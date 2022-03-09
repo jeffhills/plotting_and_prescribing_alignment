@@ -1,0 +1,804 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(colourpicker)
+library(shiny)
+library(reactlog)
+library(sf)
+library(tidyverse)
+library(ggplot2)
+library(shinyWidgets)
+library(shinyBS)
+library(kableExtra)
+library(rms)
+library(svglite)
+source("function_segment_angles_separated.R", local = TRUE)
+
+source("jh_spine_build_NEW_function.R", local = TRUE)
+
+source("jh_prescribing_alignment_functions.R", local = TRUE)
+all_possible_lumbar_segments_angles_with_lpa_df <- read_csv("all_possible_lumbar_segment_angles_for_lpa.csv")
+
+    jh_compute_pelvic_angles_and_pt_function <- function(pelvic_incidence_start = 50,
+                                                         segment_angle_list_start = segment_angle_list,
+                                                         l1pa_start = 10,
+                                                         cervical_lordosis_start = 20
+    ){
+        initial_spine_build_simulation_list <- build_full_spine_function_new(pelv_inc_value = pelvic_incidence_start,
+                                                                             segment_angle_list = segment_angle_list_start, 
+                                                                             planned_l1_pelvic_angle = l1pa_start, 
+                                                                             cervical_lordosis = cervical_lordosis_start, 
+                                                                             pt_value = 0, spine_faces = "right")
+        
+        c2pa_value <- initial_spine_build_simulation_list$spine_list$c2_pelvic_angle_value
+        
+        pt_predicted <- round(-0.023418739+0.83835713*c2pa_value+0.065802858*pelvic_incidence_start)
+        # pt_predicted <- round(1.531932+0.77877765*c2pa_value+0.067338772*pelvic_incidence_start, 0)
+        
+        t1pa_value <- initial_spine_build_simulation_list$spine_list$t1_pelvic_angle
+        
+        #T4PA
+        t4pa_value <- initial_spine_build_simulation_list$spine_list$t4_pelvic_angle_value
+        
+        return(list(c2pa_value = c2pa_value,
+                    predicted_pt = pt_predicted,
+                    tpa_value = t1pa_value,
+                    t4pa_value = t4pa_value))
+        
+    }
+```
+
+
+```{r}
+thoracic_segment_angles_by_tpa_function <- function(thoracic_level = "t12", pelvic_incidence = 51.75934,pt = 11.528076,l1_pelvic_angle = 3.8566573,l1_s1 = 61.45634,tpa = 6.2888602){
+  if(thoracic_level == "t12"){segment_angle <- 0.74830008+0.020483455*pelvic_incidence+0.18482252*pt+0.59044425*l1_pelvic_angle-0.048238157*l1_s1-0.60295017*tpa}
+  if(thoracic_level == "t11"){segment_angle <- 2.7052491+0.21543753*pelvic_incidence+0.044859428*pt+0.41535409*l1_pelvic_angle-0.23902378*l1_s1-0.60790221*tpa
+  }
+  if(thoracic_level == "t10"){segment_angle <- 2.4120385+0.32901847*pelvic_incidence-0.091213981*pt+0.11643504*l1_pelvic_angle-0.3181925*l1_s1-0.40833436*tpa
+  }
+  if(thoracic_level == "t9"){segment_angle <- 0.87675519+0.30058718*pelvic_incidence-0.023706888*pt+0.01395293*l1_pelvic_angle-0.26797527*l1_s1-0.35435255*tpa
+  }
+  if(thoracic_level == "t8"){segment_angle <- 1.0547953+0.24870941*pelvic_incidence-0.10162868*pt-0.063908963*l1_pelvic_angle-0.24189823*l1_s1-0.1900372*tpa
+  }
+  if(thoracic_level == "t7"){segment_angle <- -3.1123853+0.30652845*pelvic_incidence-0.017901238*pt-0.13833257*l1_pelvic_angle-0.25545165*l1_s1-0.23266334*tpa
+  }
+  if(thoracic_level == "t6"){segment_angle <- -4.2488227+0.20614926*pelvic_incidence-0.044624937*pt-0.11104354*l1_pelvic_angle-0.16702339*l1_s1-0.14328664*tpa
+  }
+  if(thoracic_level == "t5"){segment_angle <- -4.6389263+0.13714321*pelvic_incidence-0.0057647077*pt-0.11521942*l1_pelvic_angle-0.11427487*l1_s1-0.11605226*tpa
+  }
+  if(thoracic_level == "t4"){segment_angle<- -5.0181821+0.13235248*pelvic_incidence-0.097504765*pt-0.070469665*l1_pelvic_angle-0.092757223*l1_s1-0.0069593309*tpa
+  }
+  if(thoracic_level == "t3"){segment_angle <- -5.2220344+0.071026807*pelvic_incidence-0.062651024*pt-0.053433749*l1_pelvic_angle-0.047249273*l1_s1+0.044808031*tpa
+  }
+  if(thoracic_level == "t2"){segment_angle <- -1.7281239-0.041708352*pelvic_incidence-0.19313965*pt-0.013335467*l1_pelvic_angle+0.036268616*l1_s1+0.25374155*tpa
+  }
+  if(thoracic_level == "t1"){segment_angle <- 1.2419572-0.00027054105*pelvic_incidence-0.15977059*pt-0.14996707*l1_pelvic_angle+0.0089765709*l1_s1+0.25839188*tpa
+  }
+  return(segment_angle)
+}
+
+lumbar_segment_angle_function <- function(l1_s1_input = 39.5,l1_pelvic_angle_input = 11.222271,pelvic_incidence_input = 55.435164){ 
+  l5_sa <- 2.028759-0.2004133*l1_s1_input-1.2948269*l1_pelvic_angle_input+0.72916193*pelvic_incidence_input 
+  
+  l4_sa <- -4.2323446-0.14264788*l1_s1_input-0.66483692*l5_sa-1.6659845*l1_pelvic_angle_input+1.0011084*pelvic_incidence_input
+  
+  l3_sa <- -5.6312247+0.098489688*l1_s1_input-0.91616568*l5_sa-0.53156915*l4_sa-1.4696836*l1_pelvic_angle_input+0.92315489*pelvic_incidence_input
+  
+  l2_sa <- -2.3078228+0.47785577*l1_s1_input-0.80732669*l5_sa-0.73245566*l4_sa-0.51444405*l3_sa-0.62688324*l1_pelvic_angle_input+0.38754186*pelvic_incidence_input
+  l1_sa <- 1.4066407e-13+1*l1_s1_input-1*l5_sa-1*l4_sa-1*l3_sa-1*l2_sa-5.0984901e-16*l1_pelvic_angle_input+2.1368709e-16*pelvic_incidence_input
+  
+  lumbar_segment_angles_list <- list(l5_segment_angle = l5_sa,
+                                     l4_segment_angle = l4_sa,
+                                     l3_segment_angle = l3_sa,
+                                     l2_segment_angle = l2_sa,
+                                     l1_segment_angle = l1_sa)
+  return(lumbar_segment_angles_list)
+}
+```
+
+```{r}
+segment_angle_function_using_lpa_tpa <- function(l1_pelvic_angle_input = 10,
+                                             pelvic_incidence_input = 50,
+                                             l1_s1_lordosis_input = 50,
+                                             pt_input = 20,
+                                             t4_t12_input = 25,
+                                             t4_pelvic_angle_input = 10
+){
+  
+  lumbar_segment_angles_list <- lumbar_segment_angle_function(l1_s1_input = l1_s1_lordosis_input, l1_pelvic_angle_input = l1_pelvic_angle_input, pelvic_incidence_input = pelvic_incidence_input)
+  
+  thoracic_segment_angles_list <- thoracic_segment_angles_function(l1_s1_input = l1_s1_lordosis_input, l1_pelvic_angle_input = l1_pelvic_angle_input, pelvic_incidence_input = pelvic_incidence_input, t4_t12_input = t4_t12_input, t4_pelvic_angle_input = t4_pelvic_angle_input)
+
+    l1_segment_angle <- lumbar_segment_angles_list$l1_segment_angle
+  l2_segment_angle <- lumbar_segment_angles_list$l2_segment_angle
+  l3_segment_angle <- lumbar_segment_angles_list$l3_segment_angle
+  l4_segment_angle <- lumbar_segment_angles_list$l4_segment_angle
+  l5_segment_angle <- lumbar_segment_angles_list$l5_segment_angle
+  
+  segment_angle_list <-
+    list(
+      l5_segment_angle = l5_segment_angle,
+      l4_segment_angle = l4_segment_angle,
+      l3_segment_angle = l3_segment_angle,
+      l2_segment_angle = l2_segment_angle,
+      l1_segment_angle = l1_segment_angle,
+      t12_segment_angle = thoracic_segment_angles_list$t12_segment_angle,
+      t11_segment_angle = thoracic_segment_angles_list$t11_segment_angle,
+      t10_segment_angle = thoracic_segment_angles_list$t10_segment_angle,
+      t9_segment_angle = thoracic_segment_angles_list$t9_segment_angle,
+      t8_segment_angle = thoracic_segment_angles_list$t8_segment_angle,
+      t7_segment_angle = thoracic_segment_angles_list$t7_segment_angle,
+      t6_segment_angle = thoracic_segment_angles_list$t6_segment_angle,
+      t5_segment_angle = thoracic_segment_angles_list$t5_segment_angle,
+      t4_segment_angle = thoracic_segment_angles_list$t4_segment_angle,
+      t3_segment_angle = thoracic_segment_angles_list$t3_segment_angle,
+      t2_segment_angle = thoracic_segment_angles_list$t2_segment_angle,
+      t1_segment_angle = thoracic_segment_angles_list$t1_segment_angle
+    )
+  
+  return(segment_angle_list = segment_angle_list)
+  
+}
+```
+
+
+```{r}
+pi_preop <- 43
+pt_preop <- 37
+lpa_preop <- 9
+l1s1_preop <- 17
+t4pa_preop <- 29
+t4_t12_preop <- 37
+cl_preop <- 5
+rigid_levels <- c("l3_l4", "l4_l5")
+
+seg_angles_preop <- segment_angle_function_using_lpa_tpa(l1_pelvic_angle_input = lpa_preop, 
+                                                         pelvic_incidence_input = pi_preop, 
+                                                         l1_s1_lordosis_input = l1s1_preop,
+                                                         pt_input = pt_preop, 
+                                                         t4_t12_input = t4_t12_preop,
+                                                         t4_pelvic_angle_input = t4pa_preop)
+
+# seg_angles_preop
+
+
+spine_preop_list <- build_full_spine_function_new(pelv_inc_value = pi_preop,
+                                                                             segment_angle_list = seg_angles_preop, 
+                                                                             # planned_l1_pelvic_angle = lpa_test, 
+                                                                             cervical_lordosis = cl_preop, 
+                                                                             pt_value = pt_preop,
+                                                                             spine_faces = "right")
+
+
+
+
+ggplot() +
+  geom_sf(data = spine_preop_list$spine_df, aes(geometry = geom))+
+  geom_sf(data = spine_preop_list$spine_list$t1pa_line_sf)
+
+
+
+```
+
+```{r}
+pi_preop <- 60
+pt_preop <- 30
+lpa_preop <- 16
+l1s1_preop <- 13
+t4pa_preop <- 34
+t4_t12_preop <- 9
+cl_preop <- 10
+rigid_levels <- c("l3_l4", "l4_l5", "l5_s1")
+
+seg_angles_preop <- segment_angle_function_using_lpa_tpa(l1_pelvic_angle_input = lpa_preop, 
+                                                         pelvic_incidence_input = pi_preop, 
+                                                         l1_s1_lordosis_input = l1s1_preop,
+                                                         pt_input = pt_preop, 
+                                                         t4_t12_input = t4_t12_preop,
+                                                         t4_pelvic_angle_input = t4pa_preop)
+
+# seg_angles_preop
+
+
+spine_preop_list <- build_full_spine_function_new(pelv_inc_value = pi_preop,
+                                                                             segment_angle_list = seg_angles_preop, 
+                                                                             # planned_l1_pelvic_angle = lpa_test, 
+                                                                             cervical_lordosis = cl_preop, 
+                                                                             pt_value = pt_preop,
+                                                                             spine_faces = "right", pso_levels = "L4")
+
+
+
+
+ggplot() +
+  geom_sf(data = spine_preop_list$spine_df, aes(geometry = geom))+
+  geom_sf(data = spine_preop_list$spine_list$t4pa_line_sf, color = "red") +
+  geom_sf(data = spine_preop_list$spine_list$l1pa_line_sf, color = "blue")
+
+
+pso_list <- list()
+
+pso_list$l4 <- "l4"
+pso_list$l5 <- "l5"
+names(pso_list) <- NULL
+
+as_vector(pso_list)
+
+glue::glue_collapse()
+```
+
+
+```{r}
+pi_preop <- 43
+pt_preop <- 37
+lpa_preop <- 7
+l1s1_preop <- 20
+tpa_preop <- 34
+cl_preop <- 5
+rigid_levels <- c("l3_l4", "l4_l5")
+
+lumbar_sa_test <- list(
+  l5_segment_angle = 17, 
+  l4_segment_angle = 12,
+  l3_segment_angle = 3,
+  l2_segment_angle = -6,
+  l1_segment_angle = -8
+)
+l1s1_preop <- reduce(.x = lumbar_sa_test, .f = ~ + .x)
+l1s1_preop
+lumbar_build <-build_lumbar_spine_to_measure_lpa_function(pelv_inc_value = pi_preop, pt_value = pt_preop, segment_angle_list = lumbar_sa_test, lumbar_endplate_height = 3)
+
+
+lumbar_build$l1pa_value
+
+lumbar_build$geom_df
+
+enframe(lumbar_build$geom_list) %>%
+  unnest()
+
+
+ggplot() +
+  geom_sf(data = lumbar_build$geom_df, aes(geometry = geom))
+
+
+```
+
+
+
+```{r}
+build_lumbar_spine_to_measure_lpa_function <- function(pelv_inc_value = 50, 
+                                      pt_value = 10,
+                                      segment_angle_list,
+                                      # l1_s1 = 60,
+                                      spine_faces = "right",
+                                      lumbar_endplate_height = 4
+                                      ) {
+  
+  l1_s1 <- (segment_angle_list$l5_segment_angle + segment_angle_list$l4_segment_angle + segment_angle_list$l3_segment_angle + segment_angle_list$l2_segment_angle + segment_angle_list$l1_segment_angle)
+  
+  spine_orientation <- if_else(spine_faces == "left", 1, -1)
+  ss_value <- pelv_inc_value - pt_value
+  
+  p_inc <- (pi / 180) * (pelv_inc_value)
+  pt <- (pi / 180) * (pt_value)
+  ss <- (pi / 180) * (ss_value)
+  
+  l5s <- (pi / 180) * (ss_value  - segment_angle_list$l5_segment_angle)
+  l4s <- (pi / 180) * (ss_value  - (segment_angle_list$l5_segment_angle + segment_angle_list$l4_segment_angle))
+  l3s <- (pi / 180) * (ss_value  - (segment_angle_list$l5_segment_angle + segment_angle_list$l4_segment_angle + segment_angle_list$l3_segment_angle))
+  l2s <- (pi / 180) * (ss_value  - (segment_angle_list$l5_segment_angle + segment_angle_list$l4_segment_angle + segment_angle_list$l3_segment_angle + segment_angle_list$l2_segment_angle))
+  l1s <- (pi / 180) * (ss_value  - (segment_angle_list$l5_segment_angle + segment_angle_list$l4_segment_angle + segment_angle_list$l3_segment_angle + segment_angle_list$l2_segment_angle + segment_angle_list$l1_segment_angle))
+
+  ###########################
+  
+  ## Starting point is at the center of the femoral heads, then build sacrum and go up.
+  fem_head_center <- st_point(c(0, 3)) # Center of femoral head
+  fem_head_center_sf <- fem_head_center
+  s1_mid <-  c(fem_head_center[[1]] + spine_orientation*15 * sin(pt),
+               fem_head_center[[2]] + 15 * cos(pt))
+  
+  sac_inf <-  c(s1_mid[[1]] + spine_orientation*10 * sin(p_inc - pt), s1_mid[[2]] - 10 * cos(p_inc - pt))
+  s1p <- c(s1_mid[[1]] + spine_orientation*2.5 * cos(ss), s1_mid[[2]] + 2.5 * sin(ss))
+  s1a <- c(s1_mid[[1]] - spine_orientation*2.5 * cos(ss), s1_mid[[2]] - 2.5 * sin(ss))
+  sacrum_sf <- st_polygon(list(rbind(sac_inf, s1p, s1a, sac_inf)))
+  s1_mid_sf <- st_point(s1_mid)
+  sac_inf_sf <- st_point(sac_inf)
+  
+  ############################################# LUMBAR ############################################
+
+  sacrum_list <- list(sl = ss, sp = s1p)
+  
+  
+  l5_list <- vertebral_body_build_function_new(vertebral_slope = l5s, 
+                                           inferior_vert_list = sacrum_list,
+                                           endplate_width = 5, 
+                                           endplate_height = lumbar_endplate_height, 
+                                           wedge_body = FALSE,
+                                           spine_facing = spine_faces)
+  
+  l4_list <- vertebral_body_build_function_new(vertebral_slope = l4s, inferior_vert_list = l5_list, endplate_width = 5, endplate_height = lumbar_endplate_height, 
+                                               wedge_body = TRUE,
+                                               # wedge_body = FALSE, 
+                                               spine_facing = spine_faces, 
+                                           build_lines = FALSE)
+  
+  l3_list <- vertebral_body_build_function_new(vertebral_slope = l3s, inferior_vert_list = l4_list, endplate_width = 5, endplate_height = lumbar_endplate_height, 
+                                               wedge_body = TRUE,
+                                               # wedge_body = if_else(segment_angle_list$l3_segment_angle < 0, TRUE, FALSE),
+                                               spine_facing = spine_faces)
+  
+  l2_list <- vertebral_body_build_function_new(vertebral_slope = l2s, inferior_vert_list = l3_list, endplate_width = 5, endplate_height = lumbar_endplate_height,
+                                               wedge_body = TRUE,
+                                               # wedge_body = if_else(segment_angle_list$l2_segment_angle < 0, TRUE, FALSE), 
+                                               spine_facing = spine_faces)
+  
+  l1_list <- vertebral_body_build_function_new(vertebral_slope = l1s, inferior_vert_list = l2_list, endplate_width = 5, endplate_height = lumbar_endplate_height, 
+                                               wedge_body = TRUE,
+                                               # wedge_body = if_else(segment_angle_list$l1_segment_angle < 0, TRUE, FALSE), 
+                                               spine_facing = spine_faces, 
+                                           build_lines = FALSE)
+   ## LPA
+  fem_head_l1_distance <- st_distance(x = l1_list$vert_body_center_sf, y = fem_head_center)
+  
+  fem_head_l1_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center[1], l1_list$vert_body_center_sf[2])), y = fem_head_center)
+  
+  if(spine_faces == "left"){
+    l1_tilt_value <- if_else(l1_list$vert_body_center_sf[1] <= fem_head_center[1], 
+                             abs(acos(fem_head_l1_vertical_distance/fem_head_l1_distance)*180/pi),
+                             abs(acos(fem_head_l1_vertical_distance/fem_head_l1_distance)*180/pi)*-1)
+  }else{
+    l1_tilt_value <- if_else(l1_list$vert_body_center_sf[1] >= fem_head_center[1], 
+                             abs(acos(fem_head_l1_vertical_distance/fem_head_l1_distance)*180/pi),
+                             abs(acos(fem_head_l1_vertical_distance/fem_head_l1_distance)*180/pi)*-1)
+  }
+  
+  l1_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
+                                         l1_list$vert_body_center_sf,
+                                         c(l1_list$vert_body_center_sf[1], fem_head_center[2])))
+  
+  l1pa_line_sf <- st_linestring(rbind(l1_list$vert_body_center_sf,
+                                     fem_head_center,
+                                     s1_mid_sf))
+  
+  l1_pelvic_angle_value <- l1_tilt_value + pt_value
+  
+  geom_list <- list(fem_center_circle_sf = st_geometry(st_zm(x = fem_head_center_sf)),
+                    sacrum_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = sacrum_sf, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND"))),
+                    l5_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = l5_list$vert_body_sf, dist = -0.8, endCapStyle = "ROUND"), dist = 0.8, endCapStyle = "ROUND"))),
+                    l4_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = l4_list$vert_body_sf, dist = -0.7, endCapStyle = "ROUND"), dist = 0.7, endCapStyle = "ROUND"))),
+                    l3_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = l3_list$vert_body_sf, dist = -0.7, endCapStyle = "ROUND"), dist = 0.7, endCapStyle = "ROUND"))),
+                    l2_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = l2_list$vert_body_sf, dist = -0.6, endCapStyle = "ROUND"), dist = 0.6, endCapStyle = "ROUND"))),
+                    l1_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = l1_list$vert_body_sf, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND"))),
+                    l1_pelvic_angle_line = st_geometry(l1pa_line_sf)
+  )
+  
+  geom_df <- enframe(geom_list) %>%
+    unnest(value) %>%
+    rename(geom = value)
+  
+  return(list(geom_df = geom_df, l1pa_value = l1_pelvic_angle_value))
+  
+  
+}
+```
+
+
+
+```{r}
+pi_preop <- 60
+ segment_angles_plan <-   segment_angle_function_targets(pelvic_incidence_input = pi_preop,
+                                       fixed_l5sa_input = 99, 
+                                       fixed_l4sa_input = 5, 
+                                       fixed_l3sa_input = 5,
+                                       fixed_l2sa_input = 5, 
+                                       fixed_l1sa_input = 5, 
+                                       fixed_t12sa_input = 5,
+                                       fixed_t11sa_input = 5,
+                                       fixed_t10sa_input = 99)
+
+target_l1pa <- pi_preop*0.5-20
+        
+        measured_pelvic_angles_predicted_pt_list <- jh_compute_pelvic_angles_and_pt_function(pelvic_incidence_start = pi_preop,
+                                                 segment_angle_list_start = segment_angles_plan, 
+                                                 cervical_lordosis_start = 20)
+        #  Returns:
+        # list(c2pa_value = c2pa_value,
+        #      predicted_pt = pt_predicted,
+        #      tpa_value = t1pa_value,
+        #      t4pa_value = t4pa_value))
+        
+rigid_levels <- tibble(rigid_levels = c("L2-L3", "L3-L4", "L4-L5"))
+rigid_levels = c("L2-L3", "L3-L4", "L4-L5")
+
+l5_s1_mobile <- if_else(any(rigid_levels == "L5-S1"), "no", "yes")
+l4_l5_mobile <- if_else(any(rigid_levels == "L4-L5"), "no", "yes")
+l3_l4_mobile <- if_else(any(rigid_levels == "L3-L4"), "no", "yes")
+l2_l3_mobile <- if_else(any(rigid_levels == "L2-L3"), "no", "yes")
+l1_l2_mobile <- if_else(any(rigid_levels == "L1-L2"), "no", "yes")
+t12_l1_mobile <- if_else(any(rigid_levels == "T12-L1"), "no", "yes")
+t11_t12_mobile <- if_else(any(rigid_levels == "T11-T12"), "no", "yes")
+t10_t11_mobile <- if_else(any(rigid_levels == "T10-T11"), "no", "yes")
+
+
+lpa_deviation <- abs(target_l1pa - measured_pelvic_angles_predicted_pt_list$l1pa_value) 
+while (lpa_deviation > 5) {
+  if(l5_s1_mobile == "yes" & segment_angles_plan$l5_segment_angle < 31){
+    segment_angles_plan$l5_segment_angle <- segment_angles_plan$l5_segment_angle + 5
+  }else if(l4_l5_mobile == "yes" & segment_angles_plan$l4_segment_angle < 31){
+    segment_angles_plan$l4_segment_angle <- segment_angles_plan$l4_segment_angle + 5
+  }else if(l3_l4_mobile == "yes" & segment_angles_plan$l3_segment_angle < 31){
+    segment_angles_plan$l3_segment_angle <- segment_angles_plan$l3_segment_angle + 5
+  }else{
+    segment_angles_plan$l4_segment_angle <- segment_angles_plan$l4_segment_angle + 20
+  }
+  
+  measured_pelvic_angles_predicted_pt_list <- jh_compute_pelvic_angles_and_pt_function(pelvic_incidence_start = pi_preop,
+                                                 segment_angle_list_start = segment_angles_plan, 
+                                                 cervical_lordosis_start = 20)
+  
+  lpa_deviation <- abs(target_l1pa - measured_pelvic_angles_predicted_pt_list$l1pa_value) 
+}
+
+t4pa_l1pa_mismatch <- (measured_pelvic_angles_predicted_pt_list$t4pa_value - measured_pelvic_angles_predicted_pt_list$l1pa_value) 
+
+
+
+t4pa_l1pa_mismatch
+
+
+  segment_angles_plan
+
+  
+  
+
+        abs(target_l1pa - measured_pelvic_angles_predicted_pt_list$l1pa_value)   
+
+measured_pelvic_angles_predicted_pt_list
+
+        spine_prescribed_list <- build_full_spine_function_new(pelv_inc_value = input$preop_pelvic_incidence,
+                                                          segment_angle_list = segment_angles_plan, 
+                                                          cervical_lordosis = input$preop_c2_c7, 
+                                                          pt_value = measured_pelvic_angles_predicted_pt_list$predicted_pt,
+                                                          spine_faces = "right")
+        
+
+```
+
+
+### build a pso vertebral body
+```{r}
+pelv_inc_value <- 50
+pt_value <- 30
+
+  ss_value <- pelv_inc_value - pt_value
+  
+  p_inc <- (pi / 180) * (pelv_inc_value)
+  pt <- (pi / 180) * (pt_value)
+  ss <- (pi / 180) * (ss_value)
+  
+  
+  # l5s <- (pi / 180) * (ss_value  - 25)
+
+  ###########################
+spine_orientation <- -1  
+  ## Starting point is at the center of the femoral heads, then build sacrum and go up.
+  fem_head_center <- st_point(c(0, 3)) # Center of femoral head
+  fem_head_center_sf <- fem_head_center
+  s1_mid <-  c(fem_head_center[[1]] + spine_orientation*15 * sin(pt),
+               fem_head_center[[2]] + 15 * cos(pt))
+  
+  sac_inf <-  c(s1_mid[[1]] + spine_orientation*10 * sin(p_inc - pt), s1_mid[[2]] - 10 * cos(p_inc - pt))
+  s1p <- c(s1_mid[[1]] + spine_orientation*2.5 * cos(ss), s1_mid[[2]] + 2.5 * sin(ss))
+  s1a <- c(s1_mid[[1]] - spine_orientation*2.5 * cos(ss), s1_mid[[2]] - 2.5 * sin(ss))
+  sacrum_sf <- st_polygon(list(rbind(sac_inf, s1p, s1a, sac_inf)))
+  s1_mid_sf <- st_point(s1_mid)
+  sac_inf_sf <- st_point(sac_inf)
+  
+  sacrum_list <- list(sl = ss, sp = s1p, sa = s1a)
+  
+  inferior_vert_list <- sacrum_list
+  
+  spine_faces <- "right"
+  pso_levels <- list()
+  pso_levels$l4 <- "l4"
+  # pso_levels <- c("l4")
+  # ss_value
+  segment_angle_list <- list()
+  segment_angle_list$l5_segment_angle <- 85
+  # segment_angle_list$l4_segment_angle <- 45
+  # segment_angle_list$l3_segment_angle <- 4
+  # segment_angle_list$l2_segment_angle <- 2
+  
+  l5s <- (pi / 180) * (ss_value  - segment_angle_list$l5_segment_angle)
+  # l4s <- (pi / 180) * (ss_value  - (segment_angle_list$l5_segment_angle + segment_angle_list$l4_segment_angle))
+  # l3s <- (pi / 180) * (ss_value  - (segment_angle_list$l5_segment_angle + segment_angle_list$l4_segment_angle + segment_angle_list$l3_segment_angle))
+  # l2s <- (pi / 180) * (ss_value  - (segment_angle_list$l5_segment_angle + segment_angle_list$l4_segment_angle + segment_angle_list$l3_segment_angle + segment_angle_list$l2_segment_angle))
+  
+  # l5s
+  
+  l5_list <- vertebral_body_build_function_new(vertebral_slope = l5s, 
+                                           inferior_vert_list = sacrum_list,
+                                           endplate_width = 5, 
+                                           endplate_height = 4, 
+                                           wedge_body = FALSE,
+                                           spine_facing = spine_faces, 
+                                           pso = FALSE)
+  
+ 
+  # 
+  # l4_list <- vertebral_body_build_function_new(vertebral_slope = l4s,
+  #                                              inferior_vert_list = l5_list, 
+  #                                              endplate_width = 5, endplate_height = 4, 
+  #                                              wedge_body = TRUE, 
+  #                                              spine_facing = spine_faces, 
+  #                                          build_lines = FALSE,
+  #                                          horizontal_line_up_length = 9, 
+  #                                          horizontal_line_length = 40, 
+  #                                          posterior_lordosis_line_length = 10, 
+  #                                          pso = TRUE)
+  # 
+  # l3_list <- vertebral_body_build_function_new(vertebral_slope = l3s, inferior_vert_list = l4_list, endplate_width = 5, endplate_height = 4, wedge_body = if_else(segment_angle_list$l3_segment_angle < 0, TRUE, FALSE), spine_facing = spine_faces, 
+  #                                              pso = if_else(any(str_to_lower(pso_levels) == "l3"), TRUE, FALSE))
+  # 
+  
+
+ggplot() + 
+  geom_sf(data = sacrum_sf) + 
+  geom_sf(data = l5_list$vert_body_sf) 
+  # geom_sf(data = l4_list$vert_body_sf) +
+  # geom_sf(data = l3_list$vert_body_sf) 
+
+segment_angle_function_targets(pelvic_incidence_input = 55, fixed_l5sa_input = 5, fixed_l4sa_input = 5, fixed_l3sa_input = 5, fixed_l2sa_input = 99, fixed_l1sa_input = 5, fixed_t12sa_input = 5, fixed_t11sa_input = 5, fixed_t10sa_input = 5)
+```
+
+
+```{r}
+pso <- TRUE
+
+
+if(pso == TRUE){
+  # endplate_width <- 5
+# endplate_height <- 4
+
+box_slope <- inferior_vert_list$sl
+
+body_a <- endplate_width * cos(box_slope) ## endplate width as a straight line on x
+body_b <- endplate_height * sin(box_slope) ## height as a straight line on y
+body_c <- endplate_height * cos(box_slope) ## this number correlates to the height
+body_d <- endplate_width * sin(box_slope) ## this number correlates to the width of the endplate
+
+vert_ip <- c(inferior_vert_list$sp[[1]] + 0.5 * sin(inferior_vert_list$sl), inferior_vert_list$sp[[2]] + 0.5 * cos(inferior_vert_list$sl))
+
+vert_ia <- c(inferior_vert_list$sa[[1]] + 0.5 * sin(inferior_vert_list$sl), inferior_vert_list$sa[[2]] + 0.5 * cos(inferior_vert_list$sl))
+
+vert_sa <- c(vert_ia[[1]]  + body_b, vert_ia[[2]] + body_c)
+
+vert_sp <-  c(vert_sa[[1]] - body_a, vert_sa[[2]] + body_d) 
+
+pso_cut_too_long_length <- vert_sa[[1]]  - vert_ip[[1]]
+
+pso_cut_height <- tan(vertebral_slope)*pso_cut_too_long_length
+
+post_box_line <- st_linestring(rbind(vert_sp, vert_ip))
+
+post_pso_line <- st_linestring(rbind(vert_sa, c(vert_sa[[1]] - pso_cut_too_long_length, vert_sa[[2]] + pso_cut_height)))
+
+vert_sp <- st_intersection(x = post_box_line, y = post_pso_line)
+
+}else{
+body_a <- endplate_width * cos(vertebral_slope) ## endplate width as a straight line on x
+body_b <- endplate_height * sin(vertebral_slope) ## height as a straight line on y
+body_c <- endplate_height * cos(vertebral_slope) ## this number correlates to the height
+body_d <- endplate_width * sin(vertebral_slope) ## this number correlates to the width of the endplate
+
+### start at the IP - making a 0.5 rectangle on top of the inferior body (essentially the disk)
+vert_ip <- c(inferior_vert_list$sp[[1]] + 0.5 * sin(inferior_vert_list$sl), inferior_vert_list$sp[[2]] + 0.5 * cos(inferior_vert_list$sl)) 
+
+### then go to the IA - starting at the IP, go along the X axis the length of 'body_a', then down or up the length of body_d
+# vert_ia <- c(vert_ip[[1]] - spine_orientation*body_a, vert_ip[[2]] - body_d) ## ia for inferior anterior corner
+vert_ia <- c(vert_ip[[1]] + body_a, vert_ip[[2]] - body_d)
+# vert_ia <- c(inferior_vert_list$sa[[1]] + 0.5 * sin(inferior_vert_list$sl), inferior_vert_list$sa[[2]] + 0.5 * cos(inferior_vert_list$sl))
+### then go to the SA - starting at the IA, go along the x axis the length of body_b, then up the height of body_c
+vert_sa <- c(vert_ia[[1]]  + body_b, vert_ia[[2]] + body_c) ## sa for superior anterior corner
+## then to SP - starting at SA, go along x axis the length of body_a, then up or down the length of body_d
+vert_sp <- c(vert_sa[[1]] - body_a, vert_sa[[2]] + body_d) ## sp for superior posterior corner, closing the vert
+}
+
+
+vert_body <- rbind(vert_ip, vert_ia, vert_sa, vert_sp, vert_ip) ## binds the corners to make a square
+
+# pso_cut_height
+# post_box_line
+# post_pso_line
+# vert_sp
+# 
+# ggplot() + 
+#   geom_sf(data = post_box_line, color = "red") + 
+#   geom_sf(data = post_pso_line)
+
+vert_body_sf <- st_polygon(list(vert_body)) 
+
+vertebral_point_df <- map_df(list(vert_ip, vert_ia, vert_sa, vert_sp), .f = ~ tibble(x = .x[[1]], y = .x[[2]]))
+
+# vert_no_pso <- vert_body_sf
+
+ggplot() + 
+  geom_sf(data = sacrum_sf) +
+  geom_sf(data = vert_no_pso) +
+  geom_sf(data = vert_body_sf, alpha = 0.5) +
+  geom_point(data = vertebral_point_df, aes(x = x, y = y))
+```
+
+
+
+```{r}
+vertebral_point_df <- map_df(list(vert_ip, vert_ia, vert_sa, vert_sp), .f = ~ tibble(x = .x[[1]], y = .x[[2]]))
+
+vert_body <- rbind(vert_ip, vert_ia, vert_sa, vert_sp, vert_ip) ## binds the corners to make a square
+# wedge_body <- FALSE
+# 
+# if(wedge_body == TRUE){
+#   vert_body <- rbind(vert_ip, vert_ia_w, vert_sa, vert_sp, vert_ip) ## binds the corners to make a square
+# }else{
+#   vert_body <- rbind(vert_ip, vert_ia, vert_sa, vert_sp, vert_ip) ## binds the corners to make a square
+# }
+vert_body_sf <- st_polygon(list(vert_body)) 
+
+
+ggplot() + 
+  geom_sf(data = sacrum_sf) +
+  geom_sf(data = vert_body_sf) +
+  geom_point(data = vertebral_point_df, aes(x = x, y = y))
+
+
+```
+
+
+```{r}
+
+if(any(pso_levels == "L5")){
+  l5_pso <- TRUE
+}else{
+  l5_pso <- FALSE
+}
+
+pso_list <- list()
+pso_list$l5 <- FALSE
+pso_list$l4 <- FALSE
+pso_list$l3 <- FALSE
+pso_list$l2 <- FALSE
+pso_list$l1 <- FALSE
+pso_list$t12 <- FALSE
+pso_list$t11 <- FALSE
+pso_list$t10 <- FALSE
+
+pso_levels <- c("L3")
+
+
+
+any(str_to_lower(pso_test) == names(pso_list[3]))
+
+str_to_lower(pso_test)
+
+if_else(any(str_to_lower(pso_levels) == "l3"), TRUE, FALSE)
+
+names(pso_list[1])
+
+```
+
+```{r}
+lpa_deviation <- 20
+
+l5_s1_mobile <- "yes"
+l4_l5_mobile <- "no"
+l3_l4_mobile <- "yes"
+l2_l3_mobile <- "no"
+l1_l2_mobile <- "no"
+
+segment_angles_plan <- list()
+segment_angles_plan$l5_segment_angle <- 5
+segment_angles_plan$l4_segment_angle <- 5
+segment_angles_plan$l3_segment_angle <- 10
+segment_angles_plan$l2_segment_angle <- 0
+segment_angles_plan$l1_segment_angle <- 0
+segment_angles_plan$t12_segment_angle <- -5
+segment_angles_plan$t11_segment_angle <- -4
+segment_angles_plan$t10_segment_angle <- -4
+segment_angles_plan$t9_segment_angle <- -3
+segment_angles_plan$t8_segment_angle <- -4
+segment_angles_plan$t7_segment_angle <- -2
+segment_angles_plan$t6_segment_angle <- -1
+segment_angles_plan$t5_segment_angle <- -2
+segment_angles_plan$t4_segment_angle <- -2
+segment_angles_plan$t3_segment_angle <- -2
+segment_angles_plan$t2_segment_angle <- 0
+segment_angles_plan$t1_segment_angle <- 0
+
+pso_list <- list()
+
+pi_start <- 60
+
+target_l1pa <- 0.5*pi_start - 21
+
+as_vector(pso_list)
+
+measured_values <- jh_compute_pelvic_angles_and_pt_function(pelvic_incidence_start = pi_start,
+                                         segment_angle_list_start = segment_angles_plan, 
+                                         cervical_lordosis_start = 20,
+                                         pso_input = as_vector(pso_list))
+
+
+lpa_deviation <- abs(target_l1pa - measured_values$l1pa_value)
+
+lpa_deviation
+
+       while (lpa_deviation > 5) {
+            if(l5_s1_mobile == "yes" & segment_angles_plan$l5_segment_angle < 25){
+                segment_angles_plan$l5_segment_angle <- segment_angles_plan$l5_segment_angle + 3
+                
+            }else if(l4_l5_mobile == "yes" & segment_angles_plan$l4_segment_angle < 25){
+                segment_angles_plan$l4_segment_angle <- segment_angles_plan$l4_segment_angle + 3
+                
+            }else if(l3_l4_mobile == "yes" & segment_angles_plan$l3_segment_angle < 25){
+                segment_angles_plan$l3_segment_angle <- segment_angles_plan$l3_segment_angle + 3
+                
+            }else if(pi_start < 50 & segment_angles_plan$l3_segment_angle < 25){
+              pso_list <- list()
+              pso_list$l3 <- "l3"
+              segment_angles_plan$l4_segment_angle <- segment_angles_plan$l3_segment_angle + 25
+              
+            }else if(segment_angles_plan$l4_segment_angle < 25){
+              pso_list <- list()
+              pso_list$l4 <- "l4"
+              segment_angles_plan$l4_segment_angle <- segment_angles_plan$l4_segment_angle + 25
+            }else{
+              pso_list <- list()
+              pso_list$l5 <- "l5"
+              segment_angles_plan$l5_segment_angle <- segment_angles_plan$l5_segment_angle + 25
+            }
+            
+            measured_pelvic_angles_predicted_pt_list <- jh_compute_pelvic_angles_and_pt_function(pelvic_incidence_start = pi_start,
+                                                                                                 segment_angle_list_start = segment_angles_plan, 
+                                                                                                 cervical_lordosis_start = 20, 
+                                                                                                 pso_input = as_vector(pso_list))
+            
+            lpa_deviation <- abs(target_l1pa - measured_pelvic_angles_predicted_pt_list$l1pa_value) 
+            
+       }
+
+lpa_deviation
+
+segment_angles_plan
+```
+
+
+```{r}
+ post_box_line <- st_linestring(rbind(c(0, 0), c(0, 10)))
+    post_pso_line <- st_linestring(rbind(vert_sa, c(vert_sa[[1]] - pso_cut_too_long_length, vert_sa[[2]] + pso_cut_height)))
+    
+    vert_sp <- st_intersection(x = post_box_line, y = post_pso_line)
+
+    ggplot() + 
+      geom_sf(data = st_linestring(rbind(c(0, 3), c(2, 10)))) + 
+    geom_sf(data = st_linestring(rbind(c(0, 2), c(4, 14))))
+    
+    
+    test_int <- st_intersection(x = st_linestring(rbind(c(0, 3), c(2, 10))), y = st_linestring(rbind(c(0, 2), c(4, 14))))
+    
+   test_int<-  st_intersects(x = st_linestring(rbind(c(0, 3), c(2, 10))), y = st_linestring(rbind(c(0, 2), c(4, 14))))
+
+   length(test_int)
+   
+   is.null(test_int)
+   
+   st_is_empty(test_int)
+   
+```
+

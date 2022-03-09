@@ -1,0 +1,14 @@
+name: plotting_and_prescribing_alignment
+title: plotting_and_prescribing_alignment
+username:
+account: hills-apps
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5602032
+bundleId: 5663105
+url: https://hills-apps.shinyapps.io/plotting_and_prescribing_alignment/
+when: 1646853382.68906
+lastSyncTime: 1646853382.68906
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: prescribing_alignment_workbook.nb.html|prescribing_alignment_workbook.Rmd

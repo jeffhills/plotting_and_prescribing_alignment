@@ -661,7 +661,6 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
   
   l1_pelvic_angle_value <- l1_tilt_value + pt_value
   
-  
   ############# T4PA ############
   fem_head_t4_distance <- st_distance(x = t4_list$vert_body_center_sf, y = fem_head_center_sf)
   
@@ -682,10 +681,35 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
   
   
   t4pa_line_sf <- st_linestring(rbind(t4_list$vert_body_center_sf,
+                                      fem_head_center,
+                                      s1_mid_sf))
+  
+  t4pa_value <- t4_tilt_value + pt_value
+  
+  ############# T9PA ############
+  fem_head_t9_distance <- st_distance(x = t9_list$vert_body_center_sf, y = fem_head_center_sf)
+  
+  fem_head_t9_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center_sf[1], t9_list$vert_body_center_sf[2])), y = fem_head_center_sf)
+  
+  if(spine_faces == "left"){
+    t9_tilt_value <- if_else(t9_list$vert_body_center_sf[1] <= fem_head_center_sf[1], 
+                             abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi),
+                             -1*abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi))
+  }else{
+    t9_tilt_value <- if_else(t9_list$vert_body_center_sf[1] >= fem_head_center_sf[1], 
+                             abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi),
+                             -1*abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi))
+  }
+  t9_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
+                                         t9_list$vert_body_center_sf,
+                                         c(t9_list$vert_body_center_sf[1], fem_head_center[2])))
+  
+  
+  t9pa_line_sf <- st_linestring(rbind(t9_list$vert_body_center_sf,
                                      fem_head_center,
                                      s1_mid_sf))
   
-  t4pa_value <- t4_tilt_value + pt_value
+  t9pa_value <- t9_tilt_value + pt_value
   
   
   ############# TPA ############
@@ -811,6 +835,7 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
                      lumbar_lordosis =  l1_s1,
                      l1_pelvic_angle_value =  l1_pelvic_angle_value,
                      t1_pelvic_angle_value =  tpa_value,
+                     t9_pelvic_angle_value = t9pa_value,
                      t4_pelvic_angle_value = t4pa_value,
                      c2_pelvic_angle_value = c2pa_value,
                      c2_tilt_value = c2_tilt_value,
@@ -818,10 +843,10 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
                      cervical_lordosis =  cervical_lordosis,
                      # lumbar_spine_color = lumbar_color,
                      # thoracic_spine_color = thoracic_color,pt_line_sf
-                     pelvic_incidence_line_sf = st_geometry(st_zm(x = st_buffer(pelvic_incidence_line_sf, dist = 0.15, endCapStyle = "ROUND"))),
+                     # pelvic_incidence_line_sf = st_geometry(st_zm(x = st_buffer(pelvic_incidence_line_sf, dist = 0.15, endCapStyle = "ROUND"))),
                      # pt_line_sf = st_geometry(st_zm(x = st_buffer(pt_line_sf, dist = 0.15, endCapStyle = "ROUND"))),
                      # ss_line_sf = st_geometry(st_zm(x = st_buffer(ss_line_sf, dist = 0.15, endCapStyle = "ROUND"))),
-                     pelvic_incidence_line_sf = st_geometry(pelvic_incidence_line_sf),
+                     pi_line_sf = st_geometry(pelvic_incidence_line_sf),
                      pt_line_sf = st_geometry(pt_line_sf),
                      ss_line_sf = st_geometry(ss_line_sf),
                      l1s1_line_sf_1 = st_geometry(l1s1_line_sf_1),
@@ -836,6 +861,7 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
                      c2_tilt_line_sf = st_geometry(c2_tilt_line_sf),
                      t1pa_line_sf = st_geometry(t1pa_line_sf),
                      t1_tilt_line_sf = st_geometry(t1_tilt_line_sf),
+                     t9pa_line_sf = st_geometry(t9pa_line_sf),
                      t4pa_line_sf = st_geometry(t4pa_line_sf),
                      t4_tilt_line_sf = st_geometry(t4_tilt_line_sf),
                      l1pa_line_sf = st_geometry(l1pa_line_sf),

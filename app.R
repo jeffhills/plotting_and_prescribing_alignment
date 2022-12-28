@@ -293,13 +293,16 @@ ui <- navbarPage(title = "Spine Plotting/Planning",
                                                      ),
                                                      switchInput("spine_coloring",
                                                                  "Change Spine Color with Values",
-                                                                 labelWidth = "130px", value = TRUE),
+                                                                 labelWidth = "130px", 
+                                                                 value = FALSE),
                                                      colourpicker::colourInput(inputId = "c2pa_line_color", label = "Choose C2 Pelvic Angle Line Color", "darkgreen"),
                                                      colourpicker::colourInput(inputId = "c2_tilt_line_color", label = "Choose C2 Tilt Line Color", "#F090D8"),
                                                      colourpicker::colourInput(inputId = "tpa_line_color", label = "Choose TPA Line Color", value = "grey55"),
+                                                     colourpicker::colourInput(inputId = "t9pa_line_color", label = "Choose T9 Pelvic Angle Line Color", "#CC79A7"),
                                                      colourpicker::colourInput(inputId = "t4pa_line_color", label = "Choose T4 Pelvic Angle Line Color", "purple"),
                                                      colourpicker::colourInput(inputId = "l1_pelvic_angle_line_color", label = "Choose L1 Pelvic Angle Line Color", "blue"),
                                                      colourpicker::colourInput(inputId = "tk_line_color", label = "Choose TK Line Color", "blue"),
+                                                     colourpicker::colourInput(inputId = "pi_line_color", label = "Choose PT Line Color", "darkred"),
                                                      colourpicker::colourInput(inputId = "pt_line_color", label = "Choose PT Line Color", "red"),
                                                      colourpicker::colourInput(inputId = "ss_line_color", label = "Choose SS Line Color", "blue"),
                                                      br(),
@@ -341,22 +344,28 @@ ui <- navbarPage(title = "Spine Plotting/Planning",
                                       ),
                                       switchInput("cone_of_economy_show",
                                                   "Show Cone of Economy",
-                                                  labelWidth = "130px", value = TRUE),
-                                      switchInput("c2pa_line_show",
-                                                  "Show C2 Pelvic Angle",
-                                                  labelWidth = "130px"),
+                                                  labelWidth = "130px", 
+                                                  value = FALSE),
                                       switchInput("c2_tilt_line_show",
                                                   "Show C2 Tilt",
                                                   labelWidth = "130px"),
-                                      switchInput("tpa_line_show",
-                                                  "Show TPA",
+                                      h4("Pelvic Angles:"),
+                                      switchInput("c2pa_line_show",
+                                                  "Show C2 Pelvic Angle",
+                                                  labelWidth = "130px"),
+                                      switchInput("t1pa_line_show",
+                                                  "Show T1PA",
                                                   labelWidth = "130px"),
                                       switchInput("t4pa_line_show",
                                                   "Show T4PA",
                                                   labelWidth = "130px"),
-                                      switchInput("l1_pelvic_angle_line_show",
-                                                  "Show L1 Pelvic Angle",
+                                      switchInput("t9pa_line_show",
+                                                  "Show T9PA",
                                                   labelWidth = "130px"),
+                                      switchInput("l1pa_line_show",
+                                                  "Show L1PA",
+                                                  labelWidth = "130px"),
+                                      h4("Sagittal Cobb Angles:"),
                                       switchInput("tk_line_show",
                                                   "Show TK",
                                                   labelWidth = "130px"),
@@ -369,6 +378,7 @@ ui <- navbarPage(title = "Spine Plotting/Planning",
                                       switchInput("l4s1_line_show",
                                                   "Show L4-S1 Angle",
                                                   labelWidth = "130px"),
+                                      h4("Pelvic Parameters:"),
                                       switchInput("pt_line_show",
                                                   "Show PT",
                                                   labelWidth = "130px"),
@@ -862,8 +872,9 @@ server <- function(input, output, session) {
             
             measurements_df <- enframe(measurements_list) %>%
                 unnest() %>%
-                mutate(x = if_else(name == "PI", 10, -28)) %>%
+                mutate(x = if_else(name == "PI", 0, -28)) %>%
                 mutate(y = c(seq(from = 50, by = -4, length = length(measurements_list)-1), 3)) %>%
+              mutate(y = if_else(name == "PI", -4, y)) %>%
                 mutate(label = paste(name, value, sep = " = ")) 
             
             # facing_direction <- if_else(input$face_right == TRUE, -1, 1)
@@ -982,11 +993,17 @@ server <- function(input, output, session) {
                                                   linetype = "dashed")
         }
         
-        if(input$tpa_line_show == TRUE){
+        if(input$t1pa_line_show == TRUE){
             lines_list$tpa_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t1pa_line_sf,
                                               color = input$tpa_line_color, 
                                               fill = input$tpa_line_color, 
                                               size = line_size,lineend="round", linejoin="round")
+        }
+        if(input$t9pa_line_show == TRUE){
+          lines_list$t9pa_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t9pa_line_sf, 
+                                             color = input$t9pa_line_color, 
+                                             fill = input$t9pa_line_color, 
+                                             size = line_size,lineend="round", linejoin="round")
         }
         if(input$t4pa_line_show == TRUE){
             lines_list$t4pa_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t4pa_line_sf, 
@@ -994,7 +1011,7 @@ server <- function(input, output, session) {
                                                fill = input$t4pa_line_color, 
                                                size = line_size,lineend="round", linejoin="round")
         }
-        if(input$l1_pelvic_angle_line_show == TRUE){
+        if(input$l1pa_line_show == TRUE){
             lines_list$l1pa_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$l1pa_line_sf, 
                                             color = input$l1_pelvic_angle_line_color, 
                                             fill = input$l1_pelvic_angle_line_color, 
@@ -1013,18 +1030,6 @@ server <- function(input, output, session) {
                                            fill = input$tk_line_color, 
                                            size = line_size,lineend="round", linejoin="round")
         }
-        if(input$ss_line_show == TRUE){
-            lines_list$ss_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$ss_line_sf,
-                                          color = input$ss_line_color, 
-                                          fill = input$ss_line_color, 
-                                          size = line_size,lineend="round", linejoin="round")
-        }
-        if(input$pt_line_show == TRUE){
-            lines_list$pt_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$pt_line_sf,
-                                          color = input$pt_line_color, 
-                                          fill = input$pt_line_color, 
-                                          size = line_size,lineend="round", linejoin="round")
-        }
         if(input$l1s1_line_show == TRUE){
             lines_list$l1_s1_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$l1s1_line_sf_1, 
                                              color = input$l1s1_line_color, 
@@ -1035,12 +1040,8 @@ server <- function(input, output, session) {
                                              fill = input$l1s1_line_color, 
                                              size = line_size,lineend="round", linejoin="round")
         }
-        # if(input$l1l4_line_show == TRUE){
-        #     lines_list$l1l4_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$l1l4_line_sf, 
-        #                                     color = input$l1l4_line_color, 
-        #                                     fill = input$l1l4_line_color, 
-        #                                     size = line_size,lineend="round", linejoin="round")
-        # }
+
+        
         if(input$l4s1_line_show == TRUE){
             lines_list$l1_s1_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$l4s1_line_sf_1, 
                                              color = input$l1s1_line_color, 
@@ -1052,6 +1053,26 @@ server <- function(input, output, session) {
                                               size = line_size,
                                               lineend="round", 
                                               linejoin="round")
+        }
+        if(input$ss_line_show == TRUE){
+          lines_list$ss_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$ss_line_sf,
+                                        color = input$ss_line_color, 
+                                        fill = input$ss_line_color, 
+                                        size = line_size,lineend="round", linejoin="round")
+        }
+        if(input$pt_line_show == TRUE){
+          lines_list$pt_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$pt_line_sf,
+                                        color = input$pt_line_color, 
+                                        fill = input$pt_line_color, 
+                                        size = line_size,lineend="round", linejoin="round")
+        }
+        if(input$pi_line_show == TRUE){
+          lines_list$pt_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$pi_line_sf,
+                                        color = input$pi_line_color, 
+                                        fill = input$pi_line_color, 
+                                        size = line_size,
+                                        lineend="round", 
+                                        linejoin="round")
         }
         lines_list
     })
@@ -1598,9 +1619,10 @@ server <- function(input, output, session) {
             # }else if(l3_l4_mobile == "yes" & segment_angles_plan$l3_segment_angle < 31){
             #     segment_angles_plan$l3_segment_angle <- segment_angles_plan$l3_segment_angle + 3
             # }else
-          if(l1_l2_mobile == "yes" & segment_angles_plan$l1_segment_angle < 20){
-                segment_angles_plan$l1_segment_angle <- segment_angles_plan$l1_segment_angle + 3
-            }else if(t12_l1_mobile == "yes" & segment_angles_plan$t12_segment_angle < 10){
+          # if(l1_l2_mobile == "yes" & segment_angles_plan$l1_segment_angle < 20){
+          #       segment_angles_plan$l1_segment_angle <- segment_angles_plan$l1_segment_angle + 3
+          #   }else 
+          if(t12_l1_mobile == "yes" & segment_angles_plan$t12_segment_angle < 10){
                 segment_angles_plan$t12_segment_angle <- segment_angles_plan$t12_segment_angle + 3
             }else if(t11_t12_mobile == "yes" & segment_angles_plan$t11_segment_angle < 5){
                 segment_angles_plan$t11_segment_angle <- segment_angles_plan$t11_segment_angle + 3

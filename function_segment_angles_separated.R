@@ -179,7 +179,7 @@ lumbar_segment_angle_target_function <- function(pelvic_incidence_input = 55.435
                                                  fixed_l2sa = 99, 
                                                  fixed_l1sa = 99){ 
   
-  l1_pelvic_angle_input <- 0.5*pelvic_incidence_input - 20
+  l1_pelvic_angle_input <- 0.5*pelvic_incidence_input - 15
   
   l1_s1_input <- 1.5*pelvic_incidence_input - 1.7*l1_pelvic_angle_input - 2
   

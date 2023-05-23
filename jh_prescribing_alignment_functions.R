@@ -1,3 +1,18 @@
+############### COMPUTE TARGET PELVIC ANGLES #####################
+target_l4pa_function <- function(pelvic_incidence = 51.75934) {-10.140792+0.36078574*pelvic_incidence }
+
+target_l1pa_function <- function(pelvic_incidence = 51.813768) {-19 + 0.5*pelvic_incidence}
+
+target_t9pa_function <- function(pelvic_incidence = 51.75934) {-21.161451+0.42939559*pelvic_incidence }
+
+# Consider computing target angles based on proximal segment angles:
+
+target_l1pa_by_all_proximal_sa_function <- function(pelvic_incidence = 51.75934,c2_c3 = 7.2418723,c3_c4 = 2.3525818,c4_c5 = -3.5602989,c5_c6 = -1.0274844,c6_c7 = 5.0640539,c7_t1 = 7.6006935,t1_t2 = 0.91990553,t2_t3 = -2.4063826,t3_t4 = -4.9977997,t4_t5 = -5.2867851,t5_t6 = -5.6352776,t6_t7 = -5.5675075,t7_t8 = -5.0805516,t8_t9 = -3.5695003,t9_t10 = -2.5956493,t10_t11 = -3.2007225,t11_t12 = -2.3724442,t12_l1 = -0.4781281) {-14.02456+0.44383426*pelvic_incidence+0.073890582*c2_c3+0.096636404*c3_c4-0.007548419*c4_c5+0.096200108*c5_c6+0.15981649*c6_c7+0.096102752*c7_t1+0.022867653*t1_t2+0.14987884*t2_t3+0.16926871*t3_t4+0.13426867*t4_t5+0.10401362*t5_t6+0.073644138*t6_t7+0.16707351*t7_t8+0.22912857*t8_t9+0.229962*t9_t10+0.22680411*t10_t11+0.36013135*t11_t12+0.4652786*t12_l1 }
+
+target_l1pa_by_proximal_sa_to_t9_function <- function(pelvic_incidence = 51.75934,t9_t10 = -2.5956493,t10_t11 = -3.2007225,t11_t12 = -2.3724442,t12_l1 = -0.4781281) {-16.169583+0.43757943*pelvic_incidence+0.22606995*t9_t10+0.23857642*t10_t11+0.30851034*t11_t12+0.36924227*t12_l1 }
+
+target_l4pa_by_all_proximal_sa_function <- function(pelvic_incidence = 51.75934,c2_c3 = 7.2418723,c3_c4 = 2.3525818,c4_c5 = -3.5602989,c5_c6 = -1.0274844,c6_c7 = 5.0640539,c7_t1 = 7.6006935,t1_t2 = 0.91990553,t2_t3 = -2.4063826,t3_t4 = -4.9977997,t4_t5 = -5.2867851,t5_t6 = -5.6352776,t6_t7 = -5.5675075,t7_t8 = -5.0805516,t8_t9 = -3.5695003,t9_t10 = -2.5956493,t10_t11 = -3.2007225,t11_t12 = -2.3724442,t12_l1 = -0.4781281,l1_l2 = 9.4329344,l2_l3 = 9.4329344,l3_l4 = 10.829323) {-8.4104096+0.29880999*pelvic_incidence+0.043624079*c2_c3+0.069467112*c3_c4-0.021559367*c4_c5+0.050808206*c5_c6+0.077471645*c6_c7+0.040147095*c7_t1+0.040270531*t1_t2+0.068083498*t2_t3+0.087144042*t3_t4+0.033860915*t4_t5+0.024978178*t5_t6+0.018483101*t6_t7+0.090298058*t7_t8+0.10786551*t8_t9+0.1271408*t9_t10+0.096577939*t10_t11+0.15785489*t11_t12+0.20951609*t12_l1+0.17239328*l1_l2 + 0*l2_l3+0.14749418*l3_l4 }#############
+
 jh_pso_degree_calculator <- function(pso_level, current_lpa, desired_lpa){
   pso_level <- str_to_lower(pso_level)
   
@@ -23,7 +38,22 @@ jh_pso_degree_calculator <- function(pso_level, current_lpa, desired_lpa){
   pso_degree_needed
 }
 
-target_lpa_function <- function(pelvic_incidence = 51.813768) {-20.756157+0.48031254*pelvic_incidence}
+jh_pso_degree_calculator_for_l4pa_target <- function(pso_level, current_l4pa, desired_l4pa){
+  pso_level <- str_to_lower(pso_level)
+  
+  weight <- case_when(
+    pso_level == "l5" ~ -0.2789,
+    pso_level == "l4" ~ -0.1268
+  )
+  
+  l4pa_change_needed <- current_l4pa - desired_l4pa 
+  
+  pso_degree_needed <- l4pa_change_needed/weight*-1
+  
+  pso_degree_needed
+}
+
+
 compute_lpa_from_segment_levels_function <- function(pelvic_incidence = 51.813768,l1_l2 = 1.6817735,l2_l3 = 9.4508485,l3_l4 = 10.772589,l4_l5 = 16.66046,l5_s1 = 23.947641) {-0.8553283+0.60405938*pelvic_incidence-0.048137209*l1_l2-0.17727093*l2_l3-0.32237285*l3_l4-0.48541991*l4_l5-0.56294456*l5_s1 }
 
 pt_function <- function(tpa = 6.3128833,t1_l1 = -40.878235,l1_s1 = 61.507721,pelvic_incidence = 51.813768,l1_pelvic_angle = 3.99) {1.73748+0.71970033*tpa-0.081113318*t1_l1-0.14596707*l1_s1+0.21338716*pelvic_incidence-0.03022352*l1_pelvic_angle }
@@ -36,7 +66,7 @@ final_recompute_tpa_estimation_function <- function(t1_l1 = -40.878235,l1_s1 = 6
 
 
 # target lpa function 
-target_lpa_function <- function(pelvic_incidence = 51.813768) {-20.756157+0.48031254*pelvic_incidence}
+# target_l1pa_function <- function(pelvic_incidence = 51.813768) {-20.756157+0.48031254*pelvic_incidence}
 
 # target tpa functions
 
@@ -119,4 +149,483 @@ target_uiv_s1_function <- function(l1_pelvic_angle, pelvic_incidence, t1_uiv, tp
   }
   uiv_s1
   
+}
+
+
+##################### NEW OPTIMIZATION FUNCTIONS ######################
+compute_segmental_lordosis_range_by_pi_function <- function(pelvic_incidence){
+  range_list <- list()
+  
+  range_list$min_l5_s1 <- 10.408967+0.013929381* pelvic_incidence-3.0046014e-05*pmax(pelvic_incidence-24,0)^3+1.5596983e-05*pmax(pelvic_incidence-42,0)^3+4.0520455e-05*pmax(pelvic_incidence-60,0)^3-7.6478055e-06*pmax(pelvic_incidence-78,0)^3-1.8423619e-05*pmax(pelvic_incidence-96,0)^3
+  range_list$max_l5_s1 <- 41.018009-0.14397804* pelvic_incidence+9.2685903e-05*pmax(pelvic_incidence-24,0)^3-0.00028895757*pmax(pelvic_incidence-42,0)^3+0.00042783603*pmax(pelvic_incidence-60,0)^3-0.00035954296*pmax(pelvic_incidence-78,0)^3+0.0001279786*pmax(pelvic_incidence-96,0)^3
+  
+  range_list$min_l4_l5 <- -0.4518589+0.12610528* pelvic_incidence+9.1910983e-05*pmax(pelvic_incidence-24,0)^3-0.00036860101*pmax(pelvic_incidence-42,0)^3+0.00043108816*pmax(pelvic_incidence-60,0)^3-0.00012401723*pmax(pelvic_incidence-78,0)^3-3.0380905e-05*pmax(pelvic_incidence-96,0)^3
+  
+  range_list$max_l4_l5 <- 23.30343-0.01338107* pelvic_incidence+0.00018743572*pmax(pelvic_incidence-24,0)^3-0.00060007394*pmax(pelvic_incidence-42,0)^3+0.00072781194*pmax(pelvic_incidence-60,0)^3-0.00040514492*pmax(pelvic_incidence-78,0)^3+8.9971206e-05*pmax(pelvic_incidence-96,0)^3
+  
+  range_list$min_l3_l4 <- -7.1777623+0.25902148* pelvic_incidence-9.4729898e-05*pmax(pelvic_incidence-24,0)^3+0.00022222281*pmax(pelvic_incidence-42,0)^3-0.00024900242*pmax(pelvic_incidence-60,0)^3+0.00021025601*pmax(pelvic_incidence-78,0)^3-8.8746503e-05*pmax(pelvic_incidence-96,0)^3
+  
+  range_list$max_l3_l4 <- 10.353063+0.16521222* pelvic_incidence-2.8337622e-05*pmax(pelvic_incidence-24,0)^3+6.0777442e-05*pmax(pelvic_incidence-42,0)^3-2.6507929e-05*pmax(pelvic_incidence-60,0)^3-1.596598e-05*pmax(pelvic_incidence-78,0)^3+1.0034089e-05*pmax(pelvic_incidence-96,0)^3 
+  
+  range_list$min_l2_l3 <- -8.9032528+0.25107274* pelvic_incidence-9.7232461e-05*pmax(pelvic_incidence-24,0)^3+0.00030716779*pmax(pelvic_incidence-42,0)^3-0.00037058998*pmax(pelvic_incidence-60,0)^3+0.00020860645*pmax(pelvic_incidence-78,0)^3-4.7951792e-05*pmax(pelvic_incidence-96,0)^3
+  
+  range_list$max_l2_l3 <- 8.3469516+0.15917512* pelvic_incidence-2.8049006e-05*pmax(pelvic_incidence-24,0)^3+0.00013532709*pmax(pelvic_incidence-42,0)^3-0.00014498172*pmax(pelvic_incidence-60,0)^3-3.8218025e-06*pmax(pelvic_incidence-78,0)^3+4.1525441e-05*pmax(pelvic_incidence-96,0)^3
+  
+  range_list$min_l1_l2 <- -8.9032528+0.25107274* pelvic_incidence-9.7232461e-05*pmax(pelvic_incidence-24,0)^3+0.00030716779*pmax(pelvic_incidence-42,0)^3-0.00037058998*pmax(pelvic_incidence-60,0)^3+0.00020860645*pmax(pelvic_incidence-78,0)^3-4.7951792e-05*pmax(pelvic_incidence-96,0)^3
+  
+  range_list$max_l1_l2 <- 8.3469516+0.15917512* pelvic_incidence-2.8049006e-05*pmax(pelvic_incidence-24,0)^3+0.00013532709*pmax(pelvic_incidence-42,0)^3-0.00014498172*pmax(pelvic_incidence-60,0)^3-3.8218025e-06*pmax(pelvic_incidence-78,0)^3+4.1525441e-05*pmax(pelvic_incidence-96,0)^3
+  
+  return(range_list)
+  
+}
+
+# screening_optimized_pso_level_lordosis_values <- function(pelvic_incidence,
+#                                                                l1_l2_start, 
+#                                                                l2_l3_start, 
+#                                                                l3_l4_start, 
+#                                                                l4_l5_start, 
+#                                                                l5_s1_start,
+#                                                                desired_l1pa, 
+#                                                                non_modifiable = NULL) {
+#   # Define the equation constants
+#   constant1 <- -0.8553283
+#   constant2 <- 0.60405938
+#   constant3 <- -0.048137209
+#   constant4 <- -0.17727093
+#   constant5 <- -0.32237285
+#   constant6 <- -0.48541991
+#   constant7 <- -0.56294456
+#   
+#   # Define the objective function to minimize
+#   objective <- function(x) {
+#     l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, x[1])
+#     l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, x[2])
+#     l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, x[3])
+#     l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, x[4])
+#     l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, x[5])
+#     
+#     l1pa_diff <- desired_l1pa - (constant1 + constant2 * pelvic_incidence + constant3 * l1_l2 + constant4 * l2_l3 + constant5 * l3_l4 + constant6 * l4_l5 + constant7 * l5_s1)
+#     sum_diff_sq <- l1pa_diff^2
+#     
+#     return(sum_diff_sq)
+#   }
+#   
+#   # Set the starting values
+#   start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+#   
+#   # Use the Nelder-Mead method to find the new values
+#   result <- optim(start_values, objective, method = "Nelder-Mead")
+#   
+#   # Extract the optimized values
+#   new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+#   new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+#   new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+#   new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+#   new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+#   
+#   
+#   
+#     
+#     # Return the new values
+#     return(list(l1_l2 = new_l1_l2, 
+#                 l2_l3 = new_l2_l3,
+#                 l3_l4 = new_l3_l4, 
+#                 l4_l5 = new_l4_l5,
+#                 l5_s1 = new_l5_s1))
+#   
+#   
+# }
+
+### Estimate C2PA based on all segment angles:
+estimate_c2pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934,c2_c3 = 7.2418723,c3_c4 = 2.3525818,c4_c5 = -3.5602989,c5_c6 = -1.0274844,c6_c7 = 5.0640539,c7_t1 = 7.6006935,t1_t2 = 0.91990553,t2_t3 = -2.4063826,t3_t4 = -4.9977997,t4_t5 = -5.2867851,t5_t6 = -5.6352776,t6_t7 = -5.5675075,t7_t8 = -5.0805516,t8_t9 = -3.5695003,t9_t10 = -2.5956493,t10_t11 = -3.2007225,t11_t12 = -2.3724442,t12_l1 = -0.4781281,l1_l2 = 9.4329344,l2_l3 = 9.4329344,l3_l4 = 10.829323,l4_l5 = 16.604356,l5_s1 = 23.962803) {3.4012531+0.73821384*pelvic_incidence-0.018245053*c2_c3+0.032565312*c3_c4-0.0080538546*c4_c5-0.079163606*c5_c6-0.05851955*c6_c7-0.11024772*c7_t1-0.066980974*t1_t2-0.077286616*t2_t3-0.16573273*t3_t4-0.13414171*t4_t5-0.29557704*t5_t6-0.29613537*t6_t7-0.20529031*t7_t8-0.24658276*t8_t9-0.31277171*t9_t10-0.33952342*t10_t11-0.53084966*t11_t12-0.61709964*t12_l1-0.78140907*l1_l2NA*l2_l3-0.58582961*l3_l4-0.68621048*l4_l5-0.73429114*l5_s1 }
+
+estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934,t4_t5 = -5.2867851,t5_t6 = -5.6352776,t6_t7 = -5.5675075,t7_t8 = -5.0805516,t8_t9 = -3.5695003,t9_t10 = -2.5956493,t10_t11 = -3.2007225,t11_t12 = -2.3724442,t12_l1 = -0.4781281,l1_l2 = 9.4329344,l2_l3 = 9.4329344,l3_l4 = 10.829323,l4_l5 = 16.604356,l5_s1 = 23.962803) {1.823421+0.71023982*pelvic_incidence+0.058950934*t4_t5-0.089272646*t5_t6-0.11025113*t6_t7-0.079388449*t7_t8-0.11275605*t8_t9-0.19063858*t9_t10-0.18579882*t10_t11-0.40553368*t11_t12-0.49248536*t12_l1-0.67656593*l1_l2NA*l2_l3-0.54256365*l3_l4-0.64512353*l4_l5-0.70240693*l5_s1 }
+
+  estimate_t9pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934,t9_t10 = -2.5956493,t10_t11 = -3.2007225,t11_t12 = -2.3724442,t12_l1 = -0.4781281,l1_l2 = 9.4329344,l2_l3 = 9.4329344,l3_l4 = 10.829323,l4_l5 = 16.604356,l5_s1 = 23.962803) {0.75210312+0.67215468*pelvic_incidence+0.053470087*t9_t10-0.017375742*t10_t11-0.21574515*t11_t12-0.32073926*t12_l1-0.52601682*l1_l2NA*l2_l3-0.46793282*l3_l4-0.59719649*l4_l5-0.65617842*l5_s1 }
+  estimate_l1pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934,l1_l2 = 9.4329344,l2_l3 = 9.4329344,l3_l4 = 10.829323,l4_l5 = 16.604356,l5_s1 = 23.962803) {-0.69511147+0.59711132*pelvic_incidence-0.19584192*l1_l2NA*l2_l3-0.31393893*l3_l4-0.47965972*l4_l5-0.55809141*l5_s1 }
+  estimate_l4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934,l4_l5 = 16.604356,l5_s1 = 23.962803) {-1.8950945+0.36581368*pelvic_incidence-0.1267721*l4_l5-0.278859*l5_s1 }
+  
+  
+############ COMPUTING OPTIMAL SEGMENT ANGLES ###################
+############ COMPUTING OPTIMAL SEGMENT ANGLES ###################
+############ COMPUTING OPTIMAL SEGMENT ANGLES ###################
+############ COMPUTING OPTIMAL SEGMENT ANGLES ###################
+############ COMPUTING OPTIMAL SEGMENT ANGLES ###################
+
+############################ UIV OF L4 ##########################
+  compute_optimized_segmental_angles_uiv_l4 <- function(pelvic_incidence, 
+                                                        l4_l5_start,
+                                                        l5_s1_start,
+                                                        desired_l4pa, 
+                                                        nonmodifiable = NULL) {
+    
+    segmental_lordosis_range_list <- compute_segmental_lordosis_range_by_pi_function(pelvic_incidence = pelvic_incidence)
+    
+    nonmodifiable <- str_to_lower(str_replace_all(nonmodifiable, "-", "_"))
+    
+    results_list <- list()
+    # Define the equation constants
+    coeff_l4pa <- -1.8950945
+    coeff_pelvic_incidence <- 0.36581368
+    coeff_l4_l5 <- -0.1267721
+    coeff_l5_s1 <- -0.278859
+    
+    if(length(nonmodifiable) == 0){
+      l4_l5_modifiable <- TRUE
+      l5_s1_modifiable <- TRUE
+    }else{
+      l4_l5_modifiable <- if_else("l4_l5" %in% nonmodifiable, FALSE, TRUE)
+      l5_s1_modifiable <- if_else("l5_s1" %in% nonmodifiable, FALSE, TRUE) 
+    }
+    
+    if(l4_l5_modifiable == FALSE & l5_s1_modifiable == FALSE){
+      new_l4_l5 <- l4_l5_start
+      new_l5_s1 <- l5_s1_start
+      
+      results_list$l4_l5 <- new_l4_l5
+      results_list$l5_s1 <- new_l5_s1
+      results_list$needs_pso <- "yes"
+      
+    }else{
+      if(l4_l5_modifiable == TRUE  && l5_s1_modifiable == FALSE){
+        new_l4_l5 <- (desired_l4pa + 1.8950945 + 0.278859*l5_s1_start - 0.36581368*pelvic_incidence)/-0.1267721 
+        new_l5_s1 <- l5_s1_start
+        
+        if(between(new_l4_l5, segmental_lordosis_range_list$min_l4_l5, segmental_lordosis_range_list$max_l4_l5) == FALSE){
+          results_list$l4_l5 <- 3.0407048+0.34618218*pelvic_incidence-0.50845476*desired_l4pa
+          results_list$l5_s1 <- l5_s1_start
+          results_list$needs_pso <- "yes"
+        }else{
+          results_list$l4_l5 <- new_l4_l5
+          results_list$l5_s1 <- new_l5_s1
+          results_list$needs_pso <- "no"
+        }
+        
+        
+        
+      }else if(l4_l5_modifiable == FALSE && l5_s1_modifiable == TRUE){
+        new_l4_l5 <- l4_l5_start
+        new_l5_s1 <- (desired_l4pa + 1.8950945 + 0.1267721*l4_l5_start - 0.36581368*pelvic_incidence)/-0.278859 
+        
+        results_list$l4_l5 <- new_l4_l5
+        results_list$l5_s1 <- new_l5_s1
+        results_list$needs_pso <- "no"
+        
+      }else{
+        new_l5_s1 <- 0.70766215+0.83830614*pelvic_incidence-2.4786414*desired_l4pa
+        new_l4_l5 <- (desired_l4pa + 1.8950945 + 0.278859*new_l5_s1 - 0.36581368*pelvic_incidence)/-0.1267721 
+        
+        results_list$l4_l5 <- new_l4_l5
+        results_list$l5_s1 <- new_l5_s1
+        results_list$needs_pso <- "no"
+      }
+    } 
+    
+    
+    # Return the new values
+    return(results_list)
+    
+  }
+
+############################ UIV OF L2 ##########################
+compute_optimized_lumbar_segmental_lordosis_values <- function(pelvic_incidence,
+                                 l1_l2_start, 
+                                 l2_l3_start, 
+                                 l3_l4_start, 
+                                 l4_l5_start, 
+                                 l5_s1_start,
+                                 desired_l1pa, 
+                                 non_modifiable = NULL) {
+  
+  non_modifiable <- str_to_lower(str_replace_all(non_modifiable, "-", "_"))
+  
+  results_list <- list()
+  
+  # Define the equation constants
+  constant1 <- -0.8553283
+  constant2 <- 0.60405938
+  constant3 <- -0.048137209
+  constant4 <- -0.17727093
+  constant5 <- -0.32237285
+  constant6 <- -0.48541991
+  constant7 <- -0.56294456
+  
+  # Define the objective function to minimize
+  objective <- function(x) {
+    l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, x[1])
+    l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, x[2])
+    l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, x[3])
+    l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, x[4])
+    l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, x[5])
+    
+    l1pa_diff <- desired_l1pa - (constant1 + constant2 * pelvic_incidence + constant3 * l1_l2 + constant4 * l2_l3 + constant5 * l3_l4 + constant6 * l4_l5 + constant7 * l5_s1)
+    sum_diff_sq <- l1pa_diff^2
+    
+    return(sum_diff_sq)
+  }
+  
+  # Set the starting values
+  start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+  
+  # Use the Nelder-Mead method to find the new values
+  result <- optim(start_values, objective, method = "Nelder-Mead")
+  
+  # Extract the optimized values
+  new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+  new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+  new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+  new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+  new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+  
+  segmental_lordosis_range_list <- compute_segmental_lordosis_range_by_pi_function(pelvic_incidence = pelvic_incidence)
+  
+  if (!is.null(new_l1_l2) && new_l1_l2 < segmental_lordosis_range_list$min_l1_l2) {
+    # Set the starting values
+    new_l1_l2 <- segmental_lordosis_range_list$min_l1_l2
+    
+    l1_l2_start <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, new_l1_l2)
+    
+    start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+    
+    non_modifiable <- unique(append(non_modifiable, "l1_l2"))
+    
+    # Use the Nelder-Mead method to find the new values
+    result <- optim(start_values, objective, method = "Nelder-Mead")
+    
+    # Extract the optimized values
+    new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+    new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+    new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+    new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+    new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+    
+    results_list$min_l1_l2 <- "min l1_l2 if statement utilized"
+
+  }
+  
+  if (!is.null(new_l2_l3) && new_l2_l3 > segmental_lordosis_range_list$min_l2_l3) {
+    # Set the starting values
+    new_l2_l3 <- segmental_lordosis_range_list$min_l2_l3
+    
+    l2_l3_start <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, new_l2_l3)
+    
+    start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+    
+    non_modifiable <- unique(append(non_modifiable, "l2_l3"))
+    
+    # Use the Nelder-Mead method to find the new values
+    result <- optim(start_values, objective, method = "Nelder-Mead")
+    
+    # Extract the optimized values
+    new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+    new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+    new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+    new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+    new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+    
+    results_list$min_l2_l3 <- "min l2_l3 if statement utilized"
+  }
+  
+  if (!is.null(new_l3_l4) && new_l3_l4 > segmental_lordosis_range_list$min_l3_l4) {
+    new_l3_l4 <- segmental_lordosis_range_list$min_l3_l4
+    
+    l3_l4_start <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, new_l3_l4)
+    
+    start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+    
+    non_modifiable <- unique(append(non_modifiable, "l3_l4"))
+    
+    # Use the Nelder-Mead method to find the new values
+    result <- optim(start_values, objective, method = "Nelder-Mead")
+    
+    # Extract the optimized values
+    new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+    new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+    new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+    new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+    new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+    
+    results_list$min_l3_l4 <- "min l3_l4 if statement utilized"
+    
+    # return("Maximum value exceeded for l3_l4")
+  }
+  
+  if (!is.null(new_l5_s1) && new_l5_s1 > segmental_lordosis_range_list$max_l5_s1) {
+    new_l5_s1 <- segmental_lordosis_range_list$max_l5_s1
+    
+    l5_s1_start <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, new_l5_s1)
+    
+    start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+    
+    non_modifiable <- unique(append(non_modifiable, "l5_s1"))
+    
+    # Use the Nelder-Mead method to find the new values
+    result <- optim(start_values, objective, method = "Nelder-Mead")
+    
+    # Extract the optimized values
+    new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+    new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+    new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+    new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+    new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+    
+    results_list$max_l5_s1 <- "max l5_s1 if statement utilized"
+  }
+  
+  if (!is.null(new_l4_l5) && new_l4_l5 > segmental_lordosis_range_list$max_l4_l5) {
+    new_l4_l5 <- segmental_lordosis_range_list$max_l4_l5
+    
+    l4_l5_start <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, new_l4_l5)
+    
+    start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+    
+    non_modifiable <- unique(append(non_modifiable, "l4_l5"))
+    
+    # Use the Nelder-Mead method to find the new values
+    result <- optim(start_values, objective, method = "Nelder-Mead")
+    
+    # Extract the optimized values
+    new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+    new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+    new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+    new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+    new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+    
+    results_list$max_l4_l5 <- "max l4_l5 if statement utilized"
+    
+  }
+  
+  if (!is.null(new_l3_l4) && new_l3_l4 > segmental_lordosis_range_list$max_l3_l4) {
+    new_l3_l4 <- segmental_lordosis_range_list$max_l3_l4
+    
+    l3_l4_start <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, new_l3_l4)
+    
+    start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+    
+    non_modifiable <- unique(append(non_modifiable, "l3_l4"))
+    
+    # Use the Nelder-Mead method to find the new values
+    result <- optim(start_values, objective, method = "Nelder-Mead")
+    
+    # Extract the optimized values
+    new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+    new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+    new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+    new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+    new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+    
+    results_list$max_l3_l4 <- "max l3_l4 if statement utilized"
+    
+    # return("Maximum value exceeded for l3_l4")
+  }
+  
+  if (!is.null(new_l2_l3) && new_l2_l3 > segmental_lordosis_range_list$max_l2_l3) {
+    # Set the starting values
+    new_l2_l3 <- segmental_lordosis_range_list$max_l2_l3
+    
+    l2_l3_start <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, new_l2_l3)
+    
+    start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+    
+    non_modifiable <- unique(append(non_modifiable, "l2_l3"))
+    
+    # Use the Nelder-Mead method to find the new values
+    result <- optim(start_values, objective, method = "Nelder-Mead")
+    
+    # Extract the optimized values
+    new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+    new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+    new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+    new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+    new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+    
+    results_list$max_l2_l3 <- "max l2_l3 if statement utilized"
+    
+    # return("Maximum value exceeded for l2_l3")
+  }
+  
+  
+  if (!is.null(new_l1_l2) && new_l1_l2 > segmental_lordosis_range_list$max_l1_l2) {
+    # Set the starting values
+    new_l1_l2 <- segmental_lordosis_range_list$max_l1_l2
+    
+    l1_l2_start <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, new_l1_l2)
+    
+    start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+    
+    non_modifiable <- unique(append(non_modifiable, "l1_l2"))
+    
+    # Use the Nelder-Mead method to find the new values
+    result <- optim(start_values, objective, method = "Nelder-Mead")
+    
+    # Extract the optimized values
+    new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+    new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+    new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+    new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+    new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+    
+    results_list$max_l1_l2 <- "max l1_l2 if statement utilized"
+    
+    # return("Maximum value exceeded for l2_l3")
+  }
+  
+
+  # if (!is.null(new_l4_l5) && new_l4_l5 > segmental_lordosis_range_list$max_l4_l5) {
+  #   new_l4_l5 <- segmental_lordosis_range_list$max_l4_l5
+  #   
+  #   start_values <- c(new_l1_l2, new_l2_l3, new_l3_l4, new_l4_l5, l5_s1_start)
+  #   
+  #   l4_l5_start <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, new_l4_l5)
+  #   
+  #   non_modifiable <- unique(append(non_modifiable, "l4_l5"))
+  #   
+  #   # Use the Nelder-Mead method to find the new values
+  #   result <- optim(start_values, objective, method = "Nelder-Mead")
+  #   
+  #   # Extract the optimized values
+  #   new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+  #   new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+  #   new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+  #   new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+  #   new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+  # 
+  #   results_list$max_l4_l5 <- "max l4_l5 if statement utilized"
+  #   
+  # }
+  # if (!is.null(new_l5_s1) && new_l5_s1 > segmental_lordosis_range_list$max_l5_s1) {
+  #   return("Maximum value exceeded for l5_s1")
+  # }
+  
+  if(
+    # between(new_l1_l2, segmental_lordosis_range_list$min_l1_l2, segmental_lordosis_range_list$max_l1_l2) == FALSE |
+    #  between(new_l2_l3, segmental_lordosis_range_list$min_l2_l3, segmental_lordosis_range_list$max_l2_l3) == FALSE |
+    #  between(new_l3_l4, segmental_lordosis_range_list$min_l3_l4, segmental_lordosis_range_list$max_l3_l4) == FALSE |
+    #  between(new_l4_l5, segmental_lordosis_range_list$min_l4_l5, segmental_lordosis_range_list$max_l4_l5) == FALSE |
+     between(new_l5_s1, segmental_lordosis_range_list$min_l5_s1, segmental_lordosis_range_list$max_l5_s1) == FALSE){
+    
+    needs_pso <- "yes"
+    
+    results_list$segmental_range_exceeded <- "final segmental range if statement utilized"
+
+  }else{
+    needs_pso <- "no"
+  }
+  
+  new_l1pa <- (constant1 + constant2 * pelvic_incidence + constant3 * new_l1_l2 + constant4 * new_l2_l3 + constant5 * new_l3_l4 + constant6 * new_l4_l5 + constant7 * new_l5_s1)
+  
+  if(abs(new_l1pa - desired_l1pa) > 2){
+    needs_pso <- "yes"
+  }
+  
+  results_list$l1_l2 <- new_l1_l2
+  results_list$l2_l3 <- new_l2_l3
+  results_list$l3_l4 <- new_l3_l4
+  results_list$l4_l5 <- new_l4_l5
+  results_list$l5_s1 <- new_l5_s1
+  results_list$needs_pso <- needs_pso
+  
+  # Return the new values
+  return(results_list)
+
 }

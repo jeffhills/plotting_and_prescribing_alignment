@@ -3,31 +3,45 @@ predict_pt_function <- function(pelvic_incidence = 51.813768,t1_l1 = -40.878235,
 
 jh_compute_pelvic_angles_and_pt_function <- function(pelvic_incidence_start = 50,
                                                      segment_angle_list_start = segment_angle_list,
-                                                     # l1pa_start = 10,
                                                      cervical_lordosis_start = 20, 
                                                      pso_input = c("")
 ){
   initial_spine_build_simulation_list <- build_full_spine_function_new(pelv_inc_value = pelvic_incidence_start,
                                                                        segment_angle_list = segment_angle_list_start, 
-                                                                       # planned_l1_pelvic_angle = l1pa_start, 
                                                                        cervical_lordosis = cervical_lordosis_start, 
                                                                        pt_value = 0, spine_faces = "right", pso_levels = pso_input)
   
-  c2pa_value <- initial_spine_build_simulation_list$spine_list$c2_pelvic_angle_value
+  #C2PA
+  c2pa_value <- initial_spine_build_simulation_list$spine_list$c2pa_value
+  
+  #T1PA
+  t1pa_value <- initial_spine_build_simulation_list$spine_list$t1pa_value
+  
+  #T4PA
+  t4pa_value <- initial_spine_build_simulation_list$spine_list$t4pa_value
+  
+  #T9PA
+  t9pa_value <- initial_spine_build_simulation_list$spine_list$t9pa_value
+  
+  #L1PA
+  l1pa_value <- initial_spine_build_simulation_list$spine_list$l1pa_value
+  
+  #L4PA
+  l4pa_value <- initial_spine_build_simulation_list$spine_list$l4pa_value
   
   pt_predicted <- round(-0.023418739+0.83835713*c2pa_value+0.065802858*pelvic_incidence_start)
   # pt_predicted <- round(1.531932+0.77877765*c2pa_value+0.067338772*pelvic_incidence_start, 0)
   
-  t1pa_value <- initial_spine_build_simulation_list$spine_list$t1_pelvic_angle
-  
-  #T4PA
-  t4pa_value <- initial_spine_build_simulation_list$spine_list$t4_pelvic_angle_value
-  
   return(list(c2pa_value = c2pa_value,
               predicted_pt = pt_predicted,
-              tpa_value = t1pa_value,
-              t4pa_value = t4pa_value, 
-              l1pa_value = initial_spine_build_simulation_list$spine_list$l1_pelvic_angle_value))
+              t1pa_value = t1pa_value,
+              t4pa_value = t4pa_value,
+              t9pa_value = t9pa_value,
+              l1pa_value = l1pa_value,
+              l4pa_value = l4pa_value
+              # l1pa_value = initial_spine_build_simulation_list$spine_list$l1pa_value)
+              )
+  )
   
 }
 
@@ -624,19 +638,33 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
                                                     s1_mid[[2]] - fem_head_s1_distance * cos(p_inc - pt))
   ))
   
-  ## L1S1
-  # s1_endplate_line_posterior <-  st_linestring(rbind(s1a, # start at superior posterior corner of body and then --> end here:
-  #                                                    c(s1a[[1]] + spine_orientation*st_length(l1_list$sup_endplate_line_posterior) * cos(ss), s1a[[2]] + st_length(l1_list$sup_endplate_line_posterior)* sin(ss))
-  #                                                    # c(s1p[[2]], # X coord
-  #                                                    #   s1a[[2]] + (s1p[[2]] - s1a[[1]])*tan(ss)))
-  # )) 
-  # 
-  # l1s1_line_sf <- st_multilinestring(list(l1_list$sup_endplate_line_posterior,
-  #                                                   s1_endplate_line_posterior))
+  ############# COMPUTE PELVIC ANGLES AND GENERATE LINES   ############# 
+  #### L4PA #### 
+  fem_head_l4_distance <- st_distance(x = l4_list$vert_body_center_sf, y = fem_head_center)
   
-
+  fem_head_l4_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center[1], l4_list$vert_body_center_sf[2])), y = fem_head_center)
   
-  ## LPA
+  if(spine_faces == "left"){
+    l4_tilt_value <- if_else(l4_list$vert_body_center_sf[1] <= fem_head_center[1], 
+                             abs(acos(fem_head_l4_vertical_distance/fem_head_l4_distance)*180/pi),
+                             abs(acos(fem_head_l4_vertical_distance/fem_head_l4_distance)*180/pi)*-1)
+  }else{
+    l4_tilt_value <- if_else(l4_list$vert_body_center_sf[1] >= fem_head_center[1], 
+                             abs(acos(fem_head_l4_vertical_distance/fem_head_l4_distance)*180/pi),
+                             abs(acos(fem_head_l4_vertical_distance/fem_head_l4_distance)*180/pi)*-1)
+  }
+  
+  l4_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
+                                         l4_list$vert_body_center_sf,
+                                         c(l4_list$vert_body_center_sf[1], fem_head_center[2])))
+  
+  l4pa_line_sf <- st_linestring(rbind(l4_list$vert_body_center_sf,
+                                      fem_head_center,
+                                      s1_mid_sf))
+  
+  l4pa_value <- l4_tilt_value + pt_value
+  
+  #### L1PA #### 
   fem_head_l1_distance <- st_distance(x = l1_list$vert_body_center_sf, y = fem_head_center)
   
   fem_head_l1_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center[1], l1_list$vert_body_center_sf[2])), y = fem_head_center)
@@ -659,9 +687,34 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
                                      fem_head_center,
                                      s1_mid_sf))
   
-  l1_pelvic_angle_value <- l1_tilt_value + pt_value
+  l1pa_value <- l1_tilt_value + pt_value
   
-  ############# T4PA ############
+  #### T9PA #### 
+  fem_head_t9_distance <- st_distance(x = t9_list$vert_body_center_sf, y = fem_head_center)
+  
+  fem_head_t9_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center[1], t9_list$vert_body_center_sf[2])), y = fem_head_center)
+  
+  if(spine_faces == "left"){
+    t9_tilt_value <- if_else(t9_list$vert_body_center_sf[1] <= fem_head_center[1], 
+                             abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi),
+                             abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi)*-1)
+  }else{
+    t9_tilt_value <- if_else(t9_list$vert_body_center_sf[1] >= fem_head_center[1], 
+                             abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi),
+                             abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi)*-1)
+  }
+  
+  t9_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
+                                         t9_list$vert_body_center_sf,
+                                         c(t9_list$vert_body_center_sf[1], fem_head_center[2])))
+  
+  t9pa_line_sf <- st_linestring(rbind(t9_list$vert_body_center_sf,
+                                      fem_head_center,
+                                      s1_mid_sf))
+  
+  t9pa_value <- t9_tilt_value + pt_value
+  
+  #### T4PA #### 
   fem_head_t4_distance <- st_distance(x = t4_list$vert_body_center_sf, y = fem_head_center_sf)
   
   fem_head_t4_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center_sf[1], t4_list$vert_body_center_sf[2])), y = fem_head_center_sf)
@@ -686,33 +739,33 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
   
   t4pa_value <- t4_tilt_value + pt_value
   
-  ############# T9PA ############
-  fem_head_t9_distance <- st_distance(x = t9_list$vert_body_center_sf, y = fem_head_center_sf)
+  # ############# T9PA ############
+  # fem_head_t9_distance <- st_distance(x = t9_list$vert_body_center_sf, y = fem_head_center_sf)
+  # 
+  # fem_head_t9_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center_sf[1], t9_list$vert_body_center_sf[2])), y = fem_head_center_sf)
+  # 
+  # if(spine_faces == "left"){
+  #   t9_tilt_value <- if_else(t9_list$vert_body_center_sf[1] <= fem_head_center_sf[1], 
+  #                            abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi),
+  #                            -1*abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi))
+  # }else{
+  #   t9_tilt_value <- if_else(t9_list$vert_body_center_sf[1] >= fem_head_center_sf[1], 
+  #                            abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi),
+  #                            -1*abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi))
+  # }
+  # t9_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
+  #                                        t9_list$vert_body_center_sf,
+  #                                        c(t9_list$vert_body_center_sf[1], fem_head_center[2])))
+  # 
+  # 
+  # t9pa_line_sf <- st_linestring(rbind(t9_list$vert_body_center_sf,
+  #                                    fem_head_center,
+  #                                    s1_mid_sf))
+  # 
+  # t9pa_value <- t9_tilt_value + pt_value
   
-  fem_head_t9_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center_sf[1], t9_list$vert_body_center_sf[2])), y = fem_head_center_sf)
   
-  if(spine_faces == "left"){
-    t9_tilt_value <- if_else(t9_list$vert_body_center_sf[1] <= fem_head_center_sf[1], 
-                             abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi),
-                             -1*abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi))
-  }else{
-    t9_tilt_value <- if_else(t9_list$vert_body_center_sf[1] >= fem_head_center_sf[1], 
-                             abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi),
-                             -1*abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi))
-  }
-  t9_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
-                                         t9_list$vert_body_center_sf,
-                                         c(t9_list$vert_body_center_sf[1], fem_head_center[2])))
-  
-  
-  t9pa_line_sf <- st_linestring(rbind(t9_list$vert_body_center_sf,
-                                     fem_head_center,
-                                     s1_mid_sf))
-  
-  t9pa_value <- t9_tilt_value + pt_value
-  
-  
-  ############# TPA ############
+  #### T1PA ####
   fem_head_t1_distance <- st_distance(x = t1_list$vert_body_center_sf, y = fem_head_center_sf)
   
   fem_head_t1_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center_sf[1], t1_list$vert_body_center_sf[2])), y = fem_head_center_sf)
@@ -734,11 +787,11 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
                                       fem_head_center,
                                       s1_mid_sf))
   
-  tpa_value <- t1_tilt_value + pt_value
+  t1pa_value <- t1_tilt_value + pt_value
   
 
   
-  ############# C2PA ############
+  #### C2PA ####
   fem_head_c2_distance <- st_distance(x = c2_list$dens_centroid, y = fem_head_center_sf)
   
   fem_head_c2_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center_sf[1], c2_list$dens_centroid[2])), y = fem_head_center_sf)
@@ -766,6 +819,16 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
   
   
   ####
+  # C2 VERT HIP ANGLES
+  t1_c2_ha_line_sf <- st_linestring(rbind(t1_list$vert_body_center_sf, 
+                                          c2_list$dens_centroid,
+                                          fem_head_center))
+  
+  t9_c2_ha_line_sf <- st_linestring(rbind(t9_list$vert_body_center_sf, 
+                                          c2_list$dens_centroid,
+                                          fem_head_center))
+  
+  
   ## PT
   pt_line_sf <- st_linestring(rbind(fem_head_center,
                                     s1_mid_sf,
@@ -833,19 +896,15 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
   spine_list <- list(pelvic_incidence =  pelv_inc_value, 
                      pelvic_tilt =   pt_value,
                      lumbar_lordosis =  l1_s1,
-                     l1_pelvic_angle_value =  l1_pelvic_angle_value,
-                     t1_pelvic_angle_value =  tpa_value,
-                     t9_pelvic_angle_value = t9pa_value,
-                     t4_pelvic_angle_value = t4pa_value,
-                     c2_pelvic_angle_value = c2pa_value,
+                     l4pa_value =  l4pa_value,
+                     l1pa_value =  l1pa_value,
+                     t9pa_value = t9pa_value,
+                     t4pa_value = t4pa_value,
+                     t1pa_value =  t1pa_value,
+                     c2pa_value = c2pa_value,
                      c2_tilt_value = c2_tilt_value,
                      thoracic_kyphosis =   spinal_kyphosis_input,
                      cervical_lordosis =  cervical_lordosis,
-                     # lumbar_spine_color = lumbar_color,
-                     # thoracic_spine_color = thoracic_color,pt_line_sf
-                     # pelvic_incidence_line_sf = st_geometry(st_zm(x = st_buffer(pelvic_incidence_line_sf, dist = 0.15, endCapStyle = "ROUND"))),
-                     # pt_line_sf = st_geometry(st_zm(x = st_buffer(pt_line_sf, dist = 0.15, endCapStyle = "ROUND"))),
-                     # ss_line_sf = st_geometry(st_zm(x = st_buffer(ss_line_sf, dist = 0.15, endCapStyle = "ROUND"))),
                      pi_line_sf = st_geometry(pelvic_incidence_line_sf),
                      pt_line_sf = st_geometry(pt_line_sf),
                      ss_line_sf = st_geometry(ss_line_sf),
@@ -866,9 +925,8 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
                      t4_tilt_line_sf = st_geometry(t4_tilt_line_sf),
                      l1pa_line_sf = st_geometry(l1pa_line_sf),
                      l1_tilt_line_sf = st_geometry(l1_tilt_line_sf),
-                     # tpa_line_sf = st_geometry(st_zm(x = st_buffer(t2pa_line_sf, dist = 0.25, endCapStyle = "ROUND"))),
-                     # lpa_line_sf = st_geometry(st_zm(x = st_buffer(lpa_line_sf, dist = 0.25, endCapStyle = "ROUND"))),
-                     # l1_tilt_line_sf = st_geometry(l1_tilt_line_sf),
+                     t1_c2_ha_line_sf = st_geometry(t1_c2_ha_line_sf),
+                     t9_c2_ha_line_sf = st_geometry(t9_c2_ha_line_sf),
                      fem_head_geom = st_geometry(st_zm(x = fem_head_sf)),
                      t1_center_circle_sf = st_geometry(st_zm(x = t1_center_circle_sf)),
                      l1_center_circle_sf = st_geometry(st_zm(x = l1_center_circle_sf)),
@@ -904,9 +962,9 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
   
   spine_geoms_df <- tibble(pelvic_incidence =  pelv_inc_value,
                            pelvic_tilt =   pt_value,
-                           l1_pelvic_angle =  l1_pelvic_angle_value,
+                           l1_pelvic_angle =  l1pa_value,
                            lumbar_lordosis =  l1_s1,
-                           t1_pelvic_angle =  tpa_value,
+                           t1_pelvic_angle =  t1pa_value,
                            thoracic_kyphosis =   spinal_kyphosis_input,
                            cervical_lordosis =  cervical_lordosis,
                            # lumbar_spine_color = lumbar_color,

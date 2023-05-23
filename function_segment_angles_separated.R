@@ -70,13 +70,34 @@ thoracic_segment_angles_by_tpa_function <- function(thoracic_level = "t12", pelv
 lumbar_segment_angle_function <- function(l1_s1_input = 39.5,
                                           l1_pelvic_angle_input = 11.222271,
                                           pelvic_incidence_input = 55.435164){ 
-  l5_sa <- 2.028759-0.2004133*l1_s1_input-1.2948269*l1_pelvic_angle_input+0.72916193*pelvic_incidence_input 
+  #tried using nonlinear regressions
+  # l1_pelvic_angle <- l1_pelvic_angle_input
+  # pelvic_incidence <- pelvic_incidence_input
+  # l1_s1 <- l1_s1_input
+  # 
+  # l5_s1 <- 6.7185809+0.75974191* pelvic_incidence+0.00013605755*pmax(pelvic_incidence-34.900559,0)^3-0.001376197*pmax(pelvic_incidence-46.078545,0)^3+0.0024648771*pmax(pelvic_incidence-51.75934,0)^3-0.0013410411*pmax(pelvic_incidence-57.450709,0)^3+0.00011630347*pmax(pelvic_incidence-69.886338,0)^3-0.29348465* l1_s1+0.00035762029*pmax(l1_s1-43.678967,0)^3-0.0029096505*pmax(l1_s1-55.672081,0)^3+0.005755221*pmax(l1_s1-61.45634,0)^3-0.0039797607*pmax(l1_s1-67.329081,0)^3+0.00077656986*pmax(l1_s1-78.067187,0)^3-1.2832397* l1_pelvic_angle-0.0014788224*pmax(l1_pelvic_angle+5.9350206,0)^3+0.0055310962*pmax(l1_pelvic_angle-0.068995368,0)^3-0.0062456079*pmax(l1_pelvic_angle-3.8566573,0)^3+0.0023042547*pmax(l1_pelvic_angle-7.2427704,0)^3-0.00011092059*pmax(l1_pelvic_angle-15.871535,0)^3
+  # l5_sa <- l5_s1
+  # 
+  # l4_l5 <- -6.2175627+1.0422164* pelvic_incidence-5.3979991e-05*pmax(pelvic_incidence-34.900559,0)^3+0.00071173484*pmax(pelvic_incidence-46.078545,0)^3-0.0023697648*pmax(pelvic_incidence-51.75934,0)^3+0.0022435873*pmax(pelvic_incidence-57.450709,0)^3-0.00053157737*pmax(pelvic_incidence-69.886338,0)^3-0.14574479* l1_s1-0.00024034207*pmax(l1_s1-43.678967,0)^3+0.0020949518*pmax(l1_s1-55.672081,0)^3-0.0036171067*pmax(l1_s1-61.45634,0)^3+0.001995834*pmax(l1_s1-67.329081,0)^3-0.00023333695*pmax(l1_s1-78.067187,0)^3-1.9060242* l1_pelvic_angle+0.0030545099*pmax(l1_pelvic_angle+5.9350206,0)^3-0.011753472*pmax(l1_pelvic_angle-0.068995368,0)^3+0.014604222*pmax(l1_pelvic_angle-3.8566573,0)^3-0.0065295069*pmax(l1_pelvic_angle-7.2427704,0)^3+0.00062424662*pmax(l1_pelvic_angle-15.871535,0)^3-0.68969508* l5_s1+0.00017754685*pmax(l5_s1-11.329631,0)^3-0.001952767*pmax(l5_s1-19.669301,0)^3+0.0038235367*pmax(l5_s1-23.962803,0)^3-0.0019194178*pmax(l5_s1-26.609556,0)^3-0.00012889877*pmax(l5_s1-32.194105,0)^3
+  # l4_sa <- l4_l5
+  # 
+  # l3_l4 <- -0.74880205+0.70469788* pelvic_incidence-0.00021078294*pmax(pelvic_incidence-34.900559,0)^3+0.0015072337*pmax(pelvic_incidence-46.078545,0)^3-0.002829365*pmax(pelvic_incidence-51.75934,0)^3+0.0018317041*pmax(pelvic_incidence-57.450709,0)^3-0.00029878985*pmax(pelvic_incidence-69.886338,0)^3+0.14012568* l1_s1-0.00053736888*pmax(l1_s1-43.678967,0)^3+0.0042802121*pmax(l1_s1-55.672081,0)^3-0.0072065532*pmax(l1_s1-61.45634,0)^3+0.0039420649*pmax(l1_s1-67.329081,0)^3-0.00047835497*pmax(l1_s1-78.067187,0)^3-1.2487701* l1_pelvic_angle+0.0016161456*pmax(l1_pelvic_angle+5.9350206,0)^3-0.0052142788*pmax(l1_pelvic_angle-0.068995368,0)^3+0.0037560169*pmax(l1_pelvic_angle-3.8566573,0)^3+0.00023505049*pmax(l1_pelvic_angle-7.2427704,0)^3-0.00039293418*pmax(l1_pelvic_angle-15.871535,0)^3-0.93019505* l5_s1+0.0012337248*pmax(l5_s1-11.329631,0)^3-0.0057844781*pmax(l5_s1-19.669301,0)^3+0.0060114369*pmax(l5_s1-23.962803,0)^3-0.00049664111*pmax(l5_s1-26.609556,0)^3-0.00096404249*pmax(l5_s1-32.194105,0)^3-0.43017745* l4_l5-0.000677315*pmax(l4_l5-8.6858167,0)^3+0.003990904*pmax(l4_l5-13.885879,0)^3-0.0086836739*pmax(l4_l5-16.604356,0)^3+0.0071133048*pmax(l4_l5-19.460103,0)^3-0.0017432199*pmax(l4_l5-25.11043,0)^3
+  # l3_sa <- l3_l4
+  # 
+  # l2_l3 <- 1.8777349+0.1859238* pelvic_incidence+8.9839032e-05*pmax(pelvic_incidence-34.900559,0)^3-0.00038169268*pmax(pelvic_incidence-46.078545,0)^3+0.00054273955*pmax(pelvic_incidence-51.75934,0)^3-0.00031313794*pmax(pelvic_incidence-57.450709,0)^3+6.2252037e-05*pmax(pelvic_incidence-69.886338,0)^3+0.45814027* l1_s1-0.00013112519*pmax(l1_s1-43.678967,0)^3+0.0012366409*pmax(l1_s1-55.672081,0)^3-0.002382885*pmax(l1_s1-61.45634,0)^3+0.0015269172*pmax(l1_s1-67.329081,0)^3-0.00024954781*pmax(l1_s1-78.067187,0)^3-0.47317543* l1_pelvic_angle+0.00042489951*pmax(l1_pelvic_angle+5.9350206,0)^3-0.0012940269*pmax(l1_pelvic_angle-0.068995368,0)^3+0.0017783674*pmax(l1_pelvic_angle-3.8566573,0)^3-0.0011801864*pmax(l1_pelvic_angle-7.2427704,0)^3+0.00027094638*pmax(l1_pelvic_angle-15.871535,0)^3-0.66514353* l5_s1+0.000160417*pmax(l5_s1-11.329631,0)^3-0.00023645481*pmax(l5_s1-19.669301,0)^3-0.0020608003*pmax(l5_s1-23.962803,0)^3+0.0029684766*pmax(l5_s1-26.609556,0)^3-0.00083163846*pmax(l5_s1-32.194105,0)^3-0.53051132* l4_l5-0.0015872266*pmax(l4_l5-8.6858167,0)^3+0.0065980488*pmax(l4_l5-13.885879,0)^3-0.0057140727*pmax(l4_l5-16.604356,0)^3+0.00010862597*pmax(l4_l5-19.460103,0)^3+0.00059462457*pmax(l4_l5-25.11043,0)^3-0.33540128* l3_l4-0.010134845*pmax(l3_l4-5.7123008,0)^3+0.059183228*pmax(l3_l4-8.99933,0)^3-0.082517259*pmax(l3_l4-10.829323,0)^3+0.038860501*pmax(l3_l4-13.269923,0)^3-0.0053916257*pmax(l3_l4-17.951153,0)^3
+  # l2_sa <- l2_l3
+  # 
+  # l1_sa <- l1_s1 - (l5_s1 + l4_l5 + l3_l4 + l2_l3)
   
+  ## this worked OK:
+  l5_sa <- 2.028759-0.2004133*l1_s1_input-1.2948269*l1_pelvic_angle_input+0.72916193*pelvic_incidence_input
+
   l4_sa <- -4.2323446-0.14264788*l1_s1_input-0.66483692*l5_sa-1.6659845*l1_pelvic_angle_input+1.0011084*pelvic_incidence_input
-  
+
   l3_sa <- -5.6312247+0.098489688*l1_s1_input-0.91616568*l5_sa-0.53156915*l4_sa-1.4696836*l1_pelvic_angle_input+0.92315489*pelvic_incidence_input
-  
+
   l2_sa <- -2.3078228+0.47785577*l1_s1_input-0.80732669*l5_sa-0.73245566*l4_sa-0.51444405*l3_sa-0.62688324*l1_pelvic_angle_input+0.38754186*pelvic_incidence_input
+
   l1_sa <- 1.4066407e-13+1*l1_s1_input-1*l5_sa-1*l4_sa-1*l3_sa-1*l2_sa-5.0984901e-16*l1_pelvic_angle_input+2.1368709e-16*pelvic_incidence_input
   
   lumbar_segment_angles_list <- list(l5_segment_angle = l5_sa,
@@ -127,7 +148,7 @@ thoracic_segment_angles_function <- function(l1_s1_input = 39.5,l1_pelvic_angle_
               t1_segment_angle = t1_sa))
 }
 
-segment_angle_function_using_lpa_tpa <- function(l1_pelvic_angle_input = 10,
+initial_segment_angle_function_using_lpa_tpa <- function(l1_pelvic_angle_input = 10,
                                                  pelvic_incidence_input = 50,
                                                  l1_s1_lordosis_input = 50,
                                                  pt_input = 20,
@@ -170,6 +191,82 @@ segment_angle_function_using_lpa_tpa <- function(l1_pelvic_angle_input = 10,
   
 }
 
+segment_angle_function_using_lpa_tpa <- function(l1_pelvic_angle_input = 10,
+                                                 pelvic_incidence_input = 50,
+                                                 l1_s1_lordosis_input = 50,
+                                                 pt_input = 20,
+                                                 t4_t12_input = 25,
+                                                 t4_pelvic_angle_input = 10
+){
+  
+  initial_segment_angles_list <- initial_segment_angle_function_using_lpa_tpa(l1_pelvic_angle_input = l1_pelvic_angle_input, 
+                                               pelvic_incidence_input = pelvic_incidence_input, 
+                                               l1_s1_lordosis_input = l1_s1_lordosis_input, 
+                                               pt_input = pt_input, 
+                                               t4_t12_input = t4_t12_input,
+                                               t4_pelvic_angle_input = t4_pelvic_angle_input)
+  
+  initial_measured_pelvic_angles_preop_list <- jh_compute_pelvic_angles_and_pt_function(pelvic_incidence_start = pelvic_incidence_input,
+                                                                                     segment_angle_list_start = initial_segment_angles_list, 
+                                                                                     cervical_lordosis_start = 20)
+  
+  while(round(initial_measured_pelvic_angles_preop_list$l1pa_value) > l1_pelvic_angle_input){
+    initial_segment_angles_list$l1_segment_angle <- initial_segment_angles_list$l1_segment_angle - 1
+    initial_segment_angles_list$l5_segment_angle <- initial_segment_angles_list$l5_segment_angle + 1
+
+    initial_measured_pelvic_angles_preop_list <- jh_compute_pelvic_angles_and_pt_function(pelvic_incidence_start = pelvic_incidence_input,
+                                                                                          segment_angle_list_start = initial_segment_angles_list,
+                                                                                          cervical_lordosis_start = 20)
+  }
+  
+  while(round(initial_measured_pelvic_angles_preop_list$t4pa_value) > t4_pelvic_angle_input){
+    initial_segment_angles_list$t12_segment_angle <- initial_segment_angles_list$t12_segment_angle + 1
+    initial_segment_angles_list$t11_segment_angle <- initial_segment_angles_list$t11_segment_angle + 1
+    initial_segment_angles_list$t4_segment_angle <- initial_segment_angles_list$t4_segment_angle - 1
+    initial_segment_angles_list$t5_segment_angle <- initial_segment_angles_list$t5_segment_angle - 1
+
+    initial_measured_pelvic_angles_preop_list <- jh_compute_pelvic_angles_and_pt_function(pelvic_incidence_start = pelvic_incidence_input,
+                                                                                          segment_angle_list_start = initial_segment_angles_list,
+                                                                                          cervical_lordosis_start = 20)
+  }
+  
+  segment_angle_list <- initial_segment_angles_list
+  
+  # lumbar_segment_angles_list <- lumbar_segment_angle_function(l1_s1_input = l1_s1_lordosis_input, l1_pelvic_angle_input = l1_pelvic_angle_input, pelvic_incidence_input = pelvic_incidence_input)
+  # 
+  # thoracic_segment_angles_list <- thoracic_segment_angles_function(l1_s1_input = l1_s1_lordosis_input, l1_pelvic_angle_input = l1_pelvic_angle_input, pelvic_incidence_input = pelvic_incidence_input, t4_t12_input = t4_t12_input, t4_pelvic_angle_input = t4_pelvic_angle_input)
+  # 
+  # l1_segment_angle <- lumbar_segment_angles_list$l1_segment_angle
+  # l2_segment_angle <- lumbar_segment_angles_list$l2_segment_angle
+  # l3_segment_angle <- lumbar_segment_angles_list$l3_segment_angle
+  # l4_segment_angle <- lumbar_segment_angles_list$l4_segment_angle
+  # l5_segment_angle <- lumbar_segment_angles_list$l5_segment_angle
+  # 
+  # segment_angle_list <-
+  #   list(
+  #     l5_segment_angle = l5_segment_angle,
+  #     l4_segment_angle = l4_segment_angle,
+  #     l3_segment_angle = l3_segment_angle,
+  #     l2_segment_angle = l2_segment_angle,
+  #     l1_segment_angle = l1_segment_angle,
+  #     t12_segment_angle = thoracic_segment_angles_list$t12_segment_angle,
+  #     t11_segment_angle = thoracic_segment_angles_list$t11_segment_angle,
+  #     t10_segment_angle = thoracic_segment_angles_list$t10_segment_angle,
+  #     t9_segment_angle = thoracic_segment_angles_list$t9_segment_angle,
+  #     t8_segment_angle = thoracic_segment_angles_list$t8_segment_angle,
+  #     t7_segment_angle = thoracic_segment_angles_list$t7_segment_angle,
+  #     t6_segment_angle = thoracic_segment_angles_list$t6_segment_angle,
+  #     t5_segment_angle = thoracic_segment_angles_list$t5_segment_angle,
+  #     t4_segment_angle = thoracic_segment_angles_list$t4_segment_angle,
+  #     t3_segment_angle = thoracic_segment_angles_list$t3_segment_angle,
+  #     t2_segment_angle = thoracic_segment_angles_list$t2_segment_angle,
+  #     t1_segment_angle = thoracic_segment_angles_list$t1_segment_angle
+  #   )
+  
+  return(segment_angle_list = segment_angle_list)
+  
+}
+
 
 ######## TARGET FUNCTIONS
 lumbar_segment_angle_target_function <- function(pelvic_incidence_input = 55.435164,
@@ -179,7 +276,7 @@ lumbar_segment_angle_target_function <- function(pelvic_incidence_input = 55.435
                                                  fixed_l2sa = 99, 
                                                  fixed_l1sa = 99){ 
   
-  l1_pelvic_angle_input <- 0.5*pelvic_incidence_input - 15
+  l1_pelvic_angle_input <- 0.5*pelvic_incidence_input - 19
   
   l1_s1_input <- 1.5*pelvic_incidence_input - 1.7*l1_pelvic_angle_input - 2
   

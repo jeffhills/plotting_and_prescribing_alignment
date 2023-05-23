@@ -1,0 +1,852 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+## ATTEMPT WITH CLEANED CODE - FUNCTION FOR VERT BODIES
+library(colourpicker)
+library(shiny)
+library(reactlog)
+library(sf)
+library(tidyverse)
+library(ggplot2)
+library(shinyWidgets)
+library(shinyBS)
+# library(kableExtra)
+# library(rms)
+library(svglite)
+library(glue)
+
+
+
+source("function_segment_angles_separated.R", local = TRUE)
+
+source("jh_spine_build_NEW_function.R", local = TRUE)
+
+source("jh_prescribing_alignment_functions.R", local = TRUE)
+
+source("spinal_regional_alignment_analysis_by_vpa.R", local = TRUE)
+
+source("jh_functions.R", local = TRUE)
+
+```
+
+```{r}
+# test_patient_values 
+test_preop_pi <- 42
+test_preop_pt <- 23
+test_preop_ll <- 19
+test_preop_l1pa <- -3
+test_preop_tk <- 30
+test_preop_t4pa <- 21
+test_preop_c2c7 <- 20
+
+jh_symbols_list$degree_symbol
+
+```
+
+
+
+```{r}
+test_starting_segment_angles <- segment_angle_function_using_lpa_tpa(l1_pelvic_angle_input = test_preop_l1pa, 
+                                                                     pelvic_incidence_input = test_preop_pi,
+                                                                     l1_s1_lordosis_input = test_preop_ll,
+                                                                     pt_input = test_preop_pt, 
+                                                                     t4_t12_input = test_preop_tk,
+                                                                     t4_pelvic_angle_input = test_preop_t4pa)
+
+# test_starting_segment_angles
+        
+test_measured_pelvic_angles_preop_list <- jh_compute_pelvic_angles_and_pt_function(pelvic_incidence_start = test_preop_pi,
+                                                                                             segment_angle_list_start = test_starting_segment_angles, 
+                                                                                             cervical_lordosis_start = test_preop_c2c7)
+        
+
+test_full_spine_build <- build_full_spine_function_new(pelv_inc_value = test_preop_pi,
+                                                          segment_angle_list = test_starting_segment_angles, 
+                                                          cervical_lordosis = test_preop_c2c7, 
+                                                          pt_value = test_preop_pt,
+                                                          spine_faces = "right")
+
+test_measured_pelvic_angles_preop_list
+
+test_full_spine_build$spine_list$t4pa_value
+
+id_focal_deformity_function(pelvic_incidence = test_preop_pi,
+                            l4_pelvic_angle = test_measured_pelvic_angles_preop_list$l4pa_value, 
+                            l1_pelvic_angle = test_measured_pelvic_angles_preop_list$l1pa_value,
+                            t9_pelvic_angle = test_measured_pelvic_angles_preop_list$t9pa_value, 
+                            t4_pelvic_angle = test_measured_pelvic_angles_preop_list$t4pa_value)
+        
+```
+
+
+```{r}
+calculate_new_values <- function(pelvic_incidence,
+                                 l1_l2_start, 
+                                 l2_l3_start, 
+                                 l3_l4_start, 
+                                 l4_l5_start, 
+                                 l5_s1_start,
+                                 desired_l1pa, 
+                                 non_modifiable = NULL) {
+  # Define the equation constants
+  constant1 <- -0.8553283
+  constant2 <- 0.60405938
+  constant3 <- -0.048137209
+  constant4 <- -0.17727093
+  constant5 <- -0.32237285
+  constant6 <- -0.48541991
+  constant7 <- -0.56294456
+
+  # Define the objective function to minimize
+  objective <- function(x) {
+    l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, x[1])
+    l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, x[2])
+    l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, x[3])
+    l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, x[4])
+    l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, x[5])
+
+    l1pa_diff <- desired_l1pa - (constant1 + constant2 * pelvic_incidence + constant3 * l1_l2 + constant4 * l2_l3 + constant5 * l3_l4 + constant6 * l4_l5 + constant7 * l5_s1)
+    sum_diff_sq <- l1pa_diff^2
+
+    return(sum_diff_sq)
+  }
+
+  # Set the starting values
+  start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+
+  # Use the Nelder-Mead method to find the new values
+  result <- optim(start_values, objective, method = "Nelder-Mead")
+
+  # Extract the optimized values
+  new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+  new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+  new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+  new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+  new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+
+  # Return the new values
+  return(list(l1_l2 = new_l1_l2, 
+              l2_l3 = new_l2_l3,
+              l3_l4 = new_l3_l4, 
+              l4_l5 = new_l4_l5,
+              l5_s1 = new_l5_s1))
+}
+```
+
+
+```{r}
+
+
+calculate_new_values(pelvic_incidence = 57, 
+                     l1_l2_start = 8, 
+                     l2_l3_start = 12, 
+                     l3_l4_start = 0, 
+                     l4_l5_start = 3, 
+                     l5_s1_start = 21, 
+                     desired_l1pa = 10, 
+                     non_modifiable = c("l3_l4", "l4_l5", "l5_s1"))
+
+```
+### compute maximal segmental lordosis ranges by PI
+```{r}
+compute_segmental_lordosis_range_by_pi_function <- function(pelvic_incidence){
+  range_list <- list()
+  
+  range_list$min_l5_s1 <- 10.408967+0.013929381* pelvic_incidence-3.0046014e-05*pmax(pelvic_incidence-24,0)^3+1.5596983e-05*pmax(pelvic_incidence-42,0)^3+4.0520455e-05*pmax(pelvic_incidence-60,0)^3-7.6478055e-06*pmax(pelvic_incidence-78,0)^3-1.8423619e-05*pmax(pelvic_incidence-96,0)^3
+  range_list$max_l5_s1 <- 41.018009-0.14397804* pelvic_incidence+9.2685903e-05*pmax(pelvic_incidence-24,0)^3-0.00028895757*pmax(pelvic_incidence-42,0)^3+0.00042783603*pmax(pelvic_incidence-60,0)^3-0.00035954296*pmax(pelvic_incidence-78,0)^3+0.0001279786*pmax(pelvic_incidence-96,0)^3
+
+range_list$min_l4_l5 <- -0.4518589+0.12610528* pelvic_incidence+9.1910983e-05*pmax(pelvic_incidence-24,0)^3-0.00036860101*pmax(pelvic_incidence-42,0)^3+0.00043108816*pmax(pelvic_incidence-60,0)^3-0.00012401723*pmax(pelvic_incidence-78,0)^3-3.0380905e-05*pmax(pelvic_incidence-96,0)^3
+
+range_list$max_l4_l5 <- 23.30343-0.01338107* pelvic_incidence+0.00018743572*pmax(pelvic_incidence-24,0)^3-0.00060007394*pmax(pelvic_incidence-42,0)^3+0.00072781194*pmax(pelvic_incidence-60,0)^3-0.00040514492*pmax(pelvic_incidence-78,0)^3+8.9971206e-05*pmax(pelvic_incidence-96,0)^3
+
+range_list$min_l3_l4 <- -7.1777623+0.25902148* pelvic_incidence-9.4729898e-05*pmax(pelvic_incidence-24,0)^3+0.00022222281*pmax(pelvic_incidence-42,0)^3-0.00024900242*pmax(pelvic_incidence-60,0)^3+0.00021025601*pmax(pelvic_incidence-78,0)^3-8.8746503e-05*pmax(pelvic_incidence-96,0)^3
+
+range_list$max_l3_l4 <- 10.353063+0.16521222* pelvic_incidence-2.8337622e-05*pmax(pelvic_incidence-24,0)^3+6.0777442e-05*pmax(pelvic_incidence-42,0)^3-2.6507929e-05*pmax(pelvic_incidence-60,0)^3-1.596598e-05*pmax(pelvic_incidence-78,0)^3+1.0034089e-05*pmax(pelvic_incidence-96,0)^3 
+
+range_list$min_l2_l3 <- -8.9032528+0.25107274* pelvic_incidence-9.7232461e-05*pmax(pelvic_incidence-24,0)^3+0.00030716779*pmax(pelvic_incidence-42,0)^3-0.00037058998*pmax(pelvic_incidence-60,0)^3+0.00020860645*pmax(pelvic_incidence-78,0)^3-4.7951792e-05*pmax(pelvic_incidence-96,0)^3
+
+range_list$max_l2_l3 <- 8.3469516+0.15917512* pelvic_incidence-2.8049006e-05*pmax(pelvic_incidence-24,0)^3+0.00013532709*pmax(pelvic_incidence-42,0)^3-0.00014498172*pmax(pelvic_incidence-60,0)^3-3.8218025e-06*pmax(pelvic_incidence-78,0)^3+4.1525441e-05*pmax(pelvic_incidence-96,0)^3
+
+range_list$min_l1_l2 <- -8.9032528+0.25107274* pelvic_incidence-9.7232461e-05*pmax(pelvic_incidence-24,0)^3+0.00030716779*pmax(pelvic_incidence-42,0)^3-0.00037058998*pmax(pelvic_incidence-60,0)^3+0.00020860645*pmax(pelvic_incidence-78,0)^3-4.7951792e-05*pmax(pelvic_incidence-96,0)^3
+
+range_list$max_l1_l2 <- 8.3469516+0.15917512* pelvic_incidence-2.8049006e-05*pmax(pelvic_incidence-24,0)^3+0.00013532709*pmax(pelvic_incidence-42,0)^3-0.00014498172*pmax(pelvic_incidence-60,0)^3-3.8218025e-06*pmax(pelvic_incidence-78,0)^3+4.1525441e-05*pmax(pelvic_incidence-96,0)^3
+
+return(range_list)
+
+}
+
+```
+
+```{r}
+test_starting_pi <- 57
+test_starting_l1pa <- 19
+test_starting_l1s1 <- 43
+test_starting_pt <- 15
+test_starting_t4t12 <- 28
+test_starting_t4pa <- 16
+test_starting_c2c7 <- 10
+
+rigid_levels <- c("l1_l2", "l4_l5")
+
+pelvic_incidence <- test_starting_pi
+
+        starting_segment_angles <- segment_angle_function_using_lpa_tpa(l1_pelvic_angle_input = test_starting_l1pa, 
+                                                                     pelvic_incidence_input = pelvic_incidence,
+                                                                     l1_s1_lordosis_input = test_starting_l1s1,
+                                                                     pt_input = test_starting_pt, 
+                                                                     t4_t12_input = test_starting_t4t12,
+                                                                     t4_pelvic_angle_input = test_starting_t4pa)
+        
+        measured_pelvic_angles_preop_list <- jh_compute_pelvic_angles_and_pt_function(pelvic_incidence_start = pelvic_incidence,
+                                                                                             segment_angle_list_start = starting_segment_angles,
+                                                                                             cervical_lordosis_start = test_starting_c2c7)
+        # 
+        #         starting_segment_angles <- segment_angle_function_using_lpa_tpa(l1_pelvic_angle_input = input$preop_l1pa, 
+        #                                                              pelvic_incidence_input = input$preop_pelvic_incidence,
+        #                                                              l1_s1_lordosis_input = input$preop_l1_s1,
+        #                                                              pt_input = input$preop_pt, 
+        #                                                              t4_t12_input = input$preop_t4_t12,
+        #                                                              t4_pelvic_angle_input = input$preop_t4pa)
+        # 
+        # measured_pelvic_angles_preop_list <- jh_compute_pelvic_angles_and_pt_function(pelvic_incidence_start = input$preop_pelvic_incidence,
+        #                                                                                      segment_angle_list_start = starting_segment_angles,
+        #                                                                                      cervical_lordosis_start = input$preop_c2_c7)
+        
+        regional_analysis_list <- id_focal_deformity_function(pelvic_incidence = pelvic_incidence,
+                                                              l4_pelvic_angle = measured_pelvic_angles_preop_list$l4pa_value, 
+                                                              l1_pelvic_angle = measured_pelvic_angles_preop_list$l1pa_value,
+                                                              t9_pelvic_angle = measured_pelvic_angles_preop_list$t9pa_value, 
+                                                              t4_pelvic_angle = measured_pelvic_angles_preop_list$t4pa_value)
+        
+        uiv_for_rod <- case_when(
+          regional_analysis_list$recommended_uiv == "Upper Thoracic" ~ 11,
+          regional_analysis_list$recommended_uiv == "Lower Thoracic" ~ 18,
+          regional_analysis_list$recommended_uiv == "Upper Lumbar" ~ 21,
+          regional_analysis_list$recommended_uiv == "Lower Lumbar" ~ 23
+        )
+        
+        uiv_level <- case_when(
+          regional_analysis_list$recommended_uiv == "Upper Thoracic" ~ "T4",
+          regional_analysis_list$recommended_uiv == "Lower Thoracic" ~ "T11",
+          regional_analysis_list$recommended_uiv == "Upper Lumbar" ~ "L2",
+          regional_analysis_list$recommended_uiv == "Lower Lumbar" ~ "L4"
+        )
+```
+
+
+##### UIV L4
+```{r}
+test_starting_pi <- 60
+
+test_starting_segment_angles <- list()
+
+test_starting_segment_angles$l4_segment_angle <- 5
+test_starting_segment_angles$l5_segment_angle <- 5
+
+test_rigid_lumbar_levels <- c("l4_l5")
+
+l4pa_target <- target_l4pa_function(pelvic_incidence = test_starting_pi)
+
+l4pa_target
+          
+          test_optimized_segment_angles_list <- compute_optimized_segmental_angles_uiv_l4(pelvic_incidence = test_starting_pi, 
+                                                    l4_l5_start = test_starting_segment_angles$l4_segment_angle, 
+                                                    l5_s1_start = test_starting_segment_angles$l5_segment_angle, 
+                                                    desired_l4pa = l4pa_target, 
+                                                      nonmodifiable = c())
+          
+          
+
+        
+estimate_l4pa_by_segment_angles_function(pelvic_incidence = 60, l4_l5 = 18, l5_s1 = 22)
+          
+test_optimized_segment_angles_list 
+          
+compute_segmental_lordosis_range_by_pi_function(pelvic_incidence = 50)
+          
+
+```
+
+```{r}
+compute_optimized_segmental_angles_uiv_l4 <- function(pelvic_incidence, 
+                                  l4_l5_start,
+                                  l5_s1_start,
+                                  desired_l4pa, 
+                                  nonmodifiable = NULL) {
+    
+    segmental_lordosis_range_list <- compute_segmental_lordosis_range_by_pi_function(pelvic_incidence = pelvic_incidence)
+    
+    results_list <- list()
+    # Define the equation constants
+    coeff_l4pa <- -1.8950945
+    coeff_pelvic_incidence <- 0.36581368
+    coeff_l4_l5 <- -0.1267721
+    coeff_l5_s1 <- -0.278859
+    
+    if(length(nonmodifiable) == 0){
+      l4_l5_modifiable <- TRUE
+      l5_s1_modifiable <- TRUE
+    }else{
+      l4_l5_modifiable <- if_else("l4_l5" %in% nonmodifiable, FALSE, TRUE)
+      l5_s1_modifiable <- if_else("l5_s1" %in% nonmodifiable, FALSE, TRUE) 
+    }
+    
+    if(l4_l5_modifiable == FALSE & l5_s1_modifiable == FALSE){
+      new_l4_l5 <- l4_l5_start
+      new_l5_s1 <- l5_s1_start
+      
+      results_list$l4_l5 <- new_l4_l5
+      results_list$l5_s1 <- new_l5_s1
+      results_list$needs_pso <- "yes"
+      
+    }else{
+      if(l4_l5_modifiable == TRUE  && l5_s1_modifiable == FALSE){
+        new_l4_l5 <- (desired_l4pa + 1.8950945 + 0.278859*l5_s1_start - 0.36581368*pelvic_incidence)/-0.1267721 
+        new_l5_s1 <- l5_s1_start
+
+        results_list$l4_l5 <- new_l4_l5
+        results_list$l5_s1 <- new_l5_s1
+        results_list$needs_pso <- "no"
+        
+      }else if(l4_l5_modifiable == FALSE && l5_s1_modifiable == TRUE){
+        new_l4_l5 <- l4_l5_start
+        new_l5_s1 <- (desired_l4pa + 1.8950945 + 0.1267721*l4_l5_start - 0.36581368*pelvic_incidence)/-0.278859 
+        
+        results_list$l4_l5 <- new_l4_l5
+        results_list$l5_s1 <- new_l5_s1
+        results_list$needs_pso <- "no"
+        
+      }else{
+        new_l5_s1 <- 0.70766215+0.83830614*pelvic_incidence-2.4786414*desired_l4pa
+        new_l4_l5 <- (desired_l4pa + 1.8950945 + 0.278859*new_l5_s1 - 0.36581368*pelvic_incidence)/-0.1267721 
+        
+        results_list$l4_l5 <- new_l4_l5
+        results_list$l5_s1 <- new_l5_s1
+        results_list$needs_pso <- "no"
+      }
+    } 
+
+      
+          # Return the new values
+    return(results_list)
+      
+  }
+
+pso_list_test <- "l5"
+```
+
+
+```{r}
+starting_segment_angles <- segment_angle_function_using_lpa_tpa(l1_pelvic_angle_input = 18, 
+                                                                     pelvic_incidence_input = 57,
+                                                                     l1_s1_lordosis_input = 58,
+                                                                     pt_input = 23, 
+                                                                     t4_t12_input = 28,
+                                                                     t4_pelvic_angle_input = 16)
+
+segment_angles_plan <- starting_segment_angles
+
+target_l4pa_function(pelvic_incidence = 57)
+
+optimized_segment_angles_list <- compute_optimized_segmental_angles_uiv_l4(pelvic_incidence = 57, 
+                                                    l4_l5_start = starting_segment_angles$l4_segment_angle, 
+                                                    l5_s1_start = starting_segment_angles$l5_segment_angle, 
+                                                    desired_l4pa = target_l4pa_function(pelvic_incidence = 57), 
+                                                    nonmodifiable = c("L5-S1"))
+
+optimized_segment_angles_list
+
+starting_segment_angles
+
+            segment_angles_plan$l4_segment_angle <- optimized_segment_angles_list$l4_l5
+            
+            segment_angles_plan
+            
+            pre_pso_pelvic_angles_list <- jh_compute_pelvic_angles_and_pt_function(pelvic_incidence_start = 57,
+                                                                                          segment_angle_list_start = starting_segment_angles,
+                                                                                          cervical_lordosis_start = 10)
+            
+            
+            pre_pso_pelvic_angles_list
+            
+            target_l1pa_function(pelvic_incidence = 57)
+            
+            target_l4pa_function(57)
+            
+            l5pso <- jh_pso_degree_calculator_for_l4pa_target(pso_level = "L5", current_l4pa = 15, desired_l4pa = 10)
+            
+            jh_compute_pelvic_angles_and_pt_function
+```
+
+
+```{r}
+starting_segment_angles <- segment_angle_function_using_lpa_tpa(l1_pelvic_angle_input = 18, 
+                                                                     pelvic_incidence_input = 57,
+                                                                     l1_s1_lordosis_input = 35,
+                                                                     pt_input = 23, 
+                                                                     t4_t12_input = 28,
+                                                                     t4_pelvic_angle_input = 19)
+          l1pa_target <- target_l1pa_function(pelvic_incidence = 57)
+          
+          
+          rigid_lumbar_levels <- c("l2_l3", "l3_l4", "l4_l5", "l5_s1")
+          
+          optimized_segment_angles_list <- compute_optimized_lumbar_segmental_lordosis_values(pelvic_incidence = 57, 
+                                                                             l1_l2_start = starting_segment_angles$l1_segment_angle, 
+                                                                             l2_l3_start = starting_segment_angles$l2_segment_angle, 
+                                                                             l3_l4_start = starting_segment_angles$l3_segment_angle, 
+                                                                             l4_l5_start = starting_segment_angles$l4_segment_angle,
+                                                                             l5_s1_start = starting_segment_angles$l5_segment_angle, 
+                                                                             desired_l1pa = l1pa_target,
+                                                                             non_modifiable = unique(append(rigid_lumbar_levels, "l1_l2"))
+          )
+
+          segmental_lordosis_range_list <- compute_segmental_lordosis_range_by_pi_function(pelvic_incidence = 57)
+          
+          segmental_lordosis_range_list$max_l5_s1
+          
+          optimized_segment_angles_list
+          
+          starting_segment_angles$l3_segment_angle
+          
+          jh_compute_pelvic_angles_and_pt_function(pelvic_incidence_start = 57, 
+                                                   segment_angle_list_start = , 
+                                                   cervical_lordosis_start = 10)
+```
+
+
+```{r}
+segmental_lordosis_range_list <- compute_segmental_lordosis_range_by_pi_function(pelvic_incidence = 45)
+
+segmental_lordosis_range_list
+
+```
+
+
+```{r}
+rigid_lumbar_levels <- c()
+
+l1pa_target <- target_l1pa_function(pelvic_incidence = 45)
+
+target_l1pa_function
+
+starting_segment_angles <- segment_angle_function_using_lpa_tpa(l1_pelvic_angle_input = 8, 
+                                                                     pelvic_incidence_input = 45,
+                                                                     l1_s1_lordosis_input = 28,
+                                                                     pt_input = 23, 
+                                                                     t4_t12_input = 28,
+                                                                     t4_pelvic_angle_input = 20)
+          
+          optimized_segment_angles_list <- compute_optimized_lumbar_segmental_lordosis_values(pelvic_incidence = 45, 
+                                                                                              l1_l2_start = starting_segment_angles$l1_segment_angle, 
+                                                                                              l2_l3_start = starting_segment_angles$l2_segment_angle, 
+                                                                                              l3_l4_start = starting_segment_angles$l3_segment_angle, 
+                                                                                              l4_l5_start = starting_segment_angles$l4_segment_angle,
+                                                                                              l5_s1_start = starting_segment_angles$l5_segment_angle, 
+                                                                                              desired_l1pa = l1pa_target,
+                                                                                              non_modifiable = rigid_lumbar_levels)
+          
+          
+          optimized_segment_angles_list
+          
+          if(optimized_segment_angles_list$needs_pso == "yes"){
+            ## choose L4 PSO
+            segment_angles_plan$l1_segment_angle <-  optimized_segment_angles_list$l1_l2
+            segment_angles_plan$l2_segment_angle <-  optimized_segment_angles_list$l2_l3
+            segment_angles_plan$l3_segment_angle <-  optimized_segment_angles_list$l3_l4
+            # segment_angles_plan$l4_segment_angle <-  optimized_segment_angles_list$l4_l5
+            segment_angles_plan$l5_segment_angle <-  optimized_segment_angles_list$l5_s1
+            
+            pre_pso_pelvic_angles_list <- jh_compute_pelvic_angles_and_pt_function(pelvic_incidence_start = input$preop_pelvic_incidence,
+                                                                                   segment_angle_list_start = segment_angles_plan,
+                                                                                   cervical_lordosis_start = input$preop_c2_c7)
+            
+            segment_angles_plan$l4_segment_angle <- jh_pso_degree_calculator(pso_level = "L4", 
+                                                                             current_lpa = pre_pso_pelvic_angles_list$l1pa_value, 
+                                                                             desired_lpa = l1pa_target)
+            
+            # segment_angles_plan$l5_segment_angle <- jh_pso_degree_calculator_for_l4pa_target(pso_level = "L5", 
+            #                                                                                  current_l4pa = pre_pso_pelvic_angles_list$l4pa_value, 
+            #                                                                                  desired_l4pa = l4pa_target)
+            
+            pso_list$l4 <- "l4" 
+            
+          }else{
+            segment_angles_plan$l1_segment_angle <-  optimized_segment_angles_list$l1_l2
+            segment_angles_plan$l2_segment_angle <-  optimized_segment_angles_list$l2_l3
+            segment_angles_plan$l3_segment_angle <-  optimized_segment_angles_list$l3_l4
+            segment_angles_plan$l4_segment_angle <-  optimized_segment_angles_list$l4_l5
+            segment_angles_plan$l5_segment_angle <-  optimized_segment_angles_list$l5_s1
+          }
+          
+          new_l1_s1 <- segment_angles_plan$l1_segment_angle + segment_angles_plan$l2_segment_angle +segment_angles_plan$l3_segment_angle + segment_angles_plan$l4_segment_angle +segment_angles_plan$l5_segment_angle
+          
+          new_l1pa_list <- jh_compute_pelvic_angles_and_pt_function(pelvic_incidence_start = input$preop_pelvic_incidence,
+                                                                    segment_angle_list_start = segment_angles_plan,
+                                                                    cervical_lordosis_start = input$preop_c2_c7)
+          
+          new_t4pa_function <- function(l1_pelvic_angle = 3.8566573) {-0.22213872+0.90108295*l1_pelvic_angle }
+          
+          
+          new_t4pa_estimate <-  new_t4pa_function(l1_pelvic_angle = new_l1pa_list$l1pa_value)
+          
+          
+          segment_angles_plan <- segment_angle_function_using_lpa_tpa(l1_pelvic_angle_input = new_l1pa_list$l1pa_value, 
+                                                                      pelvic_incidence_input = input$preop_pelvic_incidence,
+                                                                      l1_s1_lordosis_input = new_l1_s1,
+                                                                      pt_input = new_l1pa_list$predicted_pt, 
+                                                                      # t4_t12_input = input$preop_t4_t12,
+                                                                      t4_pelvic_angle_input = new_t4pa_estimate)
+```
+
+pso
+```{r}
+jh_pso_degree_calculator_for_l4pa_target(pso_level = "L5", current_l4pa = )
+
+jh_pso_degree_calculator(pso_level = "L5", 
+                                                   current_l4pa = 16, 
+                                                   desired_l4pa = 10)
+
+
+
+-0.69511147+0.59711132*pelvic_incidence-0.55809141*l5_s1-0.47965972*l4_l5-0.31393893*l3_l4-0.19584192*l2_l3
+
+
+
+```
+
+```{r}
+optimize_l1pa <- function(pelvic_incidence, 
+                          l2_l3_start, 
+                          l3_l4_start,
+                          l4_l5_start,
+                          l5_s1_start,
+                          desired_l1pa, 
+                          modifiable_vars = c(""), 
+                          nonmodifiable_vars = c("")) {
+  # Extract the starting values
+
+  l2_l3 <- l2_l3_start
+  l3_l4 <- l3_l4_start
+  l4_l5 <- l4_l5_start
+  l5_s1 <- l5_s1_start
+  
+  # Create a function to minimize
+  minimize_func <- function(vars) {
+    # Assign new values to modifiable variables
+    l2_l3 <- ifelse("l2_l3" %in% modifiable_vars, vars[1], l2_l3)
+    l3_l4 <- ifelse("l3_l4" %in% modifiable_vars, vars[2], l3_l4)
+    l4_l5 <- ifelse("l4_l5" %in% modifiable_vars, vars[3], l4_l5)
+    l5_s1 <- ifelse("l5_s1" %in% modifiable_vars, vars[4], l5_s1)
+    
+    # Calculate l1pa based on the new values
+    l1pa <- -0.69511147 + 0.59711132 * pelvic_incidence - 0.19584192 * l2_l3 - 0.31393893 * l3_l4 - 0.47965972 * l4_l5 - 0.55809141 * l5_s1
+    
+    # Return the absolute difference between the desired l1pa and the calculated l1pa
+    abs(l1pa - desired_l1pa)
+  }
+  
+  # Set the initial values for the modifiable variables
+  initial_values <- c(l2_l3, l3_l4, l4_l5, l5_s1)
+  
+  # Minimize the objective function
+  result <- optim(initial_values, minimize_func, method = "L-BFGS-B")
+  
+  # Extract the optimized values
+  optimized_values <- result$par
+  
+  # Create a named list of the optimized values
+  optimized_vars <- setNames(optimized_values, c("l2_l3", "l3_l4", "l4_l5", "l5_s1"))
+  
+  # Combine the optimized values with the nonmodifiable values
+  new_values <- c(optimized_vars, nonmodifiable_vars)
+  
+  return(new_values)
+}
+```
+
+
+```{r}
+starting_segment_angles <- segment_angle_function_using_lpa_tpa(l1_pelvic_angle_input = 18, 
+                                                                     pelvic_incidence_input = 57,
+                                                                     l1_s1_lordosis_input = 58,
+                                                                     pt_input = 23, 
+                                                                     t4_t12_input = 28,
+                                                                     t4_pelvic_angle_input = 16)
+
+starting_segment_angles$l5_segment_angle
+
+target_l1pa_function(pelvic_incidence = 57)
+
+starting_segment_angles$l2_segment_angle
+
+optimize_l1pa(pelvic_incidence = 57,
+              l2_l3_start = starting_segment_angles$l2_segment_angle, 
+              l3_l4_start = starting_segment_angles$l3_segment_angle, 
+              l4_l5_start = starting_segment_angles$l4_segment_angle,
+              l5_s1_start = starting_segment_angles$l5_segment_angle, 
+              desired_l1pa = target_l1pa_function(pelvic_incidence = 57), 
+              modifiable_vars = c("l2_l3", "l3_l4"), 
+              nonmodifiable_vars =  c("l4_l5", "l5_s1"))
+
+starting_segment_angles
+
+new_l1pa_pas <- compute_optimized_lumbar_segmental_lordosis_values(pelvic_incidence = 57, 
+                                                   l1_l2_start = starting_segment_angles$l1_segment_angle, 
+                                                   l2_l3_start = starting_segment_angles$l2_segment_angle, 
+                                                   l3_l4_start = starting_segment_angles$l3_segment_angle, 
+                                                   l4_l5_start = starting_segment_angles$l4_segment_angle,
+                                                   l5_s1_start = starting_segment_angles$l5_segment_angle, 
+                                                   desired_l1pa = target_l1pa_function(pelvic_incidence = 57),
+                                                   non_modifiable = c("l1_l2", "l4_l5", "l5_s1")
+                                                   )
+
+starting_segment_angles
+new_l1pa_pas$l1_l2
+
+compute_segmental_lordosis_range_by_pi_function(pelvic_incidence = 57)
+
+rev(starting_segment_angles[1:5])
+
+```
+```{r}
+starting_segment_angles$l5_segment_angle
+```
+
+
+
+```{r}
+  constant1 <- -0.8553283
+  constant2 <- 0.60405938
+  constant3 <- -0.048137209
+  constant4 <- -0.17727093
+  constant5 <- -0.32237285
+  constant6 <- -0.48541991
+  constant7 <- -0.56294456
+  
+  pelvic_incidence <- 57
+  
+  desired_l1pa <- target_l1pa_function(pelvic_incidence = 57)
+  # Define the objective function to minimize
+  objective <- function(x) {
+    l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, x[1])
+    l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, x[2])
+    l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, x[3])
+    l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, x[4])
+    l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, x[5])
+    
+    l1pa_diff <- desired_l1pa - (constant1 + constant2 * pelvic_incidence + constant3 * l1_l2 + constant4 * l2_l3 + constant5 * l3_l4 + constant6 * l4_l5 + constant7 * l5_s1)
+    sum_diff_sq <- l1pa_diff^2
+    
+    return(sum_diff_sq)
+  }
+  
+  non_modifiable <- c("l1_l2")
+  
+  l1_l2_start <- starting_segment_angles$l1_segment_angle
+  l2_l3_start <- starting_segment_angles$l2_segment_angle
+  l3_l4_start <- starting_segment_angles$l3_segment_angle
+  l4_l5_start <- starting_segment_angles$l4_segment_angle
+  l5_s1_start <- starting_segment_angles$l5_segment_angle
+  
+  # Set the starting values
+  # start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+
+  start_values <- rev(starting_segment_angles[1:5])
+  
+  # Use the Nelder-Mead method to find the new values
+  result <- optim(start_values, objective, method = "Nelder-Mead")
+  
+  result
+  
+  # Extract the optimized values
+  new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+  new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+  new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+  new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+  new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+  
+```
+
+
+```{r}
+starting_segment_angles
+
+updated_sas <- starting_segment_angles
+
+updated_sas
+
+new_l1pa_pas
+
+updated_sas$l5_segment_angle <- new_l1pa_pas$l5_s1
+updated_sas$l4_segment_angle <- new_l1pa_pas$l4_l5
+updated_sas$l3_segment_angle <- new_l1pa_pas$l3_l4
+updated_sas$l2_segment_angle <- new_l1pa_pas$l2_l3
+
+jh_compute_pelvic_angles_and_pt_function(pelvic_incidence_start = 57,
+                                         segment_angle_list_start = updated_sas,
+                                         cervical_lordosis_start = 10)
+
+
+```
+
+
+
+##### UIV L2
+```{r}
+if(uiv_level == "L2"){
+    rigid_levels <- unique(append(rigid_levels, "l1_l2"))
+    
+    optimized_lumbar_segment_angles_list <- compute_optimized_lumbar_segmental_lordosis_values(pelvic_incidence = pelvic_incidence, 
+                                                                                               l1_l2_start = starting_segment_angles$l1_segment_angle,
+                                                                                               l2_l3_start = starting_segment_angles$l2_segment_angle, 
+                                                                                               l3_l4_start = starting_segment_angles$l3_segment_angle, 
+                                                                                               l4_l5_start = starting_segment_angles$l4_segment_angle, 
+                                                                                               l5_s1_start = starting_segment_angles$l5_segment_angle, 
+                                                                                               desired_l1pa = pelvic_incidence*0.5-19, 
+                                                                                               non_modifiable = rigid_levels)
+    
+    chosen_pso_level <- "L4"
+        
+        if(optimized_lumbar_segment_angles_list$needs_pso == "yes"){
+          pso_segment_angle <- jh_pso_degree_calculator(pso_level = chosen_pso_level,
+                                                           current_lpa = measured_pelvic_angles_preop_list$l1pa_value, 
+                                                           desired_lpa = pelvic_incidence*0.5-19)
+          
+          optimized_lumbar_segment_angles_list <- compute_optimized_lumbar_segmental_lordosis_values(pelvic_incidence = pelvic_incidence, 
+                                                           l1_l2_start = starting_segment_angles$l1_segment_angle,
+                                                           l2_l3_start = starting_segment_angles$l2_segment_angle, 
+                                                           l3_l4_start = starting_segment_angles$l3_segment_angle, 
+                                                           l4_l5_start = starting_segment_angles$l4_segment_angle + pso_segment_angle, 
+                                                           l5_s1_start = starting_segment_angles$l5_segment_angle, 
+                                                           desired_l1pa = pelvic_incidence*0.5-19, 
+                                                           non_modifiable = rigid_levels)
+        
+        }
+  
+  
+}
+
+```
+
+
+###### UIV T11
+```{r}
+if(uiv_level == "T11"){
+  
+  
+  
+}
+```
+
+###### UIV T4
+```{r}
+if(uiv_level == "T4"){
+  
+  
+  
+}
+        
+        optimized_lumbar_segment_angles_list <- compute_optimized_lumbar_segmental_lordosis_values(pelvic_incidence = pelvic_incidence, 
+                                                           l1_l2_start = starting_segment_angles$l1_segment_angle,
+                                                           l2_l3_start = starting_segment_angles$l2_segment_angle, 
+                                                           l3_l4_start = starting_segment_angles$l3_segment_angle, 
+                                                           l4_l5_start = starting_segment_angles$l4_segment_angle, 
+                                                           l5_s1_start = starting_segment_angles$l5_segment_angle, 
+                                                           desired_l1pa = pelvic_incidence*0.5-19, 
+                                                           non_modifiable = rigid_levels)
+segment_angles_plan <- starting_segment_angles
+
+
+segment_angles_plan$l2_segment_angle <- optimized_lumbar_segment_angles_list$l2_l3
+segment_angles_plan$l3_segment_angle <- optimized_lumbar_segment_angles_list$l3_l4
+segment_angles_plan$l4_segment_angle <- optimized_lumbar_segment_angles_list$l4_l5
+segment_angles_plan$l5_segment_angle <- optimized_lumbar_segment_angles_list$l5_s1
+
+ measured_pelvic_angles_predicted_pt_list <- jh_compute_pelvic_angles_and_pt_function(pelvic_incidence_start = pelvic_incidence,
+                                                                                                 segment_angle_list_start = segment_angles_plan,
+                                                                                                 cervical_lordosis_start = test_starting_c2c7,
+                                                                                                 pso_input = chosen_pso_level)
+
+            # lpa_deviation <- abs(target_l1pa - measured_pelvic_angles_predicted_pt_list$l1pa_value)
+
+            # t4pa_l1pa_mismatch <- (measured_pelvic_angles_predicted_pt_list$t4pa_value - measured_pelvic_angles_predicted_pt_list$l1pa_value)
+
+        
+        
+        predict_pt_fun <- function(postop_c2pa = 20,
+                                           preop_c2pa = 25,
+                                           preop_pt = 25) {1.4817532+0.77386313*postop_c2pa - 0.31861799*preop_c2pa + 0.49868069*preop_pt }
+    
+        predicted_pt <- predict_pt_fun(postop_c2pa = measured_pelvic_angles_predicted_pt_list$c2pa_value, 
+                                       preop_c2pa = measured_pelvic_angles_preop_list$c2pa_value, 
+                                       preop_pt = test_starting_pt)
+        
+predicted_pt
+
+spine_prescribed_list <- build_full_spine_function_new(pelv_inc_value = pelvic_incidence, #input$preop_pelvic_incidence,
+                                                               segment_angle_list = segment_angles_plan, 
+                                                               cervical_lordosis = test_starting_c2c7, #input$preop_c2_c7, 
+                                                               pt_value = predicted_pt,
+                                                               spine_faces = "right", 
+                                                               pso_levels = chosen_pso_level)
+
+        spine_geoms_df <- spine_prescribed_list$spine_df %>%
+            select(object, geom)  %>%
+            mutate(alpha = case_when(
+                object == "head_geom" ~ 0.8, 
+                str_detect(object, "c1") ~ 0.8, 
+                TRUE ~ 1
+            ))
+        
+
+        instrumented_vertebral_body_list <- spine_prescribed_list$vertebral_body_list[uiv_for_rod:length(spine_prescribed_list$vertebral_body_list)]
+        
+        sp_matrix_for_rod <- do.call(rbind, map(.x = seq(1:(length(instrumented_vertebral_body_list))), .f = ~ rbind(instrumented_vertebral_body_list[[.x]]$sp)))
+        
+        rod_sf <- st_buffer(x = st_linestring(sp_matrix_for_rod), dist = 0.5, nQuadSegs = 5, joinStyle = "ROUND", endCapStyle = "ROUND")
+        
+        screw_list <- st_multipolygon(compact(map(.x = seq(1:(length(instrumented_vertebral_body_list))), .f = ~ instrumented_vertebral_body_list[[.x]]$screw_sf)))
+        
+        
+                ggplot() +
+          geom_sf(data = spine_geoms_df,
+                  aes(geometry = geom,
+                      alpha = alpha
+                  ),
+                  color = "black",
+                  fill = "grey90") +
+          geom_sf(data = st_multipolygon(x = screw_list), fill = "grey55") +
+          geom_sf(data = rod_sf, fill = "grey55") +
+          # geom_text(data = measurements_df, aes(label = label, x = x, y = y), size = 5) +
+          # geom_text(data = segment_angles_df, aes(label = label, x = x, y = y), size = 5) +
+          # geom_text(label = paste("UIV:", uiv_level), aes(x = -30, y = 60), size = 6, fontface = "bold") +
+          # geom_text(label = pso_label, aes(x = 22, y = 5), size = 6, fontface = "bold") +
+          # geom_text(label = paste(regional_analysis_list$regional_analysis), aes(x = -30, y = 0)) +
+          # lines_list +
+          xlim(-35, 35) +
+          # ylim(-6, 110) +
+          theme_void() +
+          labs(title = "Planned Alignment") +
+          theme(
+            axis.text = element_blank(),
+            axis.title = element_blank(),
+            plot.title = element_text(
+              size = 16,
+              hjust = 0.5,
+              vjust = -0.5,
+              face = "bold.italic"
+            ),
+            plot.background = element_rect(fill = "transparent", colour = NA),
+            panel.background = element_rect(fill = "transparent", colour = NA)
+          ) +
+          # scale_fill_identity() +
+          scale_alpha_identity()
+
+```
+
+
+

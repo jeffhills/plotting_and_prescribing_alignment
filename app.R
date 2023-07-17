@@ -12,8 +12,12 @@ library(shinyBS)
 library(svglite)
 library(glue)
 library(cowplot)
-
-
+library(janitor)
+library(rms)
+library(Hmisc)
+library(cowplot)
+library(assertr)
+library(lubridate)
 
 source("jh_functions.R", local = TRUE)
 

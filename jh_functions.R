@@ -1,12 +1,3 @@
-library(tidyverse)
-library(janitor)
-library(rms)
-library(Hmisc)
-library(cowplot)
-library(assertr)
-library(lubridate)
-library(glue)
-library(tableone)
 
 jh_fit_model_function <- function(outcome_text, model_type, predictor_text, cohort_df){
   

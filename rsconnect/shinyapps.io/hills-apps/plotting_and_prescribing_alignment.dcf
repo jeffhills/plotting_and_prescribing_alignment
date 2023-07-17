@@ -5,10 +5,10 @@ account: hills-apps
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5602032
-bundleId: 5663105
+bundleId: 7252632
 url: https://hills-apps.shinyapps.io/plotting_and_prescribing_alignment/
-when: 1646853382.68906
-lastSyncTime: 1646853382.68906
+when: 1684845123.43548
+lastSyncTime: 1684845123.43548
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: prescribing_alignment_workbook.nb.html|prescribing_alignment_workbook.Rmd
+ignoredFiles: optimizing_alignment_prescriptions_workbook.nb.html|optimizing_alignment_prescriptions_workbook.Rmd|prescribing_alignment_workbook.nb.html|prescribing_alignment_workbook.Rmd

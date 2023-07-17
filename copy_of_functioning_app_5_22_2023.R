@@ -1,7 +1,7 @@
 ## ATTEMPT WITH CLEANED CODE - FUNCTION FOR VERT BODIES
-library(colourpicker)
+# library(colourpicker)
 library(shiny)
-library(reactlog)
+# library(reactlog)
 library(sf)
 library(tidyverse)
 library(ggplot2)

@@ -16,7 +16,7 @@ library(janitor)
 # library(rms)
 # library(Hmisc)
 library(cowplot)
-library(assertr)
+# library(assertr)
 library(lubridate)
 
 source("jh_functions.R", local = TRUE)

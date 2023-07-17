@@ -1,5 +1,5 @@
 ## ATTEMPT WITH CLEANED CODE - FUNCTION FOR VERT BODIES
-library(colourpicker)
+# library(colourpicker)
 library(shiny)
 library(reactlog)
 library(sf)
@@ -1223,16 +1223,16 @@ server <- function(input, output, session) {
             )
     })
     
-    output$messages_ll <- renderText({
-        ll_in_out_range_list <- reactive_spine()$ll_in_out_range_list
-        
-        ll_message <- case_when(
-            between(ll_in_out_range_list$ll_diff_from_norm, 0, 17) ~ " ",
-            ll_in_out_range_list$ll_diff_from_norm > 17 ~ "The Spinal Lordosis is outside the normal range for this Pelvic Incidence.")
-        
-        print(ll_message)
-        
-    })
+    # output$messages_ll <- renderText({
+    #     ll_in_out_range_list <- reactive_spine()$ll_in_out_range_list
+    #     
+    #     ll_message <- case_when(
+    #         between(ll_in_out_range_list$ll_diff_from_norm, 0, 17) ~ " ",
+    #         ll_in_out_range_list$ll_diff_from_norm > 17 ~ "The Spinal Lordosis is outside the normal range for this Pelvic Incidence.")
+    #     
+    #     print(ll_message)
+    #     
+    # })
     
     
     output$download_figure <- downloadHandler(filename = function(){paste("spine_figure.svg")},

@@ -1,7 +1,7 @@
 ## ATTEMPT WITH CLEANED CODE - FUNCTION FOR VERT BODIES
 # library(colourpicker)
 library(shiny)
-library(reactlog)
+# library(reactlog)
 library(sf)
 library(tidyverse)
 library(ggplot2)
@@ -32,7 +32,7 @@ all_possible_lumbar_segments_angles_with_lpa_df <- read_csv("all_possible_lumbar
 # getwd()
 # setw
 
-reactlog_enable()
+# reactlog_enable()
 
 # Define UI for application that draws a histogram
 ui <- navbarPage(title = "Spine Plotting/Planning",

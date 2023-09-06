@@ -232,36 +232,6 @@ segment_angle_function_using_lpa_tpa <- function(l1_pelvic_angle_input = 10,
   
   segment_angle_list <- initial_segment_angles_list
   
-  # lumbar_segment_angles_list <- lumbar_segment_angle_function(l1_s1_input = l1_s1_lordosis_input, l1_pelvic_angle_input = l1_pelvic_angle_input, pelvic_incidence_input = pelvic_incidence_input)
-  # 
-  # thoracic_segment_angles_list <- thoracic_segment_angles_function(l1_s1_input = l1_s1_lordosis_input, l1_pelvic_angle_input = l1_pelvic_angle_input, pelvic_incidence_input = pelvic_incidence_input, t4_t12_input = t4_t12_input, t4_pelvic_angle_input = t4_pelvic_angle_input)
-  # 
-  # l1_segment_angle <- lumbar_segment_angles_list$l1_segment_angle
-  # l2_segment_angle <- lumbar_segment_angles_list$l2_segment_angle
-  # l3_segment_angle <- lumbar_segment_angles_list$l3_segment_angle
-  # l4_segment_angle <- lumbar_segment_angles_list$l4_segment_angle
-  # l5_segment_angle <- lumbar_segment_angles_list$l5_segment_angle
-  # 
-  # segment_angle_list <-
-  #   list(
-  #     l5_segment_angle = l5_segment_angle,
-  #     l4_segment_angle = l4_segment_angle,
-  #     l3_segment_angle = l3_segment_angle,
-  #     l2_segment_angle = l2_segment_angle,
-  #     l1_segment_angle = l1_segment_angle,
-  #     t12_segment_angle = thoracic_segment_angles_list$t12_segment_angle,
-  #     t11_segment_angle = thoracic_segment_angles_list$t11_segment_angle,
-  #     t10_segment_angle = thoracic_segment_angles_list$t10_segment_angle,
-  #     t9_segment_angle = thoracic_segment_angles_list$t9_segment_angle,
-  #     t8_segment_angle = thoracic_segment_angles_list$t8_segment_angle,
-  #     t7_segment_angle = thoracic_segment_angles_list$t7_segment_angle,
-  #     t6_segment_angle = thoracic_segment_angles_list$t6_segment_angle,
-  #     t5_segment_angle = thoracic_segment_angles_list$t5_segment_angle,
-  #     t4_segment_angle = thoracic_segment_angles_list$t4_segment_angle,
-  #     t3_segment_angle = thoracic_segment_angles_list$t3_segment_angle,
-  #     t2_segment_angle = thoracic_segment_angles_list$t2_segment_angle,
-  #     t1_segment_angle = thoracic_segment_angles_list$t1_segment_angle
-  #   )
   
   return(segment_angle_list = segment_angle_list)
   

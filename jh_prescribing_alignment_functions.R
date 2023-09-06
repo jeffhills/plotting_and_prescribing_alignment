@@ -1,3 +1,10 @@
+
+predict_postop_pt_function <- function(preop_pt = 15, rad_pre_c2_tilt = 1.5430008,rad_1y_c2pa_change = -6.3748676) {
+  pt_change <- 0.45374535+0.47046549*rad_pre_c2_tilt+0.78984904*rad_1y_c2pa_change 
+  
+  preop_pt + pt_change
+}
+
 ############### COMPUTE TARGET PELVIC ANGLES #####################
 target_l4pa_function <- function(pelvic_incidence = 51.75934) {-10.140792+0.36078574*pelvic_incidence }
 
@@ -350,7 +357,7 @@ compute_optimized_lumbar_segmental_lordosis_values <- function(pelvic_incidence,
   constant6 <- -0.48541991
   constant7 <- -0.56294456
   
-  # Define the objective function to minimize
+  # Define the objective function to minimize the change at each given level
   objective <- function(x) {
     l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, x[1])
     l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, x[2])
@@ -400,7 +407,6 @@ compute_optimized_lumbar_segmental_lordosis_values <- function(pelvic_incidence,
     new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
     
     results_list$min_l1_l2 <- "min l1_l2 if statement utilized"
-
   }
   
   if (!is.null(new_l2_l3) && new_l2_l3 > segmental_lordosis_range_list$min_l2_l3) {

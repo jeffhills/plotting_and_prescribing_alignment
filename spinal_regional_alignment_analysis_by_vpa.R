@@ -1,4 +1,9 @@
-id_focal_deformity_function <- function(pelvic_incidence, l4_pelvic_angle, l1_pelvic_angle, t9_pelvic_angle, t4_pelvic_angle){
+id_focal_deformity_function <- function(pelvic_incidence,
+                                        l4_pelvic_angle, 
+                                        l1_pelvic_angle, 
+                                        t9_pelvic_angle, 
+                                        t4_pelvic_angle, 
+                                        c2_pelvic_angle){
   
   results_list <- list()
   interpretation_list <- list()
@@ -103,11 +108,12 @@ id_focal_deformity_function <- function(pelvic_incidence, l4_pelvic_angle, l1_pe
     }
   }
   
-  # results_list$uiv <- glue("- Recommended UIV region: {uiv}")
+  if(c2_pelvic_angle- t9_pelvic_angle > 12){
+    uiv <- "Upper Thoracic"
+  }
+  
   
   return_list <- list()
-  
-  # return_list$regional_analysis <- glue_collapse(x = results_list, sep = "\n")
   
   return_list$upper_thoracic_analyzed <- results_list$t4pa
   

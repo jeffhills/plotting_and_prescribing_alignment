@@ -268,6 +268,7 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
   
   if(pt_value == 99){
     pt_value <- predict_pt_function(pelvic_incidence = pelv_inc_value, t1_l1 = t1_l1, l1_s1 = l1_s1, l1_pelvic_angle = planned_l1_pelvic_angle)
+    # pt_value <- predict_pt_by_c2pa_function(c2pa_value = , pelvic_incidence)
   }else{
     pt_value <- pt_value
   }
@@ -1022,7 +1023,12 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
                            c1_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = c1_list$vert_body_sf, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND"))),
                            head_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = head_sf, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND")))
                            ) %>%
-    pivot_longer(cols = contains("geom"), names_to = "object", values_to = "geom")
+    pivot_longer(cols = contains("geom"), names_to = "object", values_to = "geom")%>%
+    mutate(geom_alpha = case_when(
+      object == "head_geom" ~ 0.7, 
+      object == "c1_geom" ~ 0.5,
+      TRUE ~ 1
+    ))
   
 
   iliac_screw_point <- st_centroid(st_buffer(st_linestring(rbind(fem_head_center,

@@ -654,8 +654,6 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
     # Use the Nelder-Mead method to find the new values
     result <- optim(start_values, objective, method = "Nelder-Mead")
     
-    optim
-    
     # Extract the optimized values
     new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
     new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])

@@ -938,7 +938,7 @@ segment_angles_function_from_vertebral_pelvic_angles_function <- function(pelvic
   
   testing_vpas <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = pi_value, 
                                                                  pt_value = 10,
-                                                                 segment_angle_list =sa_test)
+                                                                 segment_angle_list = sa_test)
   
   
   while(round(testing_vpas$l1pa_value, 0) != l1pa_input){

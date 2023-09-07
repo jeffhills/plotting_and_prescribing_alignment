@@ -335,69 +335,326 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
   }
 
 ############################ UIV OF L2 ##########################
-compute_optimized_lumbar_segmental_lordosis_values <- function(pelvic_incidence,
-                                 l1_l2_start, 
-                                 l2_l3_start, 
-                                 l3_l4_start, 
-                                 l4_l5_start, 
-                                 l5_s1_start,
-                                 desired_l1pa, 
-                                 non_modifiable = NULL) {
+# compute_optimized_lumbar_segmental_lordosis_values <- function(pelvic_incidence,
+#                                  l1_l2_start, 
+#                                  l2_l3_start, 
+#                                  l3_l4_start, 
+#                                  l4_l5_start, 
+#                                  l5_s1_start,
+#                                  desired_l1pa, 
+#                                  non_modifiable = NULL) {
+#   
+#   non_modifiable <- str_to_lower(str_replace_all(non_modifiable, "-", "_"))
+#   
+#   results_list <- list()
+#   
+#   # Define the equation constants
+#   constant1 <- -0.8553283
+#   constant2 <- 0.60405938
+#   constant3 <- -0.048137209
+#   constant4 <- -0.17727093
+#   constant5 <- -0.32237285
+#   constant6 <- -0.48541991
+#   constant7 <- -0.56294456
+#   
+#   # Define the objective function to minimize the change at each given level
+#   objective <- function(x) {
+#     l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, x[1])
+#     l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, x[2])
+#     l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, x[3])
+#     l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, x[4])
+#     l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, x[5])
+#     
+#     l1pa_diff <- desired_l1pa - (constant1 + constant2 * pelvic_incidence + constant3 * l1_l2 + constant4 * l2_l3 + constant5 * l3_l4 + constant6 * l4_l5 + constant7 * l5_s1)
+#     sum_diff_sq <- l1pa_diff^2
+#     
+#     return(sum_diff_sq)
+#   }
+#   
+#   # Set the starting values
+#   start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+#   
+#   # Use the Nelder-Mead method to find the new values
+#   result <- optim(start_values, objective, method = "Nelder-Mead")
+#   
+#   optim
+#   
+#   # Extract the optimized values
+#   new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+#   new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+#   new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+#   new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+#   new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+#   
+#   segmental_lordosis_range_list <- compute_segmental_lordosis_range_by_pi_function(pelvic_incidence = pelvic_incidence)
+#   
+#   if (!is.null(new_l1_l2) && new_l1_l2 < segmental_lordosis_range_list$min_l1_l2) {
+#     # Set the starting values
+#     new_l1_l2 <- segmental_lordosis_range_list$min_l1_l2
+#     
+#     l1_l2_start <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, new_l1_l2)
+#     
+#     start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+#     
+#     non_modifiable <- unique(append(non_modifiable, "l1_l2"))
+#     
+#     # Use the Nelder-Mead method to find the new values
+#     result <- optim(start_values, objective, method = "Nelder-Mead")
+#     
+#     # Extract the optimized values
+#     new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+#     new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+#     new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+#     new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+#     new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+#     
+#     results_list$min_l1_l2 <- "min l1_l2 if statement utilized"
+#   }
+#   
+#   if (!is.null(new_l2_l3) && new_l2_l3 > segmental_lordosis_range_list$min_l2_l3) {
+#     # Set the starting values
+#     new_l2_l3 <- segmental_lordosis_range_list$min_l2_l3
+#     
+#     l2_l3_start <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, new_l2_l3)
+#     
+#     start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+#     
+#     non_modifiable <- unique(append(non_modifiable, "l2_l3"))
+#     
+#     # Use the Nelder-Mead method to find the new values
+#     result <- optim(start_values, objective, method = "Nelder-Mead")
+#     
+#     # Extract the optimized values
+#     new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+#     new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+#     new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+#     new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+#     new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+#     
+#     results_list$min_l2_l3 <- "min l2_l3 if statement utilized"
+#   }
+#   
+#   if (!is.null(new_l3_l4) && new_l3_l4 > segmental_lordosis_range_list$min_l3_l4) {
+#     new_l3_l4 <- segmental_lordosis_range_list$min_l3_l4
+#     
+#     l3_l4_start <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, new_l3_l4)
+#     
+#     start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+#     
+#     non_modifiable <- unique(append(non_modifiable, "l3_l4"))
+#     
+#     # Use the Nelder-Mead method to find the new values
+#     result <- optim(start_values, objective, method = "Nelder-Mead")
+#     
+#     # Extract the optimized values
+#     new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+#     new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+#     new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+#     new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+#     new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+#     
+#     results_list$min_l3_l4 <- "min l3_l4 if statement utilized"
+#     
+#     # return("Maximum value exceeded for l3_l4")
+#   }
+#   
+#   if (!is.null(new_l5_s1) && new_l5_s1 > segmental_lordosis_range_list$max_l5_s1) {
+#     new_l5_s1 <- segmental_lordosis_range_list$max_l5_s1
+#     
+#     l5_s1_start <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, new_l5_s1)
+#     
+#     start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+#     
+#     non_modifiable <- unique(append(non_modifiable, "l5_s1"))
+#     
+#     # Use the Nelder-Mead method to find the new values
+#     result <- optim(start_values, objective, method = "Nelder-Mead")
+#     
+#     # Extract the optimized values
+#     new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+#     new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+#     new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+#     new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+#     new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+#     
+#     results_list$max_l5_s1 <- "max l5_s1 if statement utilized"
+#   }
+#   
+#   if (!is.null(new_l4_l5) && new_l4_l5 > segmental_lordosis_range_list$max_l4_l5) {
+#     new_l4_l5 <- segmental_lordosis_range_list$max_l4_l5
+#     
+#     l4_l5_start <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, new_l4_l5)
+#     
+#     start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+#     
+#     non_modifiable <- unique(append(non_modifiable, "l4_l5"))
+#     
+#     # Use the Nelder-Mead method to find the new values
+#     result <- optim(start_values, objective, method = "Nelder-Mead")
+#     
+#     # Extract the optimized values
+#     new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+#     new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+#     new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+#     new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+#     new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+#     
+#     results_list$max_l4_l5 <- "max l4_l5 if statement utilized"
+#     
+#   }
+#   
+#   if (!is.null(new_l3_l4) && new_l3_l4 > segmental_lordosis_range_list$max_l3_l4) {
+#     new_l3_l4 <- segmental_lordosis_range_list$max_l3_l4
+#     
+#     l3_l4_start <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, new_l3_l4)
+#     
+#     start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+#     
+#     non_modifiable <- unique(append(non_modifiable, "l3_l4"))
+#     
+#     # Use the Nelder-Mead method to find the new values
+#     result <- optim(start_values, objective, method = "Nelder-Mead")
+#     
+#     # Extract the optimized values
+#     new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+#     new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+#     new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+#     new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+#     new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+#     
+#     results_list$max_l3_l4 <- "max l3_l4 if statement utilized"
+#     
+#     # return("Maximum value exceeded for l3_l4")
+#   }
+#   
+#   if (!is.null(new_l2_l3) && new_l2_l3 > segmental_lordosis_range_list$max_l2_l3) {
+#     # Set the starting values
+#     new_l2_l3 <- segmental_lordosis_range_list$max_l2_l3
+#     
+#     l2_l3_start <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, new_l2_l3)
+#     
+#     start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+#     
+#     non_modifiable <- unique(append(non_modifiable, "l2_l3"))
+#     
+#     # Use the Nelder-Mead method to find the new values
+#     result <- optim(start_values, objective, method = "Nelder-Mead")
+#     
+#     # Extract the optimized values
+#     new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+#     new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+#     new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+#     new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+#     new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+#     
+#     results_list$max_l2_l3 <- "max l2_l3 if statement utilized"
+#     
+#     # return("Maximum value exceeded for l2_l3")
+#   }
+#   
+#   
+#   if (!is.null(new_l1_l2) && new_l1_l2 > segmental_lordosis_range_list$max_l1_l2) {
+#     # Set the starting values
+#     new_l1_l2 <- segmental_lordosis_range_list$max_l1_l2
+#     
+#     l1_l2_start <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, new_l1_l2)
+#     
+#     start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+#     
+#     non_modifiable <- unique(append(non_modifiable, "l1_l2"))
+#     
+#     # Use the Nelder-Mead method to find the new values
+#     result <- optim(start_values, objective, method = "Nelder-Mead")
+#     
+#     # Extract the optimized values
+#     new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+#     new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+#     new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+#     new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+#     new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+#     
+#     results_list$max_l1_l2 <- "max l1_l2 if statement utilized"
+#     
+#     # return("Maximum value exceeded for l2_l3")
+#   }
+#   
+#   
+#   if(
+#     # between(new_l1_l2, segmental_lordosis_range_list$min_l1_l2, segmental_lordosis_range_list$max_l1_l2) == FALSE |
+#     #  between(new_l2_l3, segmental_lordosis_range_list$min_l2_l3, segmental_lordosis_range_list$max_l2_l3) == FALSE |
+#     #  between(new_l3_l4, segmental_lordosis_range_list$min_l3_l4, segmental_lordosis_range_list$max_l3_l4) == FALSE |
+#     #  between(new_l4_l5, segmental_lordosis_range_list$min_l4_l5, segmental_lordosis_range_list$max_l4_l5) == FALSE |
+#      between(new_l5_s1, segmental_lordosis_range_list$min_l5_s1, segmental_lordosis_range_list$max_l5_s1) == FALSE){
+#     
+#     needs_pso <- "yes"
+#     
+#     results_list$segmental_range_exceeded <- "final segmental range if statement utilized"
+# 
+#   }else{
+#     needs_pso <- "no"
+#   }
+#   
+#   new_l1pa <- (constant1 + constant2 * pelvic_incidence + constant3 * new_l1_l2 + constant4 * new_l2_l3 + constant5 * new_l3_l4 + constant6 * new_l4_l5 + constant7 * new_l5_s1)
+#   
+#   if(abs(new_l1pa - desired_l1pa) > 2){
+#     needs_pso <- "yes"
+#   }
+#   
+#   results_list$l1_l2 <- new_l1_l2
+#   results_list$l2_l3 <- new_l2_l3
+#   results_list$l3_l4 <- new_l3_l4
+#   results_list$l4_l5 <- new_l4_l5
+#   results_list$l5_s1 <- new_l5_s1
+#   results_list$needs_pso <- needs_pso
+#   
+#   # Return the new values
+#   return(results_list)
+# 
+# }
   
-  non_modifiable <- str_to_lower(str_replace_all(non_modifiable, "-", "_"))
-  
-  results_list <- list()
-  
-  # Define the equation constants
-  constant1 <- -0.8553283
-  constant2 <- 0.60405938
-  constant3 <- -0.048137209
-  constant4 <- -0.17727093
-  constant5 <- -0.32237285
-  constant6 <- -0.48541991
-  constant7 <- -0.56294456
-  
-  # Define the objective function to minimize the change at each given level
-  objective <- function(x) {
-    l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, x[1])
-    l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, x[2])
-    l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, x[3])
-    l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, x[4])
-    l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, x[5])
+  compute_optimized_lumbar_segmental_lordosis_values <- function(pelvic_incidence,
+                                                                 l1_l2_start, 
+                                                                 l2_l3_start, 
+                                                                 l3_l4_start, 
+                                                                 l4_l5_start, 
+                                                                 l5_s1_start,
+                                                                 desired_l1pa, 
+                                                                 non_modifiable = NULL) {
     
-    l1pa_diff <- desired_l1pa - (constant1 + constant2 * pelvic_incidence + constant3 * l1_l2 + constant4 * l2_l3 + constant5 * l3_l4 + constant6 * l4_l5 + constant7 * l5_s1)
-    sum_diff_sq <- l1pa_diff^2
+    non_modifiable <- str_to_lower(str_replace_all(non_modifiable, "-", "_"))
     
-    return(sum_diff_sq)
-  }
-  
-  # Set the starting values
-  start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
-  
-  # Use the Nelder-Mead method to find the new values
-  result <- optim(start_values, objective, method = "Nelder-Mead")
-  
-  # Extract the optimized values
-  new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
-  new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
-  new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
-  new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
-  new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
-  
-  segmental_lordosis_range_list <- compute_segmental_lordosis_range_by_pi_function(pelvic_incidence = pelvic_incidence)
-  
-  if (!is.null(new_l1_l2) && new_l1_l2 < segmental_lordosis_range_list$min_l1_l2) {
+    results_list <- list()
+    
+    # Define the equation constants
+    constant1 <- -0.8553283
+    constant2 <- 0.60405938
+    constant3 <- -0.048137209
+    constant4 <- -0.17727093
+    constant5 <- -0.32237285
+    constant6 <- -0.48541991
+    constant7 <- -0.56294456
+    
+    # Define the objective function to minimize the change at each given level
+    objective <- function(x) {
+      l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, x[1])
+      l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, x[2])
+      l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, x[3])
+      l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, x[4])
+      l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, x[5])
+      
+      l1pa_diff <- desired_l1pa - (constant1 + constant2 * pelvic_incidence + constant3 * l1_l2 + constant4 * l2_l3 + constant5 * l3_l4 + constant6 * l4_l5 + constant7 * l5_s1)
+      sum_diff_sq <- l1pa_diff^2
+      
+      return(sum_diff_sq)
+    }
+    
     # Set the starting values
-    new_l1_l2 <- segmental_lordosis_range_list$min_l1_l2
-    
-    l1_l2_start <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, new_l1_l2)
-    
     start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
-    
-    non_modifiable <- unique(append(non_modifiable, "l1_l2"))
     
     # Use the Nelder-Mead method to find the new values
     result <- optim(start_values, objective, method = "Nelder-Mead")
+    
+    optim
     
     # Extract the optimized values
     new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
@@ -406,232 +663,106 @@ compute_optimized_lumbar_segmental_lordosis_values <- function(pelvic_incidence,
     new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
     new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
     
-    results_list$min_l1_l2 <- "min l1_l2 if statement utilized"
-  }
-  
-  if (!is.null(new_l2_l3) && new_l2_l3 > segmental_lordosis_range_list$min_l2_l3) {
-    # Set the starting values
-    new_l2_l3 <- segmental_lordosis_range_list$min_l2_l3
+    segmental_lordosis_range_list <- compute_segmental_lordosis_range_by_pi_function(pelvic_incidence = pelvic_incidence)
     
-    l2_l3_start <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, new_l2_l3)
-    
-    start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
-    
-    non_modifiable <- unique(append(non_modifiable, "l2_l3"))
-    
-    # Use the Nelder-Mead method to find the new values
-    result <- optim(start_values, objective, method = "Nelder-Mead")
-    
-    # Extract the optimized values
-    new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
-    new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
-    new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
-    new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
-    new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
-    
-    results_list$min_l2_l3 <- "min l2_l3 if statement utilized"
-  }
-  
-  if (!is.null(new_l3_l4) && new_l3_l4 > segmental_lordosis_range_list$min_l3_l4) {
-    new_l3_l4 <- segmental_lordosis_range_list$min_l3_l4
-    
-    l3_l4_start <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, new_l3_l4)
-    
-    start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
-    
-    non_modifiable <- unique(append(non_modifiable, "l3_l4"))
-    
-    # Use the Nelder-Mead method to find the new values
-    result <- optim(start_values, objective, method = "Nelder-Mead")
-    
-    # Extract the optimized values
-    new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
-    new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
-    new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
-    new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
-    new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
-    
-    results_list$min_l3_l4 <- "min l3_l4 if statement utilized"
-    
-    # return("Maximum value exceeded for l3_l4")
-  }
-  
-  if (!is.null(new_l5_s1) && new_l5_s1 > segmental_lordosis_range_list$max_l5_s1) {
-    new_l5_s1 <- segmental_lordosis_range_list$max_l5_s1
-    
-    l5_s1_start <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, new_l5_s1)
-    
-    start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
-    
-    non_modifiable <- unique(append(non_modifiable, "l5_s1"))
-    
-    # Use the Nelder-Mead method to find the new values
-    result <- optim(start_values, objective, method = "Nelder-Mead")
-    
-    # Extract the optimized values
-    new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
-    new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
-    new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
-    new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
-    new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
-    
-    results_list$max_l5_s1 <- "max l5_s1 if statement utilized"
-  }
-  
-  if (!is.null(new_l4_l5) && new_l4_l5 > segmental_lordosis_range_list$max_l4_l5) {
-    new_l4_l5 <- segmental_lordosis_range_list$max_l4_l5
-    
-    l4_l5_start <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, new_l4_l5)
-    
-    start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
-    
-    non_modifiable <- unique(append(non_modifiable, "l4_l5"))
-    
-    # Use the Nelder-Mead method to find the new values
-    result <- optim(start_values, objective, method = "Nelder-Mead")
-    
-    # Extract the optimized values
-    new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
-    new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
-    new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
-    new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
-    new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
-    
-    results_list$max_l4_l5 <- "max l4_l5 if statement utilized"
-    
-  }
-  
-  if (!is.null(new_l3_l4) && new_l3_l4 > segmental_lordosis_range_list$max_l3_l4) {
-    new_l3_l4 <- segmental_lordosis_range_list$max_l3_l4
-    
-    l3_l4_start <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, new_l3_l4)
-    
-    start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
-    
-    non_modifiable <- unique(append(non_modifiable, "l3_l4"))
-    
-    # Use the Nelder-Mead method to find the new values
-    result <- optim(start_values, objective, method = "Nelder-Mead")
-    
-    # Extract the optimized values
-    new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
-    new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
-    new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
-    new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
-    new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
-    
-    results_list$max_l3_l4 <- "max l3_l4 if statement utilized"
-    
-    # return("Maximum value exceeded for l3_l4")
-  }
-  
-  if (!is.null(new_l2_l3) && new_l2_l3 > segmental_lordosis_range_list$max_l2_l3) {
-    # Set the starting values
-    new_l2_l3 <- segmental_lordosis_range_list$max_l2_l3
-    
-    l2_l3_start <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, new_l2_l3)
-    
-    start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
-    
-    non_modifiable <- unique(append(non_modifiable, "l2_l3"))
-    
-    # Use the Nelder-Mead method to find the new values
-    result <- optim(start_values, objective, method = "Nelder-Mead")
-    
-    # Extract the optimized values
-    new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
-    new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
-    new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
-    new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
-    new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
-    
-    results_list$max_l2_l3 <- "max l2_l3 if statement utilized"
-    
-    # return("Maximum value exceeded for l2_l3")
-  }
-  
-  
-  if (!is.null(new_l1_l2) && new_l1_l2 > segmental_lordosis_range_list$max_l1_l2) {
-    # Set the starting values
-    new_l1_l2 <- segmental_lordosis_range_list$max_l1_l2
-    
-    l1_l2_start <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, new_l1_l2)
-    
-    start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
-    
-    non_modifiable <- unique(append(non_modifiable, "l1_l2"))
-    
-    # Use the Nelder-Mead method to find the new values
-    result <- optim(start_values, objective, method = "Nelder-Mead")
-    
-    # Extract the optimized values
-    new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
-    new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
-    new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
-    new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
-    new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
-    
-    results_list$max_l1_l2 <- "max l1_l2 if statement utilized"
-    
-    # return("Maximum value exceeded for l2_l3")
-  }
-  
+    new_sa_values_df <- tibble(level = c("l5_s1", "l4_l5", "l3_l4", "l2_l3", "l1_l2"), 
+                               value = c(new_l5_s1, new_l4_l5, new_l3_l4, new_l2_l3, new_l1_l2))
 
-  # if (!is.null(new_l4_l5) && new_l4_l5 > segmental_lordosis_range_list$max_l4_l5) {
-  #   new_l4_l5 <- segmental_lordosis_range_list$max_l4_l5
-  #   
-  #   start_values <- c(new_l1_l2, new_l2_l3, new_l3_l4, new_l4_l5, l5_s1_start)
-  #   
-  #   l4_l5_start <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, new_l4_l5)
-  #   
-  #   non_modifiable <- unique(append(non_modifiable, "l4_l5"))
-  #   
-  #   # Use the Nelder-Mead method to find the new values
-  #   result <- optim(start_values, objective, method = "Nelder-Mead")
-  #   
-  #   # Extract the optimized values
-  #   new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
-  #   new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
-  #   new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
-  #   new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
-  #   new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
-  # 
-  #   results_list$max_l4_l5 <- "max l4_l5 if statement utilized"
-  #   
-  # }
-  # if (!is.null(new_l5_s1) && new_l5_s1 > segmental_lordosis_range_list$max_l5_s1) {
-  #   return("Maximum value exceeded for l5_s1")
-  # }
-  
-  if(
-    # between(new_l1_l2, segmental_lordosis_range_list$min_l1_l2, segmental_lordosis_range_list$max_l1_l2) == FALSE |
-    #  between(new_l2_l3, segmental_lordosis_range_list$min_l2_l3, segmental_lordosis_range_list$max_l2_l3) == FALSE |
-    #  between(new_l3_l4, segmental_lordosis_range_list$min_l3_l4, segmental_lordosis_range_list$max_l3_l4) == FALSE |
-    #  between(new_l4_l5, segmental_lordosis_range_list$min_l4_l5, segmental_lordosis_range_list$max_l4_l5) == FALSE |
-     between(new_l5_s1, segmental_lordosis_range_list$min_l5_s1, segmental_lordosis_range_list$max_l5_s1) == FALSE){
     
-    needs_pso <- "yes"
+    confirming_segment_angles_df <- enframe(segmental_lordosis_range_list) %>%
+      unnest(value) %>%
+      mutate(min_max = if_else(str_detect(name, "min"), "min", "max")) %>%
+      mutate(level = str_remove_all(name, "min_|max_")) %>%
+      select(level, min_max, value) %>%
+      pivot_wider(names_from = min_max, values_from = value) %>%
+      left_join(new_sa_values_df) %>%
+      mutate(confirmed_value = case_when(
+        between(value, min, max) ~ value,
+        value < min ~ min,
+        value > max ~ max
+      )) %>%
+      mutate(confirmed_value_limit = case_when(
+        between(value, min, max) ~ "within_range",
+        value < min ~ "out_of_range",
+        value > max ~ "out_of_range"
+      ))
     
-    results_list$segmental_range_exceeded <- "final segmental range if statement utilized"
-
-  }else{
-    needs_pso <- "no"
+    new_segment_angles_list <- as.list(confirming_segment_angles_df$confirmed_value)
+    
+    names(new_segment_angles_list) <- confirming_segment_angles_df$level
+    
+    if(any(confirming_segment_angles_df$confirmed_value_limit == "out_of_range")){
+      
+      levels_maxed <- (confirming_segment_angles_df %>%
+                         filter(confirmed_value_limit == "out_of_range"))$level
+      
+      l1_l2_start = new_segment_angles_list$l1_l2 
+      l2_l3_start = new_segment_angles_list$l2_l3
+      l3_l4_start = new_segment_angles_list$l3_l4 
+      l4_l5_start = new_segment_angles_list$l4_l5
+      l5_s1_start = new_segment_angles_list$l5_s1
+      
+      start_values <- c(l1_l2_start, l2_l3_start, l3_l4_start, l4_l5_start, l5_s1_start)
+      
+      non_modifiable <- unique(append(non_modifiable, levels_maxed))
+      
+      # Use the Nelder-Mead method to find the new values
+      result <- optim(start_values, objective, method = "Nelder-Mead")
+      
+      # Extract the optimized values
+      new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
+      new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
+      new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
+      new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
+      new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+      
+    }
+    
+    new_sa_values_df <- tibble(level = c("l5_s1", "l4_l5", "l3_l4", "l2_l3", "l1_l2"), 
+                               value = c(new_l5_s1, new_l4_l5, new_l3_l4, new_l2_l3, new_l1_l2))
+    
+    
+    confirming_segment_angles_df <- enframe(segmental_lordosis_range_list) %>%
+      unnest(value) %>%
+      mutate(min_max = if_else(str_detect(name, "min"), "min", "max")) %>%
+      mutate(level = str_remove_all(name, "min_|max_")) %>%
+      select(level, min_max, value) %>%
+      pivot_wider(names_from = min_max, values_from = value) %>%
+      left_join(new_sa_values_df) %>%
+      mutate(confirmed_value = case_when(
+        between(value, min, max) ~ value,
+        value < min ~ min,
+        value > max ~ max
+      )) %>%
+      mutate(confirmed_value_limit = case_when(
+        between(value, min, max) ~ "within_range",
+        value < min ~ "out_of_range",
+        value > max ~ "out_of_range"
+      ))
+    
+    if(any(confirming_segment_angles_df$confirmed_value_limit == "out_of_range")){
+      needs_pso <- "yes"
+      results_list$segmental_range_exceeded <- "final segmental range if statement utilized"
+    }else{
+      needs_pso <- "no"
+    }
+    
+    
+    new_l1pa <- (constant1 + constant2 * pelvic_incidence + constant3 * new_l1_l2 + constant4 * new_l2_l3 + constant5 * new_l3_l4 + constant6 * new_l4_l5 + constant7 * new_l5_s1)
+    
+    if(abs(new_l1pa - desired_l1pa) > 2){
+      needs_pso <- "yes"
+    }
+    
+    results_list$l1_l2 <- new_l1_l2
+    results_list$l2_l3 <- new_l2_l3
+    results_list$l3_l4 <- new_l3_l4
+    results_list$l4_l5 <- new_l4_l5
+    results_list$l5_s1 <- new_l5_s1
+    results_list$estimated_l1pa <- round(new_l1pa, 1)
+    results_list$needs_pso <- needs_pso
+    
+    # Return the new values
+    return(results_list)
+    
   }
-  
-  new_l1pa <- (constant1 + constant2 * pelvic_incidence + constant3 * new_l1_l2 + constant4 * new_l2_l3 + constant5 * new_l3_l4 + constant6 * new_l4_l5 + constant7 * new_l5_s1)
-  
-  if(abs(new_l1pa - desired_l1pa) > 2){
-    needs_pso <- "yes"
-  }
-  
-  results_list$l1_l2 <- new_l1_l2
-  results_list$l2_l3 <- new_l2_l3
-  results_list$l3_l4 <- new_l3_l4
-  results_list$l4_l5 <- new_l4_l5
-  results_list$l5_s1 <- new_l5_s1
-  results_list$needs_pso <- needs_pso
-  
-  # Return the new values
-  return(results_list)
-
-}

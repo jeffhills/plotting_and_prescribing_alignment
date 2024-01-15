@@ -1,9 +1,29 @@
 
-predict_postop_pt_function <- function(preop_pt = 15, rad_pre_c2_tilt = 1.5430008,rad_1y_c2pa_change = -6.3748676) {
-  pt_change <- 0.45374535+0.47046549*rad_pre_c2_tilt+0.78984904*rad_1y_c2pa_change 
-  
-  preop_pt + pt_change
+# predict_postop_pt_function <- function(preop_pt = 15, rad_pre_c2_tilt = 1.5430008, rad_1y_c2pa_change = -6.3748676) {
+#   pt_change <- 0.45374535+0.47046549*rad_pre_c2_tilt+0.78984904*rad_1y_c2pa_change 
+#   
+#   preop_pt + pt_change
+# }
+
+predict_postop_pt_function <- function(postop_c2pa = 19.231308,
+         preop_pt = 25.203136,
+         preop_c2_tilt = 1.5912083){
+  round(-0.018071724+0.83058112*postop_c2pa+0.17554658*preop_pt-0.26959853*preop_c2_tilt, 2)
 }
+
+
+
+############# PREDICT PJK RISK ############
+pjk_risk_function <- function(age = 66.1,
+                              sex = "Female",
+                              uiv_region = "Lower Thoracic",
+                              preop_c2_t9pa_mismatch = 12.170434,
+                              pelvic_incidence = 54.630633) {
+  
+  prediction <- -3.5046884+0.022398521*age-0.47900877*(sex=="Male")-0.75690545*(uiv_region=="Upper Thoracic")+0.19040964*preop_c2_t9pa_mismatch-0.0097770523*pelvic_incidence-0.099232384*(uiv_region=="Upper Thoracic")*preop_c2_t9pa_mismatch 
+  
+  round(plogis(prediction), 2)
+  }
 
 ############### COMPUTE TARGET PELVIC ANGLES #####################
 target_l4pa_function <- function(pelvic_incidence = 51.75934) {-10.140792+0.36078574*pelvic_incidence }

@@ -695,15 +695,25 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
       pivot_wider(names_from = min_max, values_from = value) %>%
       left_join(new_sa_values_df) %>%
       mutate(confirmed_value = case_when(
-        between(value, min, max) ~ value,
         value < min ~ min,
-        value > max ~ max
+        value > max ~ max, 
+        TRUE ~ value
       )) %>%
       mutate(confirmed_value_limit = case_when(
-        between(value, min, max) ~ "within_range",
         value < min ~ "out_of_range",
-        value > max ~ "out_of_range"
+        value > max ~ "out_of_range", 
+        TRUE ~ "within_range"
       ))
+      # mutate(confirmed_value = case_when(
+      #   between(value, min, max) ~ value,
+      #   value < min ~ min,
+      #   value > max ~ max
+      # )) %>%
+      # mutate(confirmed_value_limit = case_when(
+      #   between(value, min, max) ~ "within_range",
+      #   value < min ~ "out_of_range",
+      #   value > max ~ "out_of_range"
+      # ))
     
     new_segment_angles_list <- as.list(confirming_segment_angles_df$confirmed_value)
     
@@ -748,15 +758,25 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
       pivot_wider(names_from = min_max, values_from = value) %>%
       left_join(new_sa_values_df) %>%
       mutate(confirmed_value = case_when(
-        between(value, min, max) ~ value,
         value < min ~ min,
-        value > max ~ max
+        value > max ~ max, 
+        TRUE ~ value
       )) %>%
       mutate(confirmed_value_limit = case_when(
-        between(value, min, max) ~ "within_range",
         value < min ~ "out_of_range",
-        value > max ~ "out_of_range"
+        value > max ~ "out_of_range", 
+        TRUE ~ "within_range"
       ))
+      # mutate(confirmed_value = case_when(
+        # between(value, min, max) ~ value,
+      #   value < min ~ min,
+      #   value > max ~ max
+      # )) %>%
+      # mutate(confirmed_value_limit = case_when(
+      #   between(value, min, max) ~ "within_range",
+      #   value < min ~ "out_of_range",
+      #   value > max ~ "out_of_range"
+      # ))
     
     if(any(confirming_segment_angles_df$confirmed_value_limit == "out_of_range")){
       needs_pso <- "yes"

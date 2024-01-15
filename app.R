@@ -868,7 +868,7 @@ server <- function(input, output, session) {
             ### #### ####
             t1pa_value <- spine_build_list$spine_list$t1pa_value
             
-            l1_s1_lordosis_offset <- abs(l1_s1_lordosis - (33+ pelv_inc_value*0.6))
+            l1_s1_lordosis_offset <- abs(l1_s1_lordosis - (33 + pelv_inc_value*0.6))
             
             spinal_kyphosis_offset <- abs(spinal_kyphosis - (46.7+ -pelv_inc_value*0.05))
             

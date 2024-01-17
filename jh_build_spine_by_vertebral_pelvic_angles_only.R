@@ -962,6 +962,65 @@ segment_angles_function_from_vertebral_pelvic_angles_function <- function(pelvic
                                                                  segment_angle_list = sa_test)
   
   
+  
+  while(round(testing_vpas$c2pa_value, 0) != c2pa_input){
+    # c2pa_floating_value <- c2pa_floating_value - (testing_vpas$c2pa_value - c2pa_floating_value)*0.5  
+    if(testing_vpas$c2pa_value > c2pa_floating_value){
+      c2pa_floating_value <- c2pa_floating_value - 0.5
+    }else{
+      c2pa_floating_value <- c2pa_floating_value + 0.5
+    }
+    
+    sa_test <- compute_estimated_segment_angle_list_from_pelvic_angles_function(pelvic_incidence_input = pi_value, 
+                                                                                l1_pelvic_angle_input = l1pa_floating_value, 
+                                                                                t9_pelvic_angle_input = t9pa_floating_value, 
+                                                                                t4_pelvic_angle_input = t4pa_floating_value, 
+                                                                                c2_pelvic_angle_input = c2pa_floating_value)
+    
+    testing_vpas <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = pi_value, 
+                                                                    pt_value = 10,
+                                                                    segment_angle_list =sa_test)
+  }
+  
+  while(round(testing_vpas$t4pa_value, 0) != t4pa_input){
+    if(testing_vpas$t4pa_value > t4pa_floating_value){
+      t4pa_floating_value <- t4pa_floating_value - 0.5
+    }else{
+      t4pa_floating_value <- t4pa_floating_value + 0.5
+    }
+    
+    sa_test <- compute_estimated_segment_angle_list_from_pelvic_angles_function(pelvic_incidence_input = pi_value, 
+                                                                                l1_pelvic_angle_input = l1pa_floating_value, 
+                                                                                t9_pelvic_angle_input = t9pa_floating_value, 
+                                                                                t4_pelvic_angle_input = t4pa_floating_value, 
+                                                                                c2_pelvic_angle_input = c2pa_floating_value)
+    
+    testing_vpas <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = pi_value, 
+                                                                    pt_value = 10,
+                                                                    segment_angle_list =sa_test)
+  }
+  
+  while(round(testing_vpas$t9pa_value, 0) != t9pa_input){
+    # t9pa_floating_value <- t9pa_floating_value - (testing_vpas$t9pa_value - t9pa_floating_value)*0.5  
+    if(testing_vpas$t9pa_value > t9pa_floating_value){
+      t9pa_floating_value <- t9pa_floating_value - 0.5
+    }else{
+      t9pa_floating_value <- t9pa_floating_value + 0.5
+    }
+    
+    
+    sa_test <- compute_estimated_segment_angle_list_from_pelvic_angles_function(pelvic_incidence_input = pi_value, 
+                                                                                l1_pelvic_angle_input = l1pa_floating_value, 
+                                                                                t9_pelvic_angle_input = t9pa_floating_value, 
+                                                                                t4_pelvic_angle_input = t4pa_floating_value, 
+                                                                                c2_pelvic_angle_input = c2pa_floating_value)
+    
+    testing_vpas <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = pi_value, 
+                                                                    pt_value = 10,
+                                                                    segment_angle_list =sa_test)
+  }
+  
+  
   while(round(testing_vpas$l1pa_value, 0) != round(l1pa_input, 0)){
     # l1pa_floating_value <- l1pa_floating_value - (testing_vpas$l1pa_value - l1pa_floating_value)*0.5  
     if(testing_vpas$l1pa_value > l1pa_floating_value){
@@ -982,62 +1041,62 @@ segment_angles_function_from_vertebral_pelvic_angles_function <- function(pelvic
   }
   
   
-  while(round(testing_vpas$t9pa_value, 0) != t9pa_input){
-    # t9pa_floating_value <- t9pa_floating_value - (testing_vpas$t9pa_value - t9pa_floating_value)*0.5  
-    if(testing_vpas$t9pa_value > t9pa_floating_value){
-      t9pa_floating_value <- t9pa_floating_value - 0.5
-    }else{
-      t9pa_floating_value <- t9pa_floating_value + 0.5
-    }
-    
-    
-    sa_test <- compute_estimated_segment_angle_list_from_pelvic_angles_function(pelvic_incidence_input = pi_value, 
-                                                                      l1_pelvic_angle_input = l1pa_floating_value, 
-                                                                      t9_pelvic_angle_input = t9pa_floating_value, 
-                                                                      t4_pelvic_angle_input = t4pa_floating_value, 
-                                                                      c2_pelvic_angle_input = c2pa_floating_value)
-    
-    testing_vpas <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = pi_value, 
-                                                                   pt_value = 10,
-                                                                   segment_angle_list =sa_test)
-  }
-  
-  while(round(testing_vpas$t4pa_value, 0) != t4pa_input){
-    if(testing_vpas$t4pa_value > t4pa_floating_value){
-      t4pa_floating_value <- t4pa_floating_value - 0.5
-    }else{
-      t4pa_floating_value <- t4pa_floating_value + 0.5
-    }
-    
-    sa_test <- compute_estimated_segment_angle_list_from_pelvic_angles_function(pelvic_incidence_input = pi_value, 
-                                                                      l1_pelvic_angle_input = l1pa_floating_value, 
-                                                                      t9_pelvic_angle_input = t9pa_floating_value, 
-                                                                      t4_pelvic_angle_input = t4pa_floating_value, 
-                                                                      c2_pelvic_angle_input = c2pa_floating_value)
-    
-    testing_vpas <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = pi_value, 
-                                                                   pt_value = 10,
-                                                                   segment_angle_list =sa_test)
-  }
-  
-  while(round(testing_vpas$c2pa_value, 0) != c2pa_input){
-    # c2pa_floating_value <- c2pa_floating_value - (testing_vpas$c2pa_value - c2pa_floating_value)*0.5  
-    if(testing_vpas$c2pa_value > c2pa_floating_value){
-      c2pa_floating_value <- c2pa_floating_value - 0.5
-    }else{
-      c2pa_floating_value <- c2pa_floating_value + 0.5
-    }
-    
-    sa_test <- compute_estimated_segment_angle_list_from_pelvic_angles_function(pelvic_incidence_input = pi_value, 
-                                                                      l1_pelvic_angle_input = l1pa_floating_value, 
-                                                                      t9_pelvic_angle_input = t9pa_floating_value, 
-                                                                      t4_pelvic_angle_input = t4pa_floating_value, 
-                                                                      c2_pelvic_angle_input = c2pa_floating_value)
-    
-    testing_vpas <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = pi_value, 
-                                                                   pt_value = 10,
-                                                                   segment_angle_list =sa_test)
-  }
+  # while(round(testing_vpas$t9pa_value, 0) != t9pa_input){
+  #   # t9pa_floating_value <- t9pa_floating_value - (testing_vpas$t9pa_value - t9pa_floating_value)*0.5  
+  #   if(testing_vpas$t9pa_value > t9pa_floating_value){
+  #     t9pa_floating_value <- t9pa_floating_value - 0.5
+  #   }else{
+  #     t9pa_floating_value <- t9pa_floating_value + 0.5
+  #   }
+  #   
+  #   
+  #   sa_test <- compute_estimated_segment_angle_list_from_pelvic_angles_function(pelvic_incidence_input = pi_value, 
+  #                                                                     l1_pelvic_angle_input = l1pa_floating_value, 
+  #                                                                     t9_pelvic_angle_input = t9pa_floating_value, 
+  #                                                                     t4_pelvic_angle_input = t4pa_floating_value, 
+  #                                                                     c2_pelvic_angle_input = c2pa_floating_value)
+  #   
+  #   testing_vpas <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = pi_value, 
+  #                                                                  pt_value = 10,
+  #                                                                  segment_angle_list =sa_test)
+  # }
+  # 
+  # while(round(testing_vpas$t4pa_value, 0) != t4pa_input){
+  #   if(testing_vpas$t4pa_value > t4pa_floating_value){
+  #     t4pa_floating_value <- t4pa_floating_value - 0.5
+  #   }else{
+  #     t4pa_floating_value <- t4pa_floating_value + 0.5
+  #   }
+  #   
+  #   sa_test <- compute_estimated_segment_angle_list_from_pelvic_angles_function(pelvic_incidence_input = pi_value, 
+  #                                                                     l1_pelvic_angle_input = l1pa_floating_value, 
+  #                                                                     t9_pelvic_angle_input = t9pa_floating_value, 
+  #                                                                     t4_pelvic_angle_input = t4pa_floating_value, 
+  #                                                                     c2_pelvic_angle_input = c2pa_floating_value)
+  #   
+  #   testing_vpas <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = pi_value, 
+  #                                                                  pt_value = 10,
+  #                                                                  segment_angle_list =sa_test)
+  # }
+  # 
+  # while(round(testing_vpas$c2pa_value, 0) != c2pa_input){
+  #   # c2pa_floating_value <- c2pa_floating_value - (testing_vpas$c2pa_value - c2pa_floating_value)*0.5  
+  #   if(testing_vpas$c2pa_value > c2pa_floating_value){
+  #     c2pa_floating_value <- c2pa_floating_value - 0.5
+  #   }else{
+  #     c2pa_floating_value <- c2pa_floating_value + 0.5
+  #   }
+  #   
+  #   sa_test <- compute_estimated_segment_angle_list_from_pelvic_angles_function(pelvic_incidence_input = pi_value, 
+  #                                                                     l1_pelvic_angle_input = l1pa_floating_value, 
+  #                                                                     t9_pelvic_angle_input = t9pa_floating_value, 
+  #                                                                     t4_pelvic_angle_input = t4pa_floating_value, 
+  #                                                                     c2_pelvic_angle_input = c2pa_floating_value)
+  #   
+  #   testing_vpas <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = pi_value, 
+  #                                                                  pt_value = 10,
+  #                                                                  segment_angle_list =sa_test)
+  # }
   
   return(sa_test)
   

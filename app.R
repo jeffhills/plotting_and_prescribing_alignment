@@ -1369,7 +1369,8 @@ server <- function(input, output, session) {
     # }) %>%
     #   bindEvent(input$preop_c2pa, ignoreInit = TRUE)
     
-    preop_spine_build_list_reactive <- reactive({
+    # preop_spine_build_list_reactive <- reactive({
+    preop_spine_build_list_reactive <- eventReactive(input$build_preop_spine, ignoreInit = TRUE, ignoreNULL = TRUE, {
       build_full_spine_from_vertebral_pelvic_angles_function(pelv_inc_value = input$preop_pelvic_incidence, 
                                                                                  pt_value = input$preop_pt, 
                                                                                  l1pa_value_input = input$preop_l1pa, 

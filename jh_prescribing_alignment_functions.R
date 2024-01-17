@@ -969,23 +969,24 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
                     unnest(starting_value)) %>%
         left_join(tibble(level = names(lordosis_needed_list), total_lordosis_needed = lordosis_needed_list) %>%
                     unnest(total_lordosis_needed)) %>%
-        filter(level %in% non_modifiable) %>%
         mutate(lordosis_needed = total_lordosis_needed - starting_value) %>%
         mutate(starting_value_normal_offset = case_when(
-          between(starting_value, min, max) ~ 0,
           starting_value < min ~ starting_value - min,
           starting_value > max ~ starting_value - max,
+          TRUE ~ 0
         )) %>%
         mutate(starting_value_needed_offset = starting_value - lordosis_needed) %>%
         mutate(needed_value_normal_offset = case_when(
-          between(lordosis_needed, min, max) ~ 0,
+          # between(x = lordosis_needed, left = min, right = max) ~ 0,
           lordosis_needed < min ~ starting_value - min,
           lordosis_needed > max ~ starting_value - max,
-        ))
+          TRUE ~ 0
+        )) %>%
+        filter(level %in% non_modifiable)
       
       if(nrow(identifying_pso_level_df %>%
               filter(needed_value_normal_offset == 0))>0){
-        
+
         pso_level_df <- identifying_pso_level_df %>%
           filter(needed_value_normal_offset == 0) %>%
           filter(lordosis_needed == min(lordosis_needed)) %>%
@@ -1000,6 +1001,7 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
           separate(pso_level, into = c("pso_level", "pso_inferior"), sep = "_") %>%
           select(level, starting_value, total_lordosis_needed, pso_level)
       }
+
       
       pso_level <- pso_level_df$pso_level
       pso_value <- pso_level_df$total_lordosis_needed

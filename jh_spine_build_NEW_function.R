@@ -1,3 +1,19 @@
+jh_make_colored_line_geom_function <- function(sf_geom_input, 
+                                               color_input = "darkgrey", 
+                                               line_size = 1, 
+                                               line_type = "solid"){
+  geom_sf(data = sf_geom_input, 
+          color = color_input, 
+          fill = color_input, 
+          linewidth = line_size,
+          linetype = line_type,
+          lineend="round", 
+          linejoin="round") 
+}
+
+
+###########
+
 predict_pt_function <- function(pelvic_incidence = 51.813768,t1_l1 = -40.878235,l1_s1 = 61.507721,l1_pelvic_angle = 3.99) {-0.65962719+0.66360172*pelvic_incidence-0.24004466*t1_l1-0.52660711*l1_s1+0.12344403*l1_pelvic_angle }
 
 
@@ -629,259 +645,470 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
   ############################################# DRAW LINES ############################################
   ############################################# DRAW LINES ############################################
   ############################################# DRAW LINES ############################################
-  
-  ## pelvic incidence
-  fem_head_s1_distance <- st_distance(x = s1_mid_sf, y = fem_head_center)
-  
-  pelvic_incidence_line_sf <- st_linestring(rbind(fem_head_center,
-                                                  s1_mid_sf, 
-                                                  c(s1_mid[[1]] + spine_orientation*fem_head_s1_distance * sin(p_inc - pt),
-                                                    s1_mid[[2]] - fem_head_s1_distance * cos(p_inc - pt))
-  ))
-  
-  ############# COMPUTE PELVIC ANGLES AND GENERATE LINES   ############# 
-  #### L4PA #### 
-  fem_head_l4_distance <- st_distance(x = l4_list$vert_body_center_sf, y = fem_head_center)
-  
-  fem_head_l4_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center[1], l4_list$vert_body_center_sf[2])), y = fem_head_center)
-  
-  if(spine_faces == "left"){
-    l4_tilt_value <- if_else(l4_list$vert_body_center_sf[1] <= fem_head_center[1], 
-                             abs(acos(fem_head_l4_vertical_distance/fem_head_l4_distance)*180/pi),
-                             abs(acos(fem_head_l4_vertical_distance/fem_head_l4_distance)*180/pi)*-1)
-  }else{
-    l4_tilt_value <- if_else(l4_list$vert_body_center_sf[1] >= fem_head_center[1], 
-                             abs(acos(fem_head_l4_vertical_distance/fem_head_l4_distance)*180/pi),
-                             abs(acos(fem_head_l4_vertical_distance/fem_head_l4_distance)*180/pi)*-1)
-  }
-  
-  l4_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
-                                         l4_list$vert_body_center_sf,
-                                         c(l4_list$vert_body_center_sf[1], fem_head_center[2])))
-  
-  l4pa_line_sf <- st_linestring(rbind(l4_list$vert_body_center_sf,
-                                      fem_head_center,
-                                      s1_mid_sf))
-  
-  l4pa_value <- l4_tilt_value + pt_value
-  
-  #### L1PA #### 
-  fem_head_l1_distance <- st_distance(x = l1_list$vert_body_center_sf, y = fem_head_center)
-  
-  fem_head_l1_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center[1], l1_list$vert_body_center_sf[2])), y = fem_head_center)
-  
-  if(spine_faces == "left"){
-    l1_tilt_value <- if_else(l1_list$vert_body_center_sf[1] <= fem_head_center[1], 
-                             abs(acos(fem_head_l1_vertical_distance/fem_head_l1_distance)*180/pi),
-                             abs(acos(fem_head_l1_vertical_distance/fem_head_l1_distance)*180/pi)*-1)
-  }else{
-    l1_tilt_value <- if_else(l1_list$vert_body_center_sf[1] >= fem_head_center[1], 
-                             abs(acos(fem_head_l1_vertical_distance/fem_head_l1_distance)*180/pi),
-                             abs(acos(fem_head_l1_vertical_distance/fem_head_l1_distance)*180/pi)*-1)
-  }
-  
-  l1_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
-                                         l1_list$vert_body_center_sf,
-                                         c(l1_list$vert_body_center_sf[1], fem_head_center[2])))
-  
-  l1pa_line_sf <- st_linestring(rbind(l1_list$vert_body_center_sf,
-                                     fem_head_center,
-                                     s1_mid_sf))
-  
-  l1pa_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
-                                                       line_st_geometry = l1pa_line_sf,
-                                                       distance_of_curve = st_length(st_linestring(rbind(l2_list$vert_body_center_sf,
-                                                                                                         fem_head_center)))/2.5)
-  
-  l1pa_value <- l1_tilt_value + pt_value
-  
-  #### T9PA #### 
-  fem_head_t9_distance <- st_distance(x = t9_list$vert_body_center_sf, y = fem_head_center)
-  
-  fem_head_t9_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center[1], t9_list$vert_body_center_sf[2])), y = fem_head_center)
-  
-  if(spine_faces == "left"){
-    t9_tilt_value <- if_else(t9_list$vert_body_center_sf[1] <= fem_head_center[1], 
-                             abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi),
-                             abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi)*-1)
-  }else{
-    t9_tilt_value <- if_else(t9_list$vert_body_center_sf[1] >= fem_head_center[1], 
-                             abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi),
-                             abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi)*-1)
-  }
-  
-  t9_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
-                                         t9_list$vert_body_center_sf,
-                                         c(t9_list$vert_body_center_sf[1], fem_head_center[2])))
-  
-  t9pa_line_sf <- st_linestring(rbind(t9_list$vert_body_center_sf,
-                                      fem_head_center,
-                                      s1_mid_sf))
-  
-  t9pa_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
-                                                       line_st_geometry = t9pa_line_sf,
-                                                       distance_of_curve = st_length(st_linestring(rbind(t11_list$vert_body_center_sf,
-                                                                                                         fem_head_center)))/2.5)
-  
-  t9pa_value <- t9_tilt_value + pt_value
-  
-  #### T4PA #### 
-  fem_head_t4_distance <- st_distance(x = t4_list$vert_body_center_sf, y = fem_head_center_sf)
-  
-  fem_head_t4_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center_sf[1], t4_list$vert_body_center_sf[2])), y = fem_head_center_sf)
-  
-  if(spine_faces == "left"){
-    t4_tilt_value <- if_else(t4_list$vert_body_center_sf[1] <= fem_head_center_sf[1], 
-                             abs(acos(fem_head_t4_vertical_distance/fem_head_t4_distance)*180/pi),
-                             -1*abs(acos(fem_head_t4_vertical_distance/fem_head_t4_distance)*180/pi))
-  }else{
-    t4_tilt_value <- if_else(t4_list$vert_body_center_sf[1] >= fem_head_center_sf[1], 
-                             abs(acos(fem_head_t4_vertical_distance/fem_head_t4_distance)*180/pi),
-                             -1*abs(acos(fem_head_t4_vertical_distance/fem_head_t4_distance)*180/pi))
-  }
-  t4_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
-                                         t4_list$vert_body_center_sf,
-                                         c(t4_list$vert_body_center_sf[1], fem_head_center[2])))
-  
-  
-  t4pa_line_sf <- st_linestring(rbind(t4_list$vert_body_center_sf,
-                                      fem_head_center,
-                                      s1_mid_sf))
-  
-  t4pa_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
-                                                       line_st_geometry = t4pa_line_sf,
-                                                       distance_of_curve = st_length(st_linestring(rbind(t11_list$vert_body_center_sf,
-                                                                                                         fem_head_center)))/2.5)
-  
-  t4pa_value <- t4_tilt_value + pt_value
-  
-  # ############# T9PA ############
-  # fem_head_t9_distance <- st_distance(x = t9_list$vert_body_center_sf, y = fem_head_center_sf)
   # 
-  # fem_head_t9_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center_sf[1], t9_list$vert_body_center_sf[2])), y = fem_head_center_sf)
+  # ## pelvic incidence
+  # fem_head_s1_distance <- st_distance(x = s1_mid_sf, y = fem_head_center)
+  # 
+  # pelvic_incidence_line_sf <- st_linestring(rbind(fem_head_center,
+  #                                                 s1_mid_sf, 
+  #                                                 c(s1_mid[[1]] + spine_orientation*fem_head_s1_distance * sin(p_inc - pt),
+  #                                                   s1_mid[[2]] - fem_head_s1_distance * cos(p_inc - pt))
+  # ))
+  # 
+  # ############# COMPUTE PELVIC ANGLES AND GENERATE LINES   ############# 
+  # #### L4PA #### 
+  # fem_head_l4_distance <- st_distance(x = l4_list$vert_body_center_sf, y = fem_head_center)
+  # 
+  # fem_head_l4_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center[1], l4_list$vert_body_center_sf[2])), y = fem_head_center)
   # 
   # if(spine_faces == "left"){
-  #   t9_tilt_value <- if_else(t9_list$vert_body_center_sf[1] <= fem_head_center_sf[1], 
-  #                            abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi),
-  #                            -1*abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi))
+  #   l4_tilt_value <- if_else(l4_list$vert_body_center_sf[1] <= fem_head_center[1], 
+  #                            abs(acos(fem_head_l4_vertical_distance/fem_head_l4_distance)*180/pi),
+  #                            abs(acos(fem_head_l4_vertical_distance/fem_head_l4_distance)*180/pi)*-1)
   # }else{
-  #   t9_tilt_value <- if_else(t9_list$vert_body_center_sf[1] >= fem_head_center_sf[1], 
-  #                            abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi),
-  #                            -1*abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi))
+  #   l4_tilt_value <- if_else(l4_list$vert_body_center_sf[1] >= fem_head_center[1], 
+  #                            abs(acos(fem_head_l4_vertical_distance/fem_head_l4_distance)*180/pi),
+  #                            abs(acos(fem_head_l4_vertical_distance/fem_head_l4_distance)*180/pi)*-1)
   # }
+  # 
+  # l4_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
+  #                                        l4_list$vert_body_center_sf,
+  #                                        c(l4_list$vert_body_center_sf[1], fem_head_center[2])))
+  # 
+  # l4pa_line_sf <- st_linestring(rbind(l4_list$vert_body_center_sf,
+  #                                     fem_head_center,
+  #                                     s1_mid_sf))
+  # 
+  # l4pa_value <- l4_tilt_value + pt_value
+  # 
+  # #### L1PA #### 
+  # fem_head_l1_distance <- st_distance(x = l1_list$vert_body_center_sf, y = fem_head_center)
+  # 
+  # fem_head_l1_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center[1], l1_list$vert_body_center_sf[2])), y = fem_head_center)
+  # 
+  # if(spine_faces == "left"){
+  #   l1_tilt_value <- if_else(l1_list$vert_body_center_sf[1] <= fem_head_center[1], 
+  #                            abs(acos(fem_head_l1_vertical_distance/fem_head_l1_distance)*180/pi),
+  #                            abs(acos(fem_head_l1_vertical_distance/fem_head_l1_distance)*180/pi)*-1)
+  # }else{
+  #   l1_tilt_value <- if_else(l1_list$vert_body_center_sf[1] >= fem_head_center[1], 
+  #                            abs(acos(fem_head_l1_vertical_distance/fem_head_l1_distance)*180/pi),
+  #                            abs(acos(fem_head_l1_vertical_distance/fem_head_l1_distance)*180/pi)*-1)
+  # }
+  # 
+  # l1_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
+  #                                        l1_list$vert_body_center_sf,
+  #                                        c(l1_list$vert_body_center_sf[1], fem_head_center[2])))
+  # 
+  # l1pa_line_sf <- st_linestring(rbind(l1_list$vert_body_center_sf,
+  #                                    fem_head_center,
+  #                                    s1_mid_sf))
+  # 
+  # l1pa_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
+  #                                                      line_st_geometry = l1pa_line_sf,
+  #                                                      distance_of_curve = st_length(st_linestring(rbind(l2_list$vert_body_center_sf,
+  #                                                                                                        fem_head_center)))/2.5)
+  # 
+  # l1pa_value <- l1_tilt_value + pt_value
+  # 
+  # #### T9PA #### 
+  # fem_head_t9_distance <- st_distance(x = t9_list$vert_body_center_sf, y = fem_head_center)
+  # 
+  # fem_head_t9_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center[1], t9_list$vert_body_center_sf[2])), y = fem_head_center)
+  # 
+  # if(spine_faces == "left"){
+  #   t9_tilt_value <- if_else(t9_list$vert_body_center_sf[1] <= fem_head_center[1], 
+  #                            abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi),
+  #                            abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi)*-1)
+  # }else{
+  #   t9_tilt_value <- if_else(t9_list$vert_body_center_sf[1] >= fem_head_center[1], 
+  #                            abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi),
+  #                            abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi)*-1)
+  # }
+  # 
   # t9_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
   #                                        t9_list$vert_body_center_sf,
   #                                        c(t9_list$vert_body_center_sf[1], fem_head_center[2])))
   # 
-  # 
   # t9pa_line_sf <- st_linestring(rbind(t9_list$vert_body_center_sf,
+  #                                     fem_head_center,
+  #                                     s1_mid_sf))
+  # 
+  # t9pa_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
+  #                                                      line_st_geometry = t9pa_line_sf,
+  #                                                      distance_of_curve = st_length(st_linestring(rbind(t11_list$vert_body_center_sf,
+  #                                                                                                        fem_head_center)))/2.5)
+  # 
+  # t9pa_value <- t9_tilt_value + pt_value
+  # 
+  # #### T4PA #### 
+  # fem_head_t4_distance <- st_distance(x = t4_list$vert_body_center_sf, y = fem_head_center_sf)
+  # 
+  # fem_head_t4_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center_sf[1], t4_list$vert_body_center_sf[2])), y = fem_head_center_sf)
+  # 
+  # if(spine_faces == "left"){
+  #   t4_tilt_value <- if_else(t4_list$vert_body_center_sf[1] <= fem_head_center_sf[1], 
+  #                            abs(acos(fem_head_t4_vertical_distance/fem_head_t4_distance)*180/pi),
+  #                            -1*abs(acos(fem_head_t4_vertical_distance/fem_head_t4_distance)*180/pi))
+  # }else{
+  #   t4_tilt_value <- if_else(t4_list$vert_body_center_sf[1] >= fem_head_center_sf[1], 
+  #                            abs(acos(fem_head_t4_vertical_distance/fem_head_t4_distance)*180/pi),
+  #                            -1*abs(acos(fem_head_t4_vertical_distance/fem_head_t4_distance)*180/pi))
+  # }
+  # t4_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
+  #                                        t4_list$vert_body_center_sf,
+  #                                        c(t4_list$vert_body_center_sf[1], fem_head_center[2])))
+  # 
+  # 
+  # t4pa_line_sf <- st_linestring(rbind(t4_list$vert_body_center_sf,
+  #                                     fem_head_center,
+  #                                     s1_mid_sf))
+  # 
+  # t4pa_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
+  #                                                      line_st_geometry = t4pa_line_sf,
+  #                                                      distance_of_curve = st_length(st_linestring(rbind(t11_list$vert_body_center_sf,
+  #                                                                                                        fem_head_center)))/2.5)
+  # 
+  # t4pa_value <- t4_tilt_value + pt_value
+  # 
+  # # ############# T9PA ############
+  # # fem_head_t9_distance <- st_distance(x = t9_list$vert_body_center_sf, y = fem_head_center_sf)
+  # # 
+  # # fem_head_t9_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center_sf[1], t9_list$vert_body_center_sf[2])), y = fem_head_center_sf)
+  # # 
+  # # if(spine_faces == "left"){
+  # #   t9_tilt_value <- if_else(t9_list$vert_body_center_sf[1] <= fem_head_center_sf[1], 
+  # #                            abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi),
+  # #                            -1*abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi))
+  # # }else{
+  # #   t9_tilt_value <- if_else(t9_list$vert_body_center_sf[1] >= fem_head_center_sf[1], 
+  # #                            abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi),
+  # #                            -1*abs(acos(fem_head_t9_vertical_distance/fem_head_t9_distance)*180/pi))
+  # # }
+  # # t9_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
+  # #                                        t9_list$vert_body_center_sf,
+  # #                                        c(t9_list$vert_body_center_sf[1], fem_head_center[2])))
+  # # 
+  # # 
+  # # t9pa_line_sf <- st_linestring(rbind(t9_list$vert_body_center_sf,
+  # #                                    fem_head_center,
+  # #                                    s1_mid_sf))
+  # # 
+  # # t9pa_value <- t9_tilt_value + pt_value
+  # 
+  # 
+  # #### T1PA ####
+  # fem_head_t1_distance <- st_distance(x = t1_list$vert_body_center_sf, y = fem_head_center_sf)
+  # 
+  # fem_head_t1_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center_sf[1], t1_list$vert_body_center_sf[2])), y = fem_head_center_sf)
+  # 
+  # if(spine_faces == "left"){
+  #   t1_tilt_value <- if_else(t1_list$vert_body_center_sf[1] <= fem_head_center_sf[1], 
+  #                            abs(acos(fem_head_t1_vertical_distance/fem_head_t1_distance)*180/pi),
+  #                            -1*abs(acos(fem_head_t1_vertical_distance/fem_head_t1_distance)*180/pi))
+  # }else{
+  #   t1_tilt_value <- if_else(t1_list$vert_body_center_sf[1] >= fem_head_center_sf[1], 
+  #                            abs(acos(fem_head_t1_vertical_distance/fem_head_t1_distance)*180/pi),
+  #                            -1*abs(acos(fem_head_t1_vertical_distance/fem_head_t1_distance)*180/pi))
+  # }
+  # t1_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
+  #                                        t1_list$vert_body_center_sf,
+  #                                        c(t1_list$vert_body_center_sf[1], fem_head_center[2])))
+  # 
+  # t1pa_line_sf <- st_linestring(rbind(t1_list$vert_body_center_sf,
+  #                                     fem_head_center,
+  #                                     s1_mid_sf))
+  # 
+  # t1pa_line_sf <- st_linestring(rbind(t1_list$vert_body_center_sf,
+  #                                     fem_head_center,
+  #                                     s1_mid_sf))
+  # 
+  # t1pa_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
+  #                                                      line_st_geometry = t1pa_line_sf,
+  #                                                      distance_of_curve = st_length(st_linestring(rbind(t10_list$vert_body_center_sf,
+  #                                                                                                        fem_head_center)))/2.5)
+  # 
+  # t1pa_value <- t1_tilt_value + pt_value
+  # 
+  # 
+  # 
+  # #### C2PA ####
+  # fem_head_c2_distance <- st_distance(x = c2_list$dens_centroid, y = fem_head_center_sf)
+  # 
+  # fem_head_c2_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center_sf[1], c2_list$dens_centroid[2])), y = fem_head_center_sf)
+  # 
+  # if(spine_faces == "left"){
+  #   c2_tilt_value <- if_else(c2_list$dens_centroid[1] <= fem_head_center_sf[1], 
+  #                            abs(acos(fem_head_c2_vertical_distance/fem_head_c2_distance)*180/pi),
+  #                            -1*abs(acos(fem_head_c2_vertical_distance/fem_head_c2_distance)*180/pi))
+  # }else{
+  #   c2_tilt_value <- if_else(c2_list$dens_centroid[1] >= fem_head_center_sf[1], 
+  #                            abs(acos(fem_head_c2_vertical_distance/fem_head_c2_distance)*180/pi),
+  #                            -1*abs(acos(fem_head_c2_vertical_distance/fem_head_c2_distance)*180/pi))
+  # }
+  # 
+  # 
+  # c2_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
+  #                                        c2_list$dens_centroid,
+  #                                        c(c2_list$dens_centroid[1], fem_head_center[2])))
+  # 
+  # c2pa_line_sf <- st_linestring(rbind(c2_list$dens_centroid,
   #                                    fem_head_center,
   #                                    s1_mid_sf))
   # 
-  # t9pa_value <- t9_tilt_value + pt_value
+  # pt_run <- fem_head_center[[1]] - s1_mid_sf[[1]]
+  # pt_rise <- fem_head_center[[2]] - s1_mid_sf[[2]]
+  # extended_c2pa_line_point <- c((fem_head_center[[1]] - pt_run*2.5), (fem_head_center[[2]] - pt_rise*2.5))
+  # 
+  # extended_c2pa_line_sf <- st_linestring(rbind(extended_c2pa_line_point,
+  #                                           fem_head_center, 
+  #                                           c2_list$dens_centroid)
+  # )
+  # 
+  # extended_c2pa_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
+  #                                                               line_st_geometry = extended_c2pa_line_sf,
+  #                                                               distance_of_curve = st_length(st_linestring(rbind(extended_c2pa_line_point,
+  #                                                                                                                 fem_head_center)))/1.5)
+  # 
+  # c2pa_value <- c2_tilt_value + pt_value
+  # 
+  # 
+  # ####
+  # # C2 VERT HIP ANGLES
+  t1_c2_ha_line_sf <- st_linestring(rbind(t1_list$vert_body_center_sf,
+                                          c2_list$dens_centroid,
+                                          fem_head_center))
+
+  t9_c2_ha_line_sf <- st_linestring(rbind(t9_list$vert_body_center_sf,
+                                          c2_list$dens_centroid,
+                                          fem_head_center))
+  # 
+  # 
+  # ## PT
+  # pt_line_sf <- st_linestring(rbind(fem_head_center,
+  #                                   s1_mid_sf,
+  #                                   c(s1_mid[1], fem_head_center[2])
+  # ))
+  # 
+  # 
+  # ## ss
+  # ss_anterior_inferior <- c(s1_mid[[1]] - spine_orientation*10 * cos(ss), s1_mid[[2]] - 10 * sin(ss))
+  # 
+  # ss_line_sf <- st_linestring(rbind(c(ss_anterior_inferior[1] - 5, s1p[2]), 
+  #                                   s1p,
+  #                                   ss_anterior_inferior))
+  # 
+  # 
+  # s1_endplate_line_posterior <-  st_linestring(rbind(s1a, # start at superior posterior corner of body and then --> end here:
+  #                                                    c(s1a[[1]] + spine_orientation*st_length(l1_list$sup_endplate_line_posterior) * cos(ss), s1a[[2]] + st_length(l1_list$sup_endplate_line_posterior)* sin(ss))
+  #                                                    # c(s1p[[2]], # X coord
+  #                                                    #   s1a[[2]] + (s1p[[2]] - s1a[[1]])*tan(ss)))
+  # ))
+  # 
+  # # l1_s1_value <- 
+  # l1s1_line_sf_1 <- l1_list$sup_endplate_line_posterior
+  # l1s1_line_sf_2 <- s1_endplate_line_posterior
+  # 
+  # l4s1_line_sf_1 <- l4_list$sup_endplate_line_posterior
+  # l4s1_line_sf_2 <- s1_endplate_line_posterior
+  # 
+  # ############### TK Lines
+  # 
+  # t4_line_sf <- t4_list$sup_endplate_line
+  # 
+  # t12_line_sf <- t12_list$inf_endplate_line
+  # 
+  # ############### Cervical Lines
+  # 
+  # c2_line_sf <- c2_list$inf_endplate_line_posterior
+  # 
+  # c7_line_sf <- c7_list$inf_endplate_line_posterior
+  lines_list <- list()
+  
+  #####   ##### SPINOPELVIC MEASURES  #####   ##### 
+  ##### Pelvic Incidence #####
+  fem_head_s1_distance <- st_distance(x = s1_mid_sf, y = fem_head_center)
+  
+  lines_list$pelvic_incidence_line_sf <- st_linestring(rbind(fem_head_center,
+                                                             s1_mid_sf, 
+                                                             c(s1_mid[[1]] + spine_orientation*fem_head_s1_distance * sin(p_inc - pt),
+                                                               s1_mid[[2]] - fem_head_s1_distance * cos(p_inc - pt))
+  ))
+  
+  lines_list$pelvic_incidence_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = s1_mid_sf, 
+                                                                              line_st_geometry = lines_list$pelvic_incidence_line_sf,
+                                                                              distance_of_curve = st_length(st_linestring(rbind(s1_mid_sf,
+                                                                                                                                fem_head_center)))/2)
+  
+  ##### PT #####
+  lines_list$pt_line_sf <- st_linestring(rbind(fem_head_center,
+                                               s1_mid_sf,
+                                               c(s1_mid[1], fem_head_center[2])
+  ))
+  
+  lines_list$pt_line_up_sf <- st_linestring(rbind(s1_mid_sf,
+                                                  fem_head_center,
+                                                  c(fem_head_center[1], s1_mid[2])
+  ))
+  
+  lines_list$pt_line_up_curve_sf <- jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
+                                                                 line_st_geometry = lines_list$pt_line_up_sf,
+                                                                 distance_of_curve = st_length(st_linestring(rbind(fem_head_center,
+                                                                                                                   s1_mid_sf)))/1.5)
+  
+  ##### SS #####
+  ss_anterior_inferior <- c(s1_mid[[1]] - spine_orientation*10 * cos(ss), s1_mid[[2]] - 10 * sin(ss))
+  
+  lines_list$ss_line_sf <- st_linestring(rbind(c(ss_anterior_inferior[1] - 5, s1p[2]), 
+                                               s1p,
+                                               ss_anterior_inferior))
   
   
-  #### T1PA ####
-  fem_head_t1_distance <- st_distance(x = t1_list$vert_body_center_sf, y = fem_head_center_sf)
   
-  fem_head_t1_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center_sf[1], t1_list$vert_body_center_sf[2])), y = fem_head_center_sf)
   
-  if(spine_faces == "left"){
-    t1_tilt_value <- if_else(t1_list$vert_body_center_sf[1] <= fem_head_center_sf[1], 
-                             abs(acos(fem_head_t1_vertical_distance/fem_head_t1_distance)*180/pi),
-                             -1*abs(acos(fem_head_t1_vertical_distance/fem_head_t1_distance)*180/pi))
-  }else{
-    t1_tilt_value <- if_else(t1_list$vert_body_center_sf[1] >= fem_head_center_sf[1], 
-                             abs(acos(fem_head_t1_vertical_distance/fem_head_t1_distance)*180/pi),
-                             -1*abs(acos(fem_head_t1_vertical_distance/fem_head_t1_distance)*180/pi))
-  }
-  t1_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
-                                         t1_list$vert_body_center_sf,
-                                         c(t1_list$vert_body_center_sf[1], fem_head_center[2])))
+  #####   ##### VERTEBRAL PELVIC ANGLES  #####   ##### 
   
-  t1pa_line_sf <- st_linestring(rbind(t1_list$vert_body_center_sf,
-                                      fem_head_center,
-                                      s1_mid_sf))
+  ############# L4PA ############
+  l4_tilt_value <- jh_building_spine_compute_vertebral_tilt_by_direction_function(spine_faces_input = spine_faces, 
+                                                                                  fem_head_center_input = fem_head_center, 
+                                                                                  vertebral_body_list = l4_list)
   
-  t1pa_line_sf <- st_linestring(rbind(t1_list$vert_body_center_sf,
-                                      fem_head_center,
-                                      s1_mid_sf))
+  lines_list$l4pa_line_sf <- st_linestring(rbind(l4_list$vert_body_center_sf,
+                                                 fem_head_center,
+                                                 s1_mid_sf))
   
-  t1pa_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
-                                                       line_st_geometry = t1pa_line_sf,
-                                                       distance_of_curve = st_length(st_linestring(rbind(t10_list$vert_body_center_sf,
-                                                                                                         fem_head_center)))/2.5)
+  lines_list$l4pa_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
+                                                                  line_st_geometry = lines_list$l4pa_line_sf,
+                                                                  distance_of_curve = st_length(st_linestring(rbind(l4_list$vert_body_center_sf,
+                                                                                                                    fem_head_center)))/2.5)
+  
+  l4pa_value <- l4_tilt_value + pt_value
+  
+  
+  ############# L1PA ############
+  l1_tilt_value <- jh_building_spine_compute_vertebral_tilt_by_direction_function(spine_faces_input = spine_faces, 
+                                                                                  fem_head_center_input = fem_head_center, 
+                                                                                  vertebral_body_list = l1_list)
+  
+  lines_list$l1pa_line_sf <- st_linestring(rbind(l1_list$vert_body_center_sf,
+                                                 fem_head_center,
+                                                 s1_mid_sf))
+  
+  lines_list$l1pa_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
+                                                                  line_st_geometry = lines_list$l1pa_line_sf,
+                                                                  distance_of_curve = st_length(st_linestring(rbind(l2_list$vert_body_center_sf,
+                                                                                                                    fem_head_center)))/3)
+  
+  l1pa_value <- l1_tilt_value + pt_value
+  
+  ############# T9PA ############
+  t9_tilt_value <- jh_building_spine_compute_vertebral_tilt_by_direction_function(spine_faces_input = spine_faces, 
+                                                                                  fem_head_center_input = fem_head_center, 
+                                                                                  vertebral_body_list = t9_list)
+  
+  lines_list$t9pa_line_sf <- st_linestring(rbind(t9_list$vert_body_center_sf,
+                                                 fem_head_center,
+                                                 s1_mid_sf))
+  
+  lines_list$t9pa_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
+                                                                  line_st_geometry = lines_list$t9pa_line_sf,
+                                                                  distance_of_curve = st_length(st_linestring(rbind(l1_list$vert_body_center_sf,
+                                                                                                                    fem_head_center)))/3)
+  
+  t9pa_value <- t9_tilt_value + pt_value
+  
+  ############# T4PA ############
+  
+  t4_tilt_value <- jh_building_spine_compute_vertebral_tilt_by_direction_function(spine_faces_input = spine_faces, 
+                                                                                  fem_head_center_input = fem_head_center, 
+                                                                                  vertebral_body_list = t4_list)
+  
+  lines_list$t4pa_line_sf <- st_linestring(rbind(t4_list$vert_body_center_sf,
+                                                 fem_head_center,
+                                                 s1_mid_sf))
+  
+  lines_list$t4pa_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
+                                                                  line_st_geometry = lines_list$t4pa_line_sf,
+                                                                  distance_of_curve = st_length(st_linestring(rbind(t12_list$vert_body_center_sf,
+                                                                                                                    fem_head_center)))/3)
+  
+  t4pa_value <- t4_tilt_value + pt_value
+  
+  
+  ############# T1PA ############
+  
+  t1_tilt_value <- jh_building_spine_compute_vertebral_tilt_by_direction_function(spine_faces_input = spine_faces, 
+                                                                                  fem_head_center_input = fem_head_center, 
+                                                                                  vertebral_body_list = t1_list)
+  
+  lines_list$t1pa_line_sf <- st_linestring(rbind(t1_list$vert_body_center_sf,
+                                                 fem_head_center,
+                                                 s1_mid_sf))
+  
+  lines_list$t1pa_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
+                                                                  line_st_geometry = lines_list$t1pa_line_sf,
+                                                                  distance_of_curve = st_length(st_linestring(rbind(t11_list$vert_body_center_sf,
+                                                                                                                    fem_head_center)))/3)
   
   t1pa_value <- t1_tilt_value + pt_value
   
-
+  ############# C2PA & C2 Tilt############
   
-  #### C2PA ####
-  fem_head_c2_distance <- st_distance(x = c2_list$dens_centroid, y = fem_head_center_sf)
+  c2_tilt_value <- jh_building_spine_compute_vertebral_tilt_by_direction_function(spine_faces_input = spine_faces, 
+                                                                                  fem_head_center_input = fem_head_center, 
+                                                                                  vertebral_body_list = c2_list)
   
-  fem_head_c2_vertical_distance <- st_distance(x = st_point(x = c(fem_head_center_sf[1], c2_list$dens_centroid[2])), y = fem_head_center_sf)
+  lines_list$c2_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
+                                                    c2_list$dens_centroid,
+                                                    c(c2_list$dens_centroid[1], fem_head_center[2])))
   
-  if(spine_faces == "left"){
-    c2_tilt_value <- if_else(c2_list$dens_centroid[1] <= fem_head_center_sf[1], 
-                             abs(acos(fem_head_c2_vertical_distance/fem_head_c2_distance)*180/pi),
-                             -1*abs(acos(fem_head_c2_vertical_distance/fem_head_c2_distance)*180/pi))
-  }else{
-    c2_tilt_value <- if_else(c2_list$dens_centroid[1] >= fem_head_center_sf[1], 
-                             abs(acos(fem_head_c2_vertical_distance/fem_head_c2_distance)*180/pi),
-                             -1*abs(acos(fem_head_c2_vertical_distance/fem_head_c2_distance)*180/pi))
-  }
+  lines_list$c2_tilt_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = c2_list$dens_centroid, 
+                                                                line_st_geometry = lines_list$c2_tilt_line_sf,
+                                                                distance_of_curve = st_length(st_linestring(rbind(c2_list$dens_centroid,
+                                                                                                                  fem_head_center)))/2.5)
+  
+  lines_list$c2_tilt_line_up_sf <- st_linestring(rbind(c2_list$dens_centroid,
+                                                       fem_head_center, 
+                                                       c(fem_head_center[1], c2_list$dens_centroid[2])))
+  
+  lines_list$c2_tilt_up_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
+                                                                   line_st_geometry = lines_list$c2_tilt_line_up_sf,
+                                                                   distance_of_curve = st_length(st_linestring(rbind(c2_list$dens_centroid,
+                                                                                                                     fem_head_center)))/2.5)
   
   
-  c2_tilt_line_sf <- st_linestring(rbind(fem_head_center, 
-                                         c2_list$dens_centroid,
-                                         c(c2_list$dens_centroid[1], fem_head_center[2])))
   
-  c2pa_line_sf <- st_linestring(rbind(c2_list$dens_centroid,
-                                     fem_head_center,
-                                     s1_mid_sf))
+  lines_list$c2pa_line_sf <- st_linestring(rbind(c2_list$dens_centroid,
+                                                 fem_head_center,
+                                                 s1_mid_sf))
   
-  pt_run <- fem_head_center[[1]] - s1_mid_sf[[1]]
-  pt_rise <- fem_head_center[[2]] - s1_mid_sf[[2]]
-  extended_c2pa_line_point <- c((fem_head_center[[1]] - pt_run*2.5), (fem_head_center[[2]] - pt_rise*2.5))
-  
-  extended_c2pa_line_sf <- st_linestring(rbind(extended_c2pa_line_point,
-                                            fem_head_center, 
-                                            c2_list$dens_centroid)
-  )
-  
-  extended_c2pa_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
-                                                                line_st_geometry = extended_c2pa_line_sf,
-                                                                distance_of_curve = st_length(st_linestring(rbind(extended_c2pa_line_point,
-                                                                                                                  fem_head_center)))/1.5)
+  lines_list$c2pa_line_curve_sf <-   jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
+                                                                  line_st_geometry = lines_list$c2pa_line_sf,
+                                                                  distance_of_curve = st_length(st_linestring(rbind(t11_list$vert_body_center_sf,
+                                                                                                                    fem_head_center)))/3)
   
   c2pa_value <- c2_tilt_value + pt_value
   
   
-  ####
-  # C2 VERT HIP ANGLES
-  t1_c2_ha_line_sf <- st_linestring(rbind(t1_list$vert_body_center_sf, 
-                                          c2_list$dens_centroid,
-                                          fem_head_center))
+  pt_run <- fem_head_center[[1]] - s1_mid_sf[[1]]
   
-  t9_c2_ha_line_sf <- st_linestring(rbind(t9_list$vert_body_center_sf, 
-                                          c2_list$dens_centroid,
-                                          fem_head_center))
+  pt_rise <- fem_head_center[[2]] - s1_mid_sf[[2]]
+  
+  extended_c2pa_line_point <- c((fem_head_center[[1]] - pt_run*2.5), (fem_head_center[[2]] - pt_rise*2.5))
+  
+  lines_list$c2pa_line_extended_sf <- st_linestring(rbind(extended_c2pa_line_point,
+                                                          fem_head_center, 
+                                                          c2_list$dens_centroid)
+  )
+  
+  lines_list$c2pa_line_extended_curve_sf <- jh_plot_angle_curve_function(vertex_vector = fem_head_center, 
+                                                                         line_st_geometry = lines_list$c2pa_line_extended_sf,
+                                                                         distance_of_curve = st_length(st_linestring(rbind(extended_c2pa_line_point,
+                                                                                                                           fem_head_center)))/1.5)
   
   
-  ## PT
-  pt_line_sf <- st_linestring(rbind(fem_head_center,
-                                    s1_mid_sf,
-                                    c(s1_mid[1], fem_head_center[2])
-  ))
   
-  
-  ## ss
-  ss_anterior_inferior <- c(s1_mid[[1]] - spine_orientation*10 * cos(ss), s1_mid[[2]] - 10 * sin(ss))
-  
-  ss_line_sf <- st_linestring(rbind(c(ss_anterior_inferior[1] - 5, s1p[2]), 
-                                    s1p,
-                                    ss_anterior_inferior))
-  
+  ### ### SAGITTAL COBBS ### ###
   
   s1_endplate_line_posterior <-  st_linestring(rbind(s1a, # start at superior posterior corner of body and then --> end here:
                                                      c(s1a[[1]] + spine_orientation*st_length(l1_list$sup_endplate_line_posterior) * cos(ss), s1a[[2]] + st_length(l1_list$sup_endplate_line_posterior)* sin(ss))
@@ -889,25 +1116,23 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
                                                      #   s1a[[2]] + (s1p[[2]] - s1a[[1]])*tan(ss)))
   ))
   
-  # l1_s1_value <- 
-  l1s1_line_sf_1 <- l1_list$sup_endplate_line_posterior
-  l1s1_line_sf_2 <- s1_endplate_line_posterior
+  lines_list$l1s1_line_sf_1 <- l1_list$sup_endplate_line_posterior
+  lines_list$l1s1_line_sf_2 <- s1_endplate_line_posterior
   
-  l4s1_line_sf_1 <- l4_list$sup_endplate_line_posterior
-  l4s1_line_sf_2 <- s1_endplate_line_posterior
+  lines_list$l4s1_line_sf_1 <- l4_list$sup_endplate_line_posterior
+  lines_list$l4s1_line_sf_2 <- s1_endplate_line_posterior
   
   ############### TK Lines
   
-  t4_line_sf <- t4_list$sup_endplate_line
+  lines_list$t4_line_sf <- st_crop(x = st_geometry(t4_list$sup_endplate_line_posterior), xmin = -20, xmax = 50, ymin = 0, ymax = 100)
   
-  t12_line_sf <- t12_list$inf_endplate_line
+  lines_list$t12_line_sf <- t12_list$inf_endplate_line_posterior
   
   ############### Cervical Lines
   
-  c2_line_sf <- c2_list$inf_endplate_line_posterior
+  lines_list$c2_line_sf <- c2_list$inf_endplate_line_posterior
   
-  c7_line_sf <- c7_list$inf_endplate_line_posterior
-  
+  lines_list$c7_line_sf <- c7_list$inf_endplate_line_posterior
   
   ############## BODY CENTERS
   t1_center_circle_sf <- st_buffer(x = t1_list$vert_body_center_sf,
@@ -932,6 +1157,13 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
                             endCapStyle = "ROUND")
   # 
   
+  
+  
+  #############################################
+  
+  lines_list <- map(.x = lines_list,
+                    .f = ~ st_geometry(.x))
+  
   spine_list <- list(pelvic_incidence =  pelv_inc_value, 
                      pelvic_tilt =   pt_value,
                      lumbar_lordosis =  l1_s1,
@@ -944,33 +1176,33 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
                      c2_tilt_value = c2_tilt_value,
                      thoracic_kyphosis =   spinal_kyphosis_input,
                      cervical_lordosis =  cervical_lordosis,
-                     pi_line_sf = st_geometry(pelvic_incidence_line_sf),
-                     pt_line_sf = st_geometry(pt_line_sf),
-                     ss_line_sf = st_geometry(ss_line_sf),
-                     l1s1_line_sf_1 = st_geometry(l1s1_line_sf_1),
-                     l1s1_line_sf_2 = st_geometry(l1s1_line_sf_2),
-                     l4s1_line_sf_1 = st_geometry(l4s1_line_sf_1),
-                     l4s1_line_sf_2 = st_geometry(l4s1_line_sf_2),
-                     t4_line_sf = st_geometry(st_zm(x = st_buffer(x = t4_line_sf, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
-                     t12_line_sf = st_geometry(st_zm(x = st_buffer(x = t12_line_sf, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
-                     c2_line_sf = st_geometry(st_zm(x = st_buffer(x = c2_line_sf, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
-                     c7_line_sf = st_geometry(st_zm(x = st_buffer(x = c7_line_sf, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
+                     # pi_line_sf = st_geometry(pelvic_incidence_line_sf),
+                     # pt_line_sf = st_geometry(pt_line_sf),
+                     # ss_line_sf = st_geometry(ss_line_sf),
+                     # l1s1_line_sf_1 = st_geometry(l1s1_line_sf_1),
+                     # l1s1_line_sf_2 = st_geometry(l1s1_line_sf_2),
+                     # l4s1_line_sf_1 = st_geometry(l4s1_line_sf_1),
+                     # l4s1_line_sf_2 = st_geometry(l4s1_line_sf_2),
+                     # t4_line_sf = st_geometry(st_zm(x = st_buffer(x = t4_line_sf, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
+                     # t12_line_sf = st_geometry(st_zm(x = st_buffer(x = t12_line_sf, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
+                     # c2_line_sf = st_geometry(st_zm(x = st_buffer(x = c2_line_sf, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
+                     # c7_line_sf = st_geometry(st_zm(x = st_buffer(x = c7_line_sf, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
                      ### VPAs
-                     l1pa_line_sf = st_geometry(l1pa_line_sf),
-                     l1_tilt_line_sf = st_geometry(l1_tilt_line_sf),
-                     l1pa_line_curve_sf = st_geometry(l1pa_line_curve_sf),
-                     t9pa_line_sf = st_geometry(t9pa_line_sf),
-                     t9pa_line_curve_sf = st_geometry(t9pa_line_curve_sf),
-                     t4pa_line_sf = st_geometry(t4pa_line_sf),
-                     t4pa_line_curve_sf = st_geometry(t4pa_line_curve_sf),
-                     t4_tilt_line_sf = st_geometry(t4_tilt_line_sf),
-                     t1pa_line_sf = st_geometry(t1pa_line_sf),
-                     t1pa_line_curve_sf = st_geometry(t1pa_line_curve_sf),
-                     t1_tilt_line_sf = st_geometry(t1_tilt_line_sf),
-                     c2pa_line_sf = st_geometry(c2pa_line_sf),
-                     extended_c2pa_line_sf = st_geometry(extended_c2pa_line_sf),
-                     extended_c2pa_line_curve_sf = st_geometry(extended_c2pa_line_curve_sf),
-                     c2_tilt_line_sf = st_geometry(c2_tilt_line_sf),
+                     # l1pa_line_sf = st_geometry(l1pa_line_sf),
+                     # l1_tilt_line_sf = st_geometry(l1_tilt_line_sf),
+                     # l1pa_line_curve_sf = st_geometry(l1pa_line_curve_sf),
+                     # t9pa_line_sf = st_geometry(t9pa_line_sf),
+                     # t9pa_line_curve_sf = st_geometry(t9pa_line_curve_sf),
+                     # t4pa_line_sf = st_geometry(t4pa_line_sf),
+                     # t4pa_line_curve_sf = st_geometry(t4pa_line_curve_sf),
+                     # t4_tilt_line_sf = st_geometry(t4_tilt_line_sf),
+                     # t1pa_line_sf = st_geometry(t1pa_line_sf),
+                     # t1pa_line_curve_sf = st_geometry(t1pa_line_curve_sf),
+                     # t1_tilt_line_sf = st_geometry(t1_tilt_line_sf),
+                     # c2pa_line_sf = st_geometry(c2pa_line_sf),
+                     # extended_c2pa_line_sf = st_geometry(extended_c2pa_line_sf),
+                     # extended_c2pa_line_curve_sf = st_geometry(extended_c2pa_line_curve_sf),
+                     # c2_tilt_line_sf = st_geometry(c2_tilt_line_sf),
                      #HA's
                      t1_c2_ha_line_sf = st_geometry(t1_c2_ha_line_sf),
                      t9_c2_ha_line_sf = st_geometry(t9_c2_ha_line_sf),
@@ -1002,46 +1234,47 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
                      c5_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = c5_list$vert_body_sf, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND"))),
                      c4_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = c4_list$vert_body_sf, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND"))),
                      c3_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = c3_list$vert_body_sf, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND"))),
-                     c2_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = c2_list$c2_with_dens, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND"))),
+                     c2_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = c2_list$c2_with_dens, dist = -0.2, endCapStyle = "ROUND"), dist = 0.2, endCapStyle = "ROUND"))),
                      c1_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = c1_list$vert_body_sf, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND"))),
                      head_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = head_sf, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND")))
   )
   
-  spine_geoms_df <- tibble(pelvic_incidence =  pelv_inc_value,
-                           pelvic_tilt =   pt_value,
-                           l1_pelvic_angle =  l1pa_value,
-                           lumbar_lordosis =  l1_s1,
-                           t1_pelvic_angle =  t1pa_value,
-                           thoracic_kyphosis =   spinal_kyphosis_input,
-                           cervical_lordosis =  cervical_lordosis,
+  spine_geoms_df <- tibble(
+    # pelvic_incidence =  pelv_inc_value,
+                           # pelvic_tilt =   pt_value,
+                           # l1_pelvic_angle =  l1pa_value,
+                           # lumbar_lordosis =  l1_s1,
+                           # t1_pelvic_angle =  t1pa_value,
+                           # thoracic_kyphosis =   spinal_kyphosis_input,
+                           # cervical_lordosis =  cervical_lordosis,
                            # lumbar_spine_color = lumbar_color,
                            # thoracic_spine_color = thoracic_color,pt_line_sf
-                           pelvic_incidence_line_sf = st_geometry(st_zm(x = st_buffer(pelvic_incidence_line_sf, dist = 0.15, endCapStyle = "ROUND"))),
-                           pt_line_sf = st_geometry(st_zm(x = st_buffer(pt_line_sf, dist = 0.15, endCapStyle = "ROUND"))),
-                           ss_line_sf = st_geometry(st_zm(x = st_buffer(ss_line_sf, dist = 0.15, endCapStyle = "ROUND"))),
-                           l1s1_line_sf_1 = st_geometry(st_zm(x = st_buffer(x = l1s1_line_sf_1, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
-                           l1s1_line_sf_2 = st_geometry(st_zm(x = st_buffer(x = l1s1_line_sf_2, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
-                           t4_line_sf = st_geometry(st_zm(x = st_buffer(x = t4_line_sf, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
-                           t12_line_sf = st_geometry(st_zm(x = st_buffer(x = t12_line_sf, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
-                           c2_line_sf = st_geometry(st_zm(x = st_buffer(x = c2_line_sf, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
-                           c7_line_sf = st_geometry(st_zm(x = st_buffer(x = c7_line_sf, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
+                           # pelvic_incidence_line_sf = st_geometry(st_zm(x = st_buffer(pelvic_incidence_line_sf, dist = 0.15, endCapStyle = "ROUND"))),
+                           # pt_line_sf = st_geometry(st_zm(x = st_buffer(pt_line_sf, dist = 0.15, endCapStyle = "ROUND"))),
+                           # ss_line_sf = st_geometry(st_zm(x = st_buffer(ss_line_sf, dist = 0.15, endCapStyle = "ROUND"))),
+                           # l1s1_line_sf_1 = st_geometry(st_zm(x = st_buffer(x = l1s1_line_sf_1, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
+                           # l1s1_line_sf_2 = st_geometry(st_zm(x = st_buffer(x = l1s1_line_sf_2, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
+                           # t4_line_sf = st_geometry(st_zm(x = st_buffer(x = t4_line_sf, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
+                           # t12_line_sf = st_geometry(st_zm(x = st_buffer(x = t12_line_sf, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
+                           # c2_line_sf = st_geometry(st_zm(x = st_buffer(x = c2_line_sf, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
+                           # c7_line_sf = st_geometry(st_zm(x = st_buffer(x = c7_line_sf, dist = 0.2, endCapStyle = "ROUND", joinStyle = "ROUND"))),
                            # tpa_line_sf = st_geometry(st_zm(x = st_buffer(tpa_line_sf, dist = 0.25, endCapStyle = "ROUND"))),
                            # lpa_line_sf = st_geometry(st_zm(x = st_buffer(lpa_line_sf, dist = 0.25, endCapStyle = "ROUND"))),
                            # t1_tilt_line_sf = st_geometry(t1_tilt_line_sf),
                            # l1_tilt_line_sf = st_geometry(l1_tilt_line_sf),
-                           c2pa_line_sf = st_geometry(c2pa_line_sf),
-                           c2_tilt_line_sf = st_geometry(c2_tilt_line_sf),
-                           t1pa_line_sf = st_geometry(t1pa_line_sf),
-                           t1_tilt_line_sf = st_geometry(t1_tilt_line_sf),
-                           t4pa_line_sf = st_geometry(t4pa_line_sf),
-                           t4_tilt_line_sf = st_geometry(t4_tilt_line_sf),
-                           l1pa_line_sf = st_geometry(l1pa_line_sf),
-                           l1_tilt_line_sf = st_geometry(l1_tilt_line_sf),
+                           # c2pa_line_sf = st_geometry(c2pa_line_sf),
+                           # c2_tilt_line_sf = st_geometry(c2_tilt_line_sf),
+                           # t1pa_line_sf = st_geometry(t1pa_line_sf),
+                           # t1_tilt_line_sf = st_geometry(t1_tilt_line_sf),
+                           # t4pa_line_sf = st_geometry(t4pa_line_sf),
+                           # t4_tilt_line_sf = st_geometry(t4_tilt_line_sf),
+                           # l1pa_line_sf = st_geometry(l1pa_line_sf),
+                           # l1_tilt_line_sf = st_geometry(l1_tilt_line_sf),
                            fem_head_geom = st_geometry(st_zm(x = fem_head_sf)),
-                           t1_center_circle_sf = st_geometry(st_zm(x = t1_center_circle_sf)),
-                           l1_center_circle_sf = st_geometry(st_zm(x = l1_center_circle_sf)),
-                           s1_center_circle_sf = st_geometry(st_zm(x = s1_center_circle_sf)),
-                           fem_center_circle_sf = st_geometry(st_zm(x = fem_center_circle_sf)),
+                           # t1_center_circle_sf = st_geometry(st_zm(x = t1_center_circle_sf)),
+                           # l1_center_circle_sf = st_geometry(st_zm(x = l1_center_circle_sf)),
+                           # s1_center_circle_sf = st_geometry(st_zm(x = s1_center_circle_sf)),
+                           # fem_center_circle_sf = st_geometry(st_zm(x = fem_center_circle_sf)),
                            sacrum_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = sacrum_sf, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND"))),
                            l5_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = l5_list$vert_body_sf, dist = -0.8, endCapStyle = "ROUND"), dist = 0.8, endCapStyle = "ROUND"))),
                            l4_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = l4_list$vert_body_sf, dist = -0.7, endCapStyle = "ROUND"), dist = 0.7, endCapStyle = "ROUND"))),
@@ -1065,7 +1298,7 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
                            c5_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = c5_list$vert_body_sf, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND"))),
                            c4_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = c4_list$vert_body_sf, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND"))),
                            c3_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = c3_list$vert_body_sf, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND"))),
-                           c2_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = c2_list$c2_with_dens, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND"))),
+                           c2_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = c2_list$c2_with_dens, dist = -0.3, endCapStyle = "ROUND"), dist = 0.3, endCapStyle = "ROUND"))),
                            c1_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = c1_list$vert_body_sf, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND"))),
                            head_geom = st_geometry(st_zm(st_buffer(x = st_buffer(x = head_sf, dist = -0.5, endCapStyle = "ROUND"), dist = 0.5, endCapStyle = "ROUND")))
                            ) %>%
@@ -1112,6 +1345,7 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
   
   return(list(spine_list = spine_list, 
               spine_df = spine_geoms_df, 
+              lines_list = lines_list,
               vertebral_body_list = vertebral_body_list))
   
 }

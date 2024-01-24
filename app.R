@@ -310,20 +310,27 @@ ui <- navbarPage(title = "Spine Plotting/Planning",
                                                                  "Change Spine Color with Values",
                                                                  labelWidth = "130px", 
                                                                  value = FALSE),
+                                                     h4(strong("Pelvic Lines:")),
+                                                     colorPickr(inputId = "pi_line_color", label = "Choose PT Line Color", "darkred"),
+                                                     colorPickr(inputId = "pt_line_color", label = "Choose PT Line Color", "darkviolet"),
+                                                     switchInput("pt_line_vertex_at_hips",
+                                                                 "Vertex at hips?",
+                                                                 labelWidth = "130px", 
+                                                                 value = TRUE),
+                                                     colorPickr(inputId = "ss_line_color", label = "Choose SS Line Color", "yellow"),
+                                                     colorPickr(inputId = "c2_tilt_line_color", label = "Choose C2 Tilt Line Color", "#F090D8"),
+                                                     h4(strong("Vertebral Pelvic Angle Lines:")),
                                                      colorPickr(inputId = "c2pa_line_color",
                                                                 label = "Choose C2 Pelvic Angle Line Color", 
                                                                 selected = "darkgreen"),
-                                                     colorPickr(inputId = "c2_tilt_line_color", label = "Choose C2 Tilt Line Color", "#F090D8"),
-                                                     colorPickr(inputId = "t1pa_line_color", label = "Choose T1PA Line Color", "grey55"),
+                                                     colorPickr(inputId = "t1pa_line_color", label = "Choose T1PA Line Color", "darkblue"),
                                                      colorPickr(inputId = "t9pa_line_color", label = "Choose T9 Pelvic Angle Line Color", "#CC79A7"),
                                                      colorPickr(inputId = "t4pa_line_color", label = "Choose T4 Pelvic Angle Line Color", "purple"),
-                                                     colorPickr(inputId = "l1_pelvic_angle_line_color", label = "Choose L1 Pelvic Angle Line Color", "blue"),
+                                                     colorPickr(inputId = "l1pa_line_color", label = "Choose L1 Pelvic Angle Line Color", "lightblue"),
                                                      colorPickr(inputId = "t1_c2_ha_line_color", label = "Choose T1-C2-Hip Angle Line Color", "orange"),
-                                                     colorPickr(inputId = "t9_c2_ha_line_color", label = "Choose T9-C2-Hip Angle Line Color", "orange"),
+                                                     colorPickr(inputId = "t9_c2_ha_line_color", label = "Choose T9-C2-Hip Angle Line Color", "darkorange"),
+                                                     h4(strong("Sagittal Cobb Angle Lines:")),
                                                      colorPickr(inputId = "tk_line_color", label = "Choose TK Line Color", "blue"),
-                                                     colorPickr(inputId = "pi_line_color", label = "Choose PT Line Color", "darkred"),
-                                                     colorPickr(inputId = "pt_line_color", label = "Choose PT Line Color", "red"),
-                                                     colorPickr(inputId = "ss_line_color", label = "Choose SS Line Color", "blue"),
                                                      br(),
                                                      switchInput("lines_posterior",
                                                                  "Show Lordosis Lines Posteriorly",
@@ -355,11 +362,6 @@ ui <- navbarPage(title = "Spine Plotting/Planning",
                                                      )
                                                  )
                                           ), 
-                                          # column(width = 6, 
-                                          #        switchInput("face_right",
-                                          #                    "Face Right",
-                                          #                    value = TRUE)
-                                          # )
                                       ),
                                       switchInput("cone_of_economy_show",
                                                   "Show Cone of Economy",
@@ -1070,77 +1072,87 @@ server <- function(input, output, session) {
     
         
         if(input$c2pa_line_show == TRUE){
-            lines_list$c2pa_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$c2pa_line_sf,
-                                               color = input$c2pa_line_color, 
-                                               fill = input$c2pa_line_color, 
-                                               size = line_size, 
-                                               lineend="round", 
-                                               linejoin="round")
+            # lines_list$c2pa_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$c2pa_line_sf,
+            #                                    color = input$c2pa_line_color, 
+            #                                    fill = input$c2pa_line_color, 
+            #                                    size = line_size, 
+            #                                    lineend="round", 
+            #                                    linejoin="round")
+            
+            lines_list$c2pa_line_sf <- jh_make_colored_line_geom_function(sf_geom_input = reactive_spine()$spine_build_list$lines_list$c2pa_line_extended_curve_sf, 
+                                               color_input = input$c2pa_line_color, 
+                                               line_size =  1.75)
         }
         
         if(input$c2_tilt_line_show == TRUE){
-            lines_list$c2_tilt_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$c2_tilt_line_sf, 
-                                                  color = input$c2_tilt_line_color, 
-                                                  fill = input$c2_tilt_line_color, 
-                                                  size = line_size,
-                                                  lineend="round", 
-                                                  linejoin="round",
-                                                  linetype = "dashed")
+            # lines_list$c2_tilt_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$c2_tilt_line_sf, 
+            #                                       color = input$c2_tilt_line_color, 
+            #                                       fill = input$c2_tilt_line_color, 
+            #                                       size = line_size,
+            #                                       lineend="round", 
+            #                                       linejoin="round",
+            #                                       linetype = "dashed")
+          lines_list$c2_tilt_line_sf <- jh_make_colored_line_geom_function(sf_geom_input = reactive_spine()$spine_build_list$lines_list$c2_tilt_up_curve_sf, 
+                                                                        color_input = input$c2_tilt_line_color, 
+                                                                        line_size =  line_size,
+                                                                        line_type = "dashed")
         }
         
         if(input$t1pa_line_show == TRUE){
-            lines_list$t1pa_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t1pa_line_sf,
-                                              color = input$t1pa_line_color, 
-                                              fill = input$t1pa_line_color, 
-                                              size = line_size,lineend="round", linejoin="round")
+            # lines_list$t1pa_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t1pa_line_sf,
+            #                                   color = input$t1pa_line_color, 
+            #                                   fill = input$t1pa_line_color, 
+            #                                   size = line_size,lineend="round", linejoin="round")
+          lines_list$t1pa_line_sf <- jh_make_colored_line_geom_function(sf_geom_input = reactive_spine()$spine_build_list$lines_list$t1pa_line_curve_sf, 
+                                                                        color_input = input$t1pa_line_color, 
+                                                                        line_size =  1.5)
+        }
+
+        if(input$t4pa_line_show == TRUE){
+            # lines_list$t4pa_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t4pa_line_sf, 
+            #                                    color = input$t4pa_line_color, 
+            #                                    fill = input$t4pa_line_color, 
+            #                                    size = line_size,lineend="round", linejoin="round")
+            lines_list$t4pa_line_sf <- jh_make_colored_line_geom_function(sf_geom_input = reactive_spine()$spine_build_list$lines_list$t4pa_line_curve_sf, 
+                                                                          color_input = input$t4pa_line_color, 
+                                                                          line_size =  1.25)
         }
         if(input$t9pa_line_show == TRUE){
-          lines_list$t9pa_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t9pa_line_sf, 
-                                             color = input$t9pa_line_color, 
-                                             fill = input$t9pa_line_color, 
-                                             size = line_size,lineend="round", linejoin="round")
-        }
-        if(input$t4pa_line_show == TRUE){
-            lines_list$t4pa_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t4pa_line_sf, 
-                                               color = input$t4pa_line_color, 
-                                               fill = input$t4pa_line_color, 
-                                               size = line_size,lineend="round", linejoin="round")
+          # lines_list$t9pa_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t9pa_line_sf, 
+          #                                    color = input$t9pa_line_color, 
+          #                                    fill = input$t9pa_line_color, 
+          #                                    size = line_size,lineend="round", linejoin="round")
+          lines_list$t9pa_line_sf <- jh_make_colored_line_geom_function(sf_geom_input = reactive_spine()$spine_build_list$lines_list$t9pa_line_curve_sf, 
+                                                                        color_input = input$t9pa_line_color, 
+                                                                        line_size =  1)
         }
         if(input$l1pa_line_show == TRUE){
-            lines_list$l1pa_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$l1pa_line_sf, 
-                                            color = input$l1_pelvic_angle_line_color, 
-                                            fill = input$l1_pelvic_angle_line_color, 
-                                            size = line_size,lineend="round", linejoin="round")
+            # lines_list$l1pa_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$l1pa_line_sf, 
+            #                                 color = input$l1pa_line_color, 
+            #                                 fill = input$l1pa_line_color, 
+            #                                 size = line_size,lineend="round", linejoin="round")
+            lines_list$l1pa_line <- jh_make_colored_line_geom_function(sf_geom_input = reactive_spine()$spine_build_list$lines_list$l1pa_line_curve_sf, 
+                                                                          color_input = input$l1pa_line_color, 
+                                                                          line_size =  0.75)
         }
-        if(input$t1_c2_ha_line_show == TRUE){
-          lines_list$t1_c2_ha_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t1_c2_ha_line_sf, 
-                                          color = input$t1_c2_ha_line_color, 
-                                          fill = input$t1_c2_ha_line_color, 
-                                          size = line_size,
-                                          lineend="round",
-                                          linejoin="round")
-        }
-        
-        if(input$t9_c2_ha_line_show == TRUE){
-            lines_list$t9_c2_ha_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t9_c2_ha_line_sf,
-                                          color = input$t9_c2_ha_line_color, 
-                                          fill = input$t9_c2_ha_line_color, 
-                                          size = line_size,
-                                          lineend="round", 
-                                          linejoin="round")
-        }
+
         if(input$tk_line_show == TRUE){
-            lines_list$t12_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t12_line_sf,
+            lines_list$t4_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$lines_list$t4_line_sf,
                                            color = input$tk_line_color, 
                                            fill = input$tk_line_color, 
                                            size = line_size,lineend="round", linejoin="round")
+            
+            lines_list$t12_line <- geom_sf(data = reactive_spine()$spine_build_list$lines_list$t12_line_sf,
+                                           color = input$tk_line_color, 
+                                           fill = input$tk_line_color, 
+                                           size = line_size, lineend="round", linejoin="round")
         }
         if(input$l1s1_line_show == TRUE){
-            lines_list$l1_s1_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$l1s1_line_sf_1, 
+            lines_list$l1_s1_line <- geom_sf(data = reactive_spine()$spine_build_list$lines_list$l1s1_line_sf_1, 
                                              color = input$l1s1_line_color, 
                                              fill = input$l1s1_line_color, 
                                              size = line_size,lineend="round", linejoin="round")
-            lines_list$l1_s1_line2 <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$l1s1_line_sf_2, 
+            lines_list$l1_s1_line2 <- geom_sf(data = reactive_spine()$spine_build_list$lines_list$l1s1_line_sf_2, 
                                              color = input$l1s1_line_color, 
                                              fill = input$l1s1_line_color, 
                                              size = line_size,lineend="round", linejoin="round")
@@ -1148,11 +1160,14 @@ server <- function(input, output, session) {
 
         
         if(input$l4s1_line_show == TRUE){
-            lines_list$l1_s1_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$l4s1_line_sf_1, 
+            lines_list$l1_s1_line <- geom_sf(data = reactive_spine()$spine_build_list$lines_list$l4s1_line_sf_1, 
                                              color = input$l1s1_line_color, 
                                              fill = input$l1s1_line_color, 
-                                             size = line_size,lineend="round", linejoin="round")
-            lines_list$l1_s1_line2 <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$l4s1_line_sf_2, 
+                                             size = line_size,
+                                             lineend="round", 
+                                             linejoin="round")
+            
+            lines_list$l1_s1_line2 <- geom_sf(data = reactive_spine()$spine_build_list$lines_list$l4s1_line_sf_2, 
                                               color = input$l4s1_line_color, 
                                               fill = input$l4s1_line_color, 
                                               size = line_size,
@@ -1160,24 +1175,50 @@ server <- function(input, output, session) {
                                               linejoin="round")
         }
         if(input$ss_line_show == TRUE){
-          lines_list$ss_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$ss_line_sf,
+          lines_list$ss_line <- geom_sf(data = reactive_spine()$spine_build_list$lines_list$ss_line_sf,
                                         color = input$ss_line_color, 
                                         fill = input$ss_line_color, 
                                         size = line_size,lineend="round", linejoin="round")
         }
         if(input$pt_line_show == TRUE){
-          lines_list$pt_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$pt_line_sf,
-                                        color = input$pt_line_color, 
-                                        fill = input$pt_line_color, 
-                                        size = line_size,lineend="round", linejoin="round")
+          if(input$pt_line_vertex_at_hips){
+            lines_list$pt_line <- geom_sf(data = reactive_spine()$spine_build_list$lines_list$pt_line_up_curve_sf,
+                                          color = input$pt_line_color, 
+                                          fill = input$pt_line_color, 
+                                          size = line_size,lineend="round", linejoin="round")
+          }else{
+            lines_list$pt_line <- geom_sf(data = reactive_spine()$spine_build_list$lines_list$pt_line_sf,
+                                          color = input$pt_line_color, 
+                                          fill = input$pt_line_color, 
+                                          size = line_size,lineend="round", linejoin="round")
+          }
         }
         if(input$pi_line_show == TRUE){
-          lines_list$pt_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$pi_line_sf,
+          lines_list$pi_line <- geom_sf(data = reactive_spine()$spine_build_list$lines_list$pelvic_incidence_line_curve_sf,
                                         color = input$pi_line_color, 
                                         fill = input$pi_line_color, 
                                         size = line_size,
                                         lineend="round", 
                                         linejoin="round")
+        }
+        
+        #####
+        if(input$t1_c2_ha_line_show == TRUE){
+          lines_list$t1_c2_ha_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t1_c2_ha_line_sf, 
+                                                 color = input$t1_c2_ha_line_color, 
+                                                 fill = input$t1_c2_ha_line_color, 
+                                                 size = line_size,
+                                                 lineend="round",
+                                                 linejoin="round")
+        }
+        
+        if(input$t9_c2_ha_line_show == TRUE){
+          lines_list$t9_c2_ha_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t9_c2_ha_line_sf,
+                                                 color = input$t9_c2_ha_line_color, 
+                                                 fill = input$t9_c2_ha_line_color, 
+                                                 size = line_size,
+                                                 lineend="round", 
+                                                 linejoin="round")
         }
         lines_list
     })
@@ -1411,18 +1452,18 @@ server <- function(input, output, session) {
                                                               )
         
         
-        lines_list <- list()
+        # lines_list <- list()
         # lines_list$l1pa_line <- geom_sf(data = spine_preop_list$spine_list$l1pa_line_sf, 
-        #                                 color = input$l1_pelvic_angle_line_color, 
-        #                                 fill = input$l1_pelvic_angle_line_color, 
+        #                                 color = input$l1pa_line_color, 
+        #                                 fill = input$l1pa_line_color, 
         #                                 size = 1,lineend="round", linejoin="round")
         
-        lines_list$t9pa_line <- geom_sf(data = spine_preop_list$spine_list$t9pa_line_curve_sf, 
-                                        color = jh_colors_list$colorblind_palette_dark[2], 
-                                        fill = jh_colors_list$colorblind_palette_dark[2], 
-                                        size = 1,
-                                        lineend="round", 
-                                        linejoin="round")
+        # lines_list$t9pa_line <- geom_sf(data = spine_preop_list$spine_list$t9pa_line_curve_sf, 
+        #                                 color = jh_colors_list$colorblind_palette_dark[2], 
+        #                                 fill = jh_colors_list$colorblind_palette_dark[2], 
+        #                                 size = 1,
+        #                                 lineend="round", 
+        #                                 linejoin="round")
         
 
         # lines_list$t4pa_line_sf <- geom_sf(data = spine_preop_list$spine_list$t4pa_line_sf, 
@@ -1430,11 +1471,22 @@ server <- function(input, output, session) {
         #                                    fill = input$t4pa_line_color, 
         #                                    size = 1,lineend="round", linejoin="round")
         
-        lines_list$c2pa_line <- geom_sf(data = spine_preop_list$spine_list$extended_c2pa_line_curve_sf, 
-                                        color = jh_colors_list$colorblind_palette_dark[4], 
-                                        fill = jh_colors_list$colorblind_palette_dark[4], 
-                                        size = 1,lineend="round", linejoin="round")
+        # lines_list$c2pa_line <- geom_sf(data = spine_preop_list$spine_list$extended_c2pa_line_curve_sf, 
+        #                                 color = jh_colors_list$colorblind_palette_dark[4], 
+        #                                 fill = jh_colors_list$colorblind_palette_dark[4], 
+        #                                 size = 1,lineend="round", linejoin="round")
         
+        line_geoms_list <- list()
+        
+        line_geoms_list$t9pa_line <- jh_make_colored_line_geom_function(sf_geom_input = spine_preop_list$lines_list$t9pa_line_curve_sf,
+                                                                        color_input = jh_colors_list$colorblind_palette_dark[2],
+                                                                        line_size = 1.75
+                                                                        )
+        
+        line_geoms_list$c2pa_line <- jh_make_colored_line_geom_function(sf_geom_input = spine_preop_list$lines_list$c2pa_line_extended_curve_sf,
+                                                                        color_input = jh_colors_list$colorblind_palette_dark[4], 
+                                                                        line_size = 0.5
+        )
         
         # return_list$upper_thoracic_analyzed <- results_list$t4pa
         # 
@@ -1445,7 +1497,6 @@ server <- function(input, output, session) {
         # return_list$lower_lumbar_analyzed <- results_list$l4pa
         
         ggplot() +
-            # cone_economy_list_reactive() +
             geom_sf(data = spine_geoms_df, 
                     color = "black", 
                     aes(geometry = geom, 
@@ -1457,7 +1508,7 @@ server <- function(input, output, session) {
           # draw_text(text = regional_analysis_list$lower_lumbar_analyzed, x = -64, y = 18, size = 11, hjust = 0) +
           # draw_text(text = paste("Recommended UIV Region:", regional_analysis_list$recommended_uiv, "Spine"), x = -55, y = -2, size = 16, fontface = "bold", hjust = 0) +
           # geom_text(label = paste(regional_analysis_list$regional_analysis), aes(x = -35, y = 0), hjust = 0) +
-          lines_list +
+          line_geoms_list +
           # xlim(-40, 40) +
           # xlim(-65, 40) +
           ylim(-6, 110) +
@@ -1863,8 +1914,8 @@ server <- function(input, output, session) {
     #                                        lineend="round", 
     #                                        linejoin="round")
     #     lines_list$l1pa_line <- geom_sf(data = spine_prescribed_list$spine_list$l1pa_line_sf,
-    #                                     color = input$l1_pelvic_angle_line_color,
-    #                                     fill = input$l1_pelvic_angle_line_color,
+    #                                     color = input$l1pa_line_color,
+    #                                     fill = input$l1pa_line_color,
     #                                     size = 1,
     #                                     lineend="round",
     #                                     linejoin="round")
@@ -2116,26 +2167,20 @@ server <- function(input, output, session) {
       
       lines_list <- list()
       
-      lines_list$t4pa_line_sf <- geom_sf(data = spine_prescribed_list$spine_list$t4pa_line_sf, 
-                                         color = input$t4pa_line_color,
-                                         fill = input$t4pa_line_color,
-                                         size = 1,
-                                         lineend="round", 
-                                         linejoin="round")
+      lines_list$l1pa_line <- jh_make_colored_line_geom_function(sf_geom_input = spine_prescribed_list$lines_list$l1pa_line_curve_sf,
+                                                                 color_input = input$l1pa_line_color, 
+                                                                 line_size = 1.75
+      )
       
-      lines_list$l1pa_line <- geom_sf(data = spine_prescribed_list$spine_list$l1pa_line_sf,
-                                      color = input$l1_pelvic_angle_line_color,
-                                      fill = input$l1_pelvic_angle_line_color,
-                                      size = 1,
-                                      lineend="round",
-                                      linejoin="round")
+      lines_list$t4pa_line <- jh_make_colored_line_geom_function(sf_geom_input = spine_prescribed_list$lines_list$t4pa_line_curve_sf,
+                                                                      color_input = input$t4pa_line_color,
+                                                                      line_size = 1
+      )
       
-      lines_list$c2pa_line <- geom_sf(data = spine_prescribed_list$spine_list$c2pa_line_sf,
-                                      color = input$c2pa_line_color,
-                                      fill = input$c2pa_line_color,
-                                      size = 1,
-                                      lineend="round",
-                                      linejoin="round")
+      lines_list$c2pa_line <- jh_make_colored_line_geom_function(sf_geom_input = spine_prescribed_list$lines_list$c2pa_line_extended_curve_sf,
+                                                                 color_input = input$c2pa_line_color,
+                                                                 line_size = 0.5
+      )
       
       preop_t4pa_l1pa_mismatch = input$preop_t4pa - input$preop_l1pa
       
@@ -2368,26 +2413,41 @@ server <- function(input, output, session) {
       
       lines_list <- list()
       
-      lines_list$t4pa_line_sf <- geom_sf(data = spine_prescribed_list$spine_list$t4pa_line_sf, 
-                                         color = input$t4pa_line_color,
-                                         fill = input$t4pa_line_color,
-                                         size = 1,
-                                         lineend="round", 
-                                         linejoin="round")
+      # lines_list$t4pa_line_sf <- geom_sf(data = spine_prescribed_list$spine_list$t4pa_line_sf, 
+      #                                    color = input$t4pa_line_color,
+      #                                    fill = input$t4pa_line_color,
+      #                                    size = 1,
+      #                                    lineend="round", 
+      #                                    linejoin="round")
+      # 
+      # lines_list$l1pa_line <- geom_sf(data = spine_prescribed_list$spine_list$l1pa_line_sf,
+      #                                 color = input$l1pa_line_color,
+      #                                 fill = input$l1pa_line_color,
+      #                                 size = 1,
+      #                                 lineend="round",
+      #                                 linejoin="round")
+      # 
+      # lines_list$c2pa_line <- geom_sf(data = spine_prescribed_list$spine_list$c2pa_line_sf,
+      #                                 color = input$c2pa_line_color,
+      #                                 fill = input$c2pa_line_color,
+      #                                 size = 1,
+      #                                 lineend="round",
+      #                                 linejoin="round")
       
-      lines_list$l1pa_line <- geom_sf(data = spine_prescribed_list$spine_list$l1pa_line_sf,
-                                      color = input$l1_pelvic_angle_line_color,
-                                      fill = input$l1_pelvic_angle_line_color,
-                                      size = 1,
-                                      lineend="round",
-                                      linejoin="round")
+      lines_list$l1pa_line <- jh_make_colored_line_geom_function(sf_geom_input = spine_prescribed_list$lines_list$l1pa_line_curve_sf,
+                                                                 color_input = input$l1pa_line_color, 
+                                                                 line_size = 1.75
+      )
       
-      lines_list$c2pa_line <- geom_sf(data = spine_prescribed_list$spine_list$c2pa_line_sf,
-                                      color = input$c2pa_line_color,
-                                      fill = input$c2pa_line_color,
-                                      size = 1,
-                                      lineend="round",
-                                      linejoin="round")
+      lines_list$t4pa_line <- jh_make_colored_line_geom_function(sf_geom_input = spine_prescribed_list$lines_list$t4pa_line_curve_sf,
+                                                                 color_input = input$t4pa_line_color,
+                                                                 line_size = 1
+      )
+      
+      lines_list$c2pa_line <- jh_make_colored_line_geom_function(sf_geom_input = spine_prescribed_list$lines_list$c2pa_line_extended_curve_sf,
+                                                                 color_input = input$c2pa_line_color,
+                                                                 line_size = 0.5
+      )
       
       preop_t4pa_l1pa_mismatch = input$preop_t4pa - input$preop_l1pa
       
@@ -2580,8 +2640,16 @@ server <- function(input, output, session) {
     })
     
     output$measures_table <- renderTable({
-      preop_spine_build_list_reactive()$spine_df %>%
-        select(pelvic_tilt, l1_pelvic_angle, lumbar_lordosis, t1_pelvic_angle, thoracic_kyphosis, cervical_lordosis) %>%
+      # preop_spine_build_list_reactive()$spine_df %>%
+        
+        tibble(pelvic_tilt = preop_spine_build_list_reactive()$spine_list$pelvic_tilt,
+               l1_pelvic_angle = preop_spine_build_list_reactive()$spine_list$l1_pelvic_angle_value, 
+               lumbar_lordosis = preop_spine_build_list_reactive()$spine_list$lumbar_lordosis,
+               t9_pelvic_angle = preop_spine_build_list_reactive()$spine_list$t9_pelvic_angle_value,
+               t4_pelvic_angle = preop_spine_build_list_reactive()$spine_list$t4_pelvic_angle_value,
+               c2_pelvic_angle = preop_spine_build_list_reactive()$spine_list$c2_pelvic_angle_value,
+               thoracic_kyphosis = preop_spine_build_list_reactive()$spine_list$thoracic_kyphosis,
+               cervical_lordosis = preop_spine_build_list_reactive()$spine_list$cervical_lordosis) %>%
         distinct() %>%
         pivot_longer(cols = everything()) %>%
         mutate(value = round(value, 0))

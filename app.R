@@ -694,24 +694,26 @@ server <- function(input, output, session) {
                                                                                postop_c2pa = input$predict_pt_postop_c2pa
             )
           
-        }else if(input$pt_prediction_model_choice == "c2pa_and_pt_and_l1pa")
-          predicting_pt_lower_t_uiv_by_c2pa_pt_l1pa_function <- function(preop_pt = 24.168039,
-                                                                         preop_c2pa = 25.165139,
-                                                                         preop_l1pa = 12.159217,
-                                                                         postop_l1pa = 9.1099133,
-                                                                         postop_c2pa = 18.427933) {
-            predicted_pt <- 0.17891039 + 0.57925383* preop_pt-0.00036858808*pmax(preop_pt-14.610783,0)^3+0.00067917607*pmax(preop_pt-24.168039,0)^3-0.00031058799*pmax(preop_pt-35.510044,0)^3-0.29549706* preop_c2pa+0.00019181124*pmax(preop_c2pa-13.487531,0)^3-0.00033987862*pmax(preop_c2pa-25.165139,0)^3+0.00014806738*pmax(preop_c2pa-40.292689,0)^3-0.14545127*preop_l1pa+0.22297945*postop_l1pa+
-              0.66158104*postop_c2pa 
+          }else if(input$pt_prediction_model_choice == "c2pa_and_pt_and_l1pa"){
+            predicting_pt_lower_t_uiv_by_c2pa_pt_l1pa_function <- function(preop_pt = 24.168039,
+                                                                           preop_c2pa = 25.165139,
+                                                                           preop_l1pa = 12.159217,
+                                                                           postop_l1pa = 9.1099133,
+                                                                           postop_c2pa = 18.427933) {
+              predicted_pt <- 0.17891039 + 0.57925383* preop_pt-0.00036858808*pmax(preop_pt-14.610783,0)^3+0.00067917607*pmax(preop_pt-24.168039,0)^3-0.00031058799*pmax(preop_pt-35.510044,0)^3-0.29549706* preop_c2pa+0.00019181124*pmax(preop_c2pa-13.487531,0)^3-0.00033987862*pmax(preop_c2pa-25.165139,0)^3+0.00014806738*pmax(preop_c2pa-40.292689,0)^3-0.14545127*preop_l1pa+0.22297945*postop_l1pa+
+                0.66158104*postop_c2pa 
+              
+              round(predicted_pt, 1)
+            }
             
-            round(predicted_pt, 1)
-          }
-        
-        predicted_pt <- predicting_pt_lower_t_uiv_by_c2pa_pt_l1pa_function(preop_pt = input$predict_pt_preop_pt, 
-                                                                           preop_c2pa = input$predict_pt_preop_c2pa, 
-                                                                           preop_l1pa = input$predict_pt_preop_l1pa, 
-                                                                           postop_l1pa = input$predict_pt_postop_l1pa,
-                                                                           postop_c2pa = input$predict_pt_postop_c2pa
-                                                                           )
+            predicted_pt <- predicting_pt_lower_t_uiv_by_c2pa_pt_l1pa_function(preop_pt = input$predict_pt_preop_pt, 
+                                                                               preop_c2pa = input$predict_pt_preop_c2pa, 
+                                                                               preop_l1pa = input$predict_pt_preop_l1pa, 
+                                                                               postop_l1pa = input$predict_pt_postop_l1pa,
+                                                                               postop_c2pa = input$predict_pt_postop_c2pa
+            ) 
+        }
+
         
           }
         

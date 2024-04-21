@@ -18,6 +18,7 @@ library(janitor)
 library(cowplot)
 # library(assertr)
 library(lubridate)
+library(shinydashboard)
 
 source("jh_functions.R", local = TRUE)
 
@@ -29,8 +30,8 @@ source("jh_prescribing_alignment_functions.R", local = TRUE)
 
 source("spinal_regional_alignment_analysis_by_vpa.R", local = TRUE)
 
-source("jh_build_spine_by_vertebral_pelvic_angles_only.R", local = TRUE)
-
+# source("jh_build_spine_by_vertebral_pelvic_angles_only.R", local = TRUE)
+source("jh_build_spine_by_vertebral_pelvic_angles_cleaned.R", local = TRUE)
 
 all_possible_lumbar_segments_angles_with_lpa_df <- read_csv("all_possible_lumbar_segment_angles_for_lpa.csv")
 # 
@@ -40,561 +41,615 @@ all_possible_lumbar_segments_angles_with_lpa_df <- read_csv("all_possible_lumbar
 # reactlog_enable()
 
 # Define UI for application that draws a histogram
-ui <- navbarPage(title = "Spine Plotting/Planning",
-                 tabPanel("Spine Plotting",
-                          # Application title
-                          # titlePanel("Plotting Alignment"),
-                          sidebarLayout(
-                              sidebarPanel(
-                                  width = 3,
-                                  sliderInput(
-                                      "pelvic_incidence",
-                                      "Pelvic Incidence:",
-                                      min = 25,
-                                      max = 90,
-                                      value = 50
-                                  ),
-                                  radioGroupButtons(inputId = "plot_lumbar_distribution_using",
-                                                    label = "Define Lumbar Distribution by:", 
-                                                    choices = c("L1 Pelvic Angle", "Lordosis by Level"), 
-                                                    direction = "vertical", 
-                                                    justified = TRUE, 
-                                                    selected = "L1 Pelvic Angle"
-                                  ),
-                                  conditionalPanel(condition = "input.plot_lumbar_distribution_using == 'L1 Pelvic Angle'", 
+ui <- dashboardPage(
+  dashboardHeader(title = "Basic dashboard"),
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("Plot Spine Alignment",
+               tabName = "plot_alignment", 
+               icon = icon("fas fa-scale-balanced")
+               ),
+      menuItem("Prescribe Spinal Alignment",
+               tabName = "prescribe_alignment", 
+               icon = icon("calculator")
+               )
+    )
+  ),
+  dashboardBody(
+    # Boxes need to be put in a row (or column)
+    tabItems(
+      tabItem(tabName = "plot_alignment",
+              fluidRow(
+                column(width = 3, 
+                       box(width = 12,
+                           title = tags$div(style = "font-size:20px; font-weight:bold", "Alignment Parameters"),
+                           status = "primary",
+                           sliderInput(
+                             "pelvic_incidence",
+                             "Pelvic Incidence:",
+                             min = 25,
+                             max = 90,
+                             value = 50
+                           ),
+                           radioGroupButtons(inputId = "plot_lumbar_distribution_using",
+                                             label = "Define Lumbar Distribution by:", 
+                                             choices = c("L1 Pelvic Angle", "Lordosis by Level"), 
+                                             direction = "vertical", 
+                                             justified = TRUE, 
+                                             selected = "L1 Pelvic Angle"
+                           ),
+                           conditionalPanel(condition = "input.plot_lumbar_distribution_using == 'L1 Pelvic Angle'", 
+                                            sliderInput(
+                                              "l1_s1_lordosis",
+                                              "L1-S1 Lordosis:",
+                                              min = 0,
+                                              max = 90,
+                                              value = 55
+                                            ),
+                                            sliderTextInput(
+                                              inputId = "l1_pelvic_angle",
+                                              label = "L1 Pelvic Angle",
+                                              choices = seq(-20, 45, by = 1),
+                                              selected =  5
+                                            )
+                           ),
+                           conditionalPanel(condition = "input.plot_lumbar_distribution_using == 'Lordosis by Level'",
+                                            column(width = 12,
                                                    sliderInput(
-                                                       "l1_s1_lordosis",
-                                                       "L1-S1 Lordosis:",
-                                                       min = 0,
-                                                       max = 90,
-                                                       value = 55
+                                                     "l1_sa",
+                                                     "L1-S1 Lordosis",
+                                                     min = -25,
+                                                     max = 90,
+                                                     value = 55
                                                    ),
-                                                   sliderTextInput(
-                                                       inputId = "l1_pelvic_angle",
-                                                       label = "L1 Pelvic Angle",
-                                                       choices = seq(-20, 45, by = 1),
-                                                       selected =  5
-                                                   )
-                                  ),
-                                  # conditionalPanel(condition = "input.plot_lumbar_distribution_using == 'L4-S1 Lordosis'", 
-                                  #                  sliderInput(
-                                  #                      "l1_s1_lordosis",
-                                  #                      "Spinal Lordosis:",
-                                  #                      min = 0,
-                                  #                      max = 90,
-                                  #                      value = 55
-                                  #                  ),
-                                  #                  sliderInput(
-                                  #                      "l4_s1_lordosis",
-                                  #                      "L4-S1 Lordosis",
-                                  #                      min = 0,
-                                  #                      max = 60,
-                                  #                      value = 40
-                                  #                  )
-                                  # ),
-                                  conditionalPanel(condition = "input.plot_lumbar_distribution_using == 'Lordosis by Level'",
-                                                   column(width = 12,
-                                                          sliderInput(
-                                                              "l1_sa",
-                                                              "L1-S1 Lordosis",
-                                                              min = -25,
-                                                              max = 90,
-                                                              value = 55
-                                                          ),
-                                                          sliderInput(
-                                                              "l2_sa",
-                                                              "L2-S1 Lordosis",
-                                                              min = -25,
-                                                              max = 80,
-                                                              value = 55
-                                                          ),
-                                                          sliderInput(
-                                                              "l3_sa",
-                                                              "L3-S1 Lordosis",
-                                                              min = -25,
-                                                              max = 70,
-                                                              value = 45
-                                                          ),
-                                                          sliderInput(
-                                                              "l4_sa",
-                                                              "L4-S1 Lordosis",
-                                                              min = -25,
-                                                              max = 60,
-                                                              value = 35
-                                                          ),
-                                                          sliderInput(
-                                                              "l5_sa",
-                                                              "L5-S1 Lordosis",
-                                                              min = -25,
-                                                              max = 45,
-                                                              value = 20
-                                                          ))
-                                  ),
-                                  radioGroupButtons(
-                                      inputId = "thoracic_distribution_format",
-                                      label = NULL,
-                                      choices = c("Select Spinal Kyphosis", 
-                                                  "Select Segmental Thoracic Kyphosis"),
-                                      selected = "Select Spinal Kyphosis", 
-                                      direction = "vertical",
-                                      justified = TRUE
-                                  ),
-                                  conditionalPanel(condition = "input.thoracic_distribution_format == 'Select Spinal Kyphosis'",
                                                    sliderInput(
-                                                       "spinal_kyphosis",
-                                                       "Spinal Kyphosis",
-                                                       min = -20,
-                                                       max = 80,
-                                                       value = 30
+                                                     "l2_sa",
+                                                     "L2-S1 Lordosis",
+                                                     min = -25,
+                                                     max = 80,
+                                                     value = 55
                                                    ),
-                                                   sliderTextInput(inputId = "tk_range", 
-                                                                   label = "Choose Spinal Kyphosis Range",
-                                                                   choices = c("T12",
-                                                                               "T11",
-                                                                               "T10",
-                                                                               "T9",
-                                                                               "T8",
-                                                                               "T7",
-                                                                               "T6",
-                                                                               "T5",
-                                                                               "T4",
-                                                                               "T3",
-                                                                               "T2",
-                                                                               "T1"),
-                                                                   selected = c("T11", "T2")
-                                                   )
-                                  ),
-                                  conditionalPanel(condition = "input.thoracic_distribution_format == 'Select Segmental Thoracic Kyphosis'",
-                                                   column(width = 10, 
-                                                          sliderInput(
-                                                              "t12_sa",
-                                                              "T12-L1 Kyphosis",
-                                                              min = -40,
-                                                              max = 40,
-                                                              value = 0
-                                                          ),
-                                                          sliderInput(
-                                                              "t11_sa",
-                                                              "T11-T12 Kyphosis",
-                                                              min = -40,
-                                                              max = 40,
-                                                              value = 5
-                                                          ),
-                                                          sliderInput(
-                                                              "t10_sa",
-                                                              "T10-T11 Kyphosis",
-                                                              min = -40,
-                                                              max = 40,
-                                                              value = 15
-                                                          ),
-                                                          sliderInput(
-                                                              "t9_sa",
-                                                              "T9-T10 Kyphosis",
-                                                              min = -40,
-                                                              max = 40,
-                                                              value = 20
-                                                          ),
-                                                          sliderInput(
-                                                              "t8_sa",
-                                                              "T8-T9 Kyphosis",
-                                                              min = -40,
-                                                              max = 40,
-                                                              value = 20
-                                                          ),
-                                                          sliderInput(
-                                                              "t7_sa",
-                                                              "T7-T8 Kyphosis",
-                                                              min = -40,
-                                                              max = 40,
-                                                              value = 20
-                                                          ),
-                                                          sliderInput(
-                                                              "t6_sa",
-                                                              "T6-T7 Kyphosis",
-                                                              min = -40,
-                                                              max = 40,
-                                                              value = 20
-                                                          ),
-                                                          sliderInput(
-                                                              "t5_sa",
-                                                              "T5-T6 Kyphosis",
-                                                              min = -40,
-                                                              max = 40,
-                                                              value = 20
-                                                          ),
-                                                          sliderInput(
-                                                              "t4_sa",
-                                                              "T4-T5 Kyphosis",
-                                                              min = -40,
-                                                              max = 40,
-                                                              value = 20
-                                                          ),
-                                                          sliderInput(
-                                                              "t3_sa",
-                                                              "T3-T4 Kyphosis",
-                                                              min = -40,
-                                                              max = 40,
-                                                              value = 20
-                                                          ),
-                                                          sliderInput(
-                                                              "t2_sa",
-                                                              "T2-T3 Kyphosis",
-                                                              min = -40,
-                                                              max = 40,
-                                                              value = 20
-                                                          ),
-                                                          sliderInput(
-                                                              "t1_sa",
-                                                              "T1-T2 Kyphosis",
-                                                              min = -40,
-                                                              max = 40,
-                                                              value = 20
-                                                          ))
-                                                   
-                                  ),
-                                  h5(strong("Additional Options")),
-                                  sliderInput(
-                                      "cervical_lordosis",
-                                      "Cervical Lordosis",
-                                      min = -10,
-                                      max = 30,
-                                      value = 15
-                                  ), 
-                                  # prettySwitch("pt_input",
-                                  #             "Input PT (rather than predict)",
-                                  #             value = FALSE), 
-                                  # switchInput("pt_input",
-                                  #             "Input PT (rather than predict)",
-                                  #             labelWidth = "130px",  
-                                  #             value = FALSE), 
-                                  radioButtons(inputId = "pt_input",inline = TRUE,
-                                                     label = "Pelvic Tilt:",
-                                                     choices = list("Predict PT", "Input PT")),
-                                  conditionalPanel(condition = "input.pt_input == 'Input PT'",
-                                                   sliderInput(inputId =  "pt_value_input",
-                                                               label = "Pelvic tilt:",
-                                                               min = -10,
-                                                               max = 60,
-                                                               value = 20
-                                                   )
-                                  )
-                              ),
-                              mainPanel(
-                                  column(
-                                      width = 8,
-                                      plotOutput("spine_base", height = 700),
-                                      span(textOutput("messages_ll"), style="color:red"),
-                                      downloadButton(outputId = "download_figure", label = "Download the Figure"),
-                                      downloadButton(outputId = "download_plain_figure", label = "Download Plain Spine Figure")
-                                  ),
-                                  column(
-                                      width = 4,
-                                      h5(strong("Plot Graphics")),
-                                      fixedRow(
-                                          column(width = 5, 
-                                                 dropdownButton(
-                                                     circle = TRUE,
-                                                     icon = icon("gear"),
-                                                     h5(strong("Plot Settings")),
-                                                     colorPickr(inputId = "plot_background_color",
-                                                                label = "Choose Plot Background Color", 
-                                                                selected = "white",
-                                                                opacity = TRUE),
-                                                     # colourpicker::colourInput(
-                                                     #     inputId = "plot_background_color",
-                                                     #     label = "Choose Plot Background Color",
-                                                     #     value = "white",
-                                                     #     allowTransparent = TRUE
-                                                     # ),
-                                                     switchInput("spine_coloring",
-                                                                 "Change Spine Color with Values",
-                                                                 labelWidth = "130px", 
-                                                                 value = FALSE),
-                                                     h4(strong("Pelvic Lines:")),
-                                                     colorPickr(inputId = "pi_line_color", label = "Choose PT Line Color", "darkred"),
-                                                     colorPickr(inputId = "pt_line_color", label = "Choose PT Line Color", "darkviolet"),
-                                                     switchInput("pt_line_vertex_at_hips",
-                                                                 "Vertex at hips?",
-                                                                 labelWidth = "130px", 
-                                                                 value = TRUE),
-                                                     colorPickr(inputId = "ss_line_color", label = "Choose SS Line Color", "yellow"),
-                                                     colorPickr(inputId = "c2_tilt_line_color", label = "Choose C2 Tilt Line Color", "#F090D8"),
-                                                     h4(strong("Vertebral Pelvic Angle Lines:")),
-                                                     colorPickr(inputId = "c2pa_line_color",
-                                                                label = "Choose C2 Pelvic Angle Line Color", 
-                                                                selected = "darkgreen"),
-                                                     colorPickr(inputId = "t1pa_line_color", label = "Choose T1PA Line Color", "darkblue"),
-                                                     colorPickr(inputId = "t9pa_line_color", label = "Choose T9 Pelvic Angle Line Color", "#CC79A7"),
-                                                     colorPickr(inputId = "t4pa_line_color", label = "Choose T4 Pelvic Angle Line Color", "purple"),
-                                                     colorPickr(inputId = "l1pa_line_color", label = "Choose L1 Pelvic Angle Line Color", "lightblue"),
-                                                     colorPickr(inputId = "t1_c2_ha_line_color", label = "Choose T1-C2-Hip Angle Line Color", "orange"),
-                                                     colorPickr(inputId = "t9_c2_ha_line_color", label = "Choose T9-C2-Hip Angle Line Color", "darkorange"),
-                                                     h4(strong("Sagittal Cobb Angle Lines:")),
-                                                     colorPickr(inputId = "tk_line_color", label = "Choose TK Line Color", "blue"),
-                                                     br(),
-                                                     switchInput("lines_posterior",
-                                                                 "Show Lordosis Lines Posteriorly",
-                                                                 labelWidth = "130px", value = TRUE),
-                                                     colorPickr(inputId = "l1s1_line_color", label = "Choose L1-S1 Color", "blue"),
-                                                     sliderInput(
-                                                         "l1l4_angle_line_length",
-                                                         "L1-L4 Angle Display Length",
-                                                         min = 0,
-                                                         max = 30,
-                                                         value = 10
-                                                     ),
-                                                     colorPickr(inputId = "l1l4_line_color", label = "Choose L1-L4 Line Color", "blue"),
-                                                     br(),
-                                                     sliderInput(
-                                                         "l4s1_angle_line_length",
-                                                         "L4-S1 Angle Display Length",
-                                                         min = 0,
-                                                         max = 30,
-                                                         value = 10
-                                                     ),
-                                                     colorPickr(inputId = "l4s1_line_color", label = "Choose L4-S1 Line Color", "red"),
-                                                     sliderInput(
-                                                         "posterior_lordosis_line_lengths",
-                                                         "Posterior Lordosis Line Lengths",
-                                                         min = 0,
-                                                         max = 70,
-                                                         value = 30
-                                                     )
-                                                 )
-                                          ), 
-                                      ),
-                                      switchInput("cone_of_economy_show",
-                                                  "Show Cone of Economy",
+                                                   sliderInput(
+                                                     "l3_sa",
+                                                     "L3-S1 Lordosis",
+                                                     min = -25,
+                                                     max = 70,
+                                                     value = 45
+                                                   ),
+                                                   sliderInput(
+                                                     "l4_sa",
+                                                     "L4-S1 Lordosis",
+                                                     min = -25,
+                                                     max = 60,
+                                                     value = 35
+                                                   ),
+                                                   sliderInput(
+                                                     "l5_sa",
+                                                     "L5-S1 Lordosis",
+                                                     min = -25,
+                                                     max = 45,
+                                                     value = 20
+                                                   ))
+                           ),
+                           radioGroupButtons(
+                             inputId = "thoracic_distribution_format",
+                             label = NULL,
+                             choices = c("Select Spinal Kyphosis", 
+                                         "Select Segmental Thoracic Kyphosis"),
+                             selected = "Select Spinal Kyphosis", 
+                             direction = "vertical",
+                             justified = TRUE
+                           ),
+                           conditionalPanel(condition = "input.thoracic_distribution_format == 'Select Spinal Kyphosis'",
+                                            sliderInput(
+                                              "spinal_kyphosis",
+                                              "Spinal Kyphosis",
+                                              min = -20,
+                                              max = 80,
+                                              value = 30
+                                            ),
+                                            sliderTextInput(inputId = "tk_range", 
+                                                            label = "Choose Spinal Kyphosis Range",
+                                                            choices = c("T12",
+                                                                        "T11",
+                                                                        "T10",
+                                                                        "T9",
+                                                                        "T8",
+                                                                        "T7",
+                                                                        "T6",
+                                                                        "T5",
+                                                                        "T4",
+                                                                        "T3",
+                                                                        "T2",
+                                                                        "T1"),
+                                                            selected = c("T11", "T2")
+                                            )
+                           ),
+                           conditionalPanel(condition = "input.thoracic_distribution_format == 'Select Segmental Thoracic Kyphosis'",
+                                            column(width = 10, 
+                                                   sliderInput(
+                                                     "t12_sa",
+                                                     "T12-L1 Kyphosis",
+                                                     min = -40,
+                                                     max = 40,
+                                                     value = 0
+                                                   ),
+                                                   sliderInput(
+                                                     "t11_sa",
+                                                     "T11-T12 Kyphosis",
+                                                     min = -40,
+                                                     max = 40,
+                                                     value = 5
+                                                   ),
+                                                   sliderInput(
+                                                     "t10_sa",
+                                                     "T10-T11 Kyphosis",
+                                                     min = -40,
+                                                     max = 40,
+                                                     value = 15
+                                                   ),
+                                                   sliderInput(
+                                                     "t9_sa",
+                                                     "T9-T10 Kyphosis",
+                                                     min = -40,
+                                                     max = 40,
+                                                     value = 20
+                                                   ),
+                                                   sliderInput(
+                                                     "t8_sa",
+                                                     "T8-T9 Kyphosis",
+                                                     min = -40,
+                                                     max = 40,
+                                                     value = 20
+                                                   ),
+                                                   sliderInput(
+                                                     "t7_sa",
+                                                     "T7-T8 Kyphosis",
+                                                     min = -40,
+                                                     max = 40,
+                                                     value = 20
+                                                   ),
+                                                   sliderInput(
+                                                     "t6_sa",
+                                                     "T6-T7 Kyphosis",
+                                                     min = -40,
+                                                     max = 40,
+                                                     value = 20
+                                                   ),
+                                                   sliderInput(
+                                                     "t5_sa",
+                                                     "T5-T6 Kyphosis",
+                                                     min = -40,
+                                                     max = 40,
+                                                     value = 20
+                                                   ),
+                                                   sliderInput(
+                                                     "t4_sa",
+                                                     "T4-T5 Kyphosis",
+                                                     min = -40,
+                                                     max = 40,
+                                                     value = 20
+                                                   ),
+                                                   sliderInput(
+                                                     "t3_sa",
+                                                     "T3-T4 Kyphosis",
+                                                     min = -40,
+                                                     max = 40,
+                                                     value = 20
+                                                   ),
+                                                   sliderInput(
+                                                     "t2_sa",
+                                                     "T2-T3 Kyphosis",
+                                                     min = -40,
+                                                     max = 40,
+                                                     value = 20
+                                                   ),
+                                                   sliderInput(
+                                                     "t1_sa",
+                                                     "T1-T2 Kyphosis",
+                                                     min = -40,
+                                                     max = 40,
+                                                     value = 20
+                                                   ))
+                                            
+                           ),
+                           h5(strong("Additional Options")),
+                           sliderInput(
+                             "cervical_lordosis",
+                             "Cervical Lordosis",
+                             min = -10,
+                             max = 30,
+                             value = 15
+                           ), 
+                           radioButtons(inputId = "pt_input",inline = TRUE,
+                                        label = "Pelvic Tilt:",
+                                        choices = list("Predict PT", "Input PT")),
+                           conditionalPanel(condition = "input.pt_input == 'Input PT'",
+                                            sliderInput(inputId =  "pt_value_input",
+                                                        label = "Pelvic tilt:",
+                                                        min = -10,
+                                                        max = 60,
+                                                        value = 20
+                                            )
+                           )
+                       ),
+                       box(width = 12,
+                           title = tags$div(style = "font-size:16px; font-weight:bold", "Predict Postop PT"),
+                           solidHeader = TRUE, 
+                           status = "success",
+                           radioButtons(inputId = "pt_prediction_model_uiv",
+                                        inline = TRUE,
+                                        label = "Predict for:",
+                                        choices = c("Upper T UIV" = "upper_t_uiv",
+                                                    "Lower T UIV" = "lower_t_uiv"), 
+                                        selected = "lower_t_uiv"
+                           ),
+                           radioButtons(inputId = "pt_prediction_model_choice",
+                                        inline = TRUE,
+                                        label = "Predict using:",
+                                        choices = c("By C2PA & PT" = "c2pa_and_pt",
+                                                    "Add L1PA" = "c2pa_and_pt_and_l1pa"), 
+                                        selected = "c2pa_and_pt"
+                           ),
+                           numericInput(inputId = "predict_pt_preop_pt", label = "Preop PT", value = 25),
+                           numericInput(inputId = "predict_pt_preop_c2pa", label = "Preop C2PA", value = 20),
+                           conditionalPanel(condition = "input.pt_prediction_model_choice == 'c2pa_and_pt_and_l1pa'",
+                                            numericInput(inputId = "predict_pt_preop_l1pa", 
+                                                         label = "Preop L1PA", value = 15),
+                           ),
+                           numericInput(inputId = "predict_pt_postop_c2pa", label = "Postop C2PA", value = 11),
+                           conditionalPanel(condition = "input.pt_prediction_model_choice == 'c2pa_and_pt_and_l1pa'",
+                                            numericInput(inputId = "predict_pt_postop_l1pa", 
+                                                         label = "Postop L1PA", value = 15),
+                           ),
+                           tags$div(style = "font-size:16px; font-weight:bold; color:darkblue; font-family:sans-serif; font-style:italic", 
+                                    htmlOutput(outputId = "predicted_pt")
+                           )
+                       ),
+                       box(width = 12,
+                           title = tags$div(style = "font-size:14px; font-weight:bold", "Prescribe Postop TL Alignment for Lower T UIV"),
+                           solidHeader = TRUE, 
+                           status = "success", 
+                           collapsible = TRUE,
+                           # numericInput(inputId = "prescribe_tl_preop_t10_l2", label = "Preop T10-L2 Lordosis:", value = 25),
+                           sliderTextInput(
+                             inputId = "prescribe_tl_preop_t10_l2",
+                             label = "Preop T10-L2 Lordosis:", 
+                             choices = seq(from = -50,
+                                           to = 30,
+                                           by = 1),
+                             grid = TRUE
+                           ),
+                           numericInput(inputId = "prescribe_tl_preop_l1pa", label = "Preop L1PA", value = 20),
+                           numericInput(inputId = "prescribe_tl_preop_l1s1", label = "Preop L1-S1 Lordosis", value = 20),
+                           numericInput(inputId = "prescribe_tl_postop_l1pa", label = "Postop L1PA", value = 20),
+                           numericInput(inputId = "prescribe_tl_postop_l1s1", label = "Postop L1-S1 Lordosis", value = 20),
+                           tags$div(style = "font-size:16px; font-weight:bold; color:darkgreen; font-family:sans-serif; font-style:italic", 
+                                    htmlOutput(outputId = "prescribed_t10_l2")
+                           )
+                       )
+                ),
+                ######################### SPINE PLOT COLUMN ###########################
+                ######################### SPINE PLOT COLUMN ###########################
+                ######################### SPINE PLOT COLUMN ###########################
+                ######################### SPINE PLOT COLUMN ###########################
+                column(width = 6, 
+                       box(width = 12, 
+                           title = tags$div(style = "font-size:14px; font-weight:bold", "Spinal Alignment"),
+                         plotOutput("spine_base", height = 700),
+                         span(textOutput("messages_ll"), style="color:red"),
+                         downloadButton(outputId = "download_figure", label = "Download the Figure"),
+                         downloadButton(outputId = "download_plain_figure", label = "Download Plain Spine Figure")  
+                       )
+                ),
+                
+                ######################### PLOT SETTINGS COLUMN ###########################
+                ######################### PLOT SETTINGS COLUMN ###########################
+                ######################### PLOT SETTINGS COLUMN ###########################
+                ######################### PLOT SETTINGS COLUMN ###########################
+                column(width = 3, 
+                       box(width = 12, title = "Plot Graphics",
+                           fixedRow(
+                             column(width = 5, 
+                                    dropdownButton(
+                                      circle = TRUE,label = "Edit plot settings",
+                                      icon = icon("gear"),
+                                      h5(strong("Plot Settings")),
+                                      colorPickr(inputId = "plot_background_color",
+                                                 label = "Choose Plot Background Color", 
+                                                 selected = "white",
+                                                 opacity = TRUE),
+                                      # colourpicker::colourInput(
+                                      #     inputId = "plot_background_color",
+                                      #     label = "Choose Plot Background Color",
+                                      #     value = "white",
+                                      #     allowTransparent = TRUE
+                                      # ),
+                                      switchInput("spine_coloring",
+                                                  "Change Spine Color with Values",
                                                   labelWidth = "130px", 
                                                   value = FALSE),
-                                      switchInput("c2_tilt_line_show",
-                                                  "Show C2 Tilt",
-                                                  labelWidth = "130px"),
-                                      h4("Pelvic Angles:"),
-                                      switchInput("c2pa_line_show",
-                                                  "Show C2 Pelvic Angle",
-                                                  labelWidth = "130px"),
-                                      switchInput("t1pa_line_show",
-                                                  "Show T1PA",
-                                                  labelWidth = "130px"),
-                                      switchInput("t4pa_line_show",
-                                                  "Show T4PA",
-                                                  labelWidth = "130px"),
-                                      switchInput("t9pa_line_show",
-                                                  "Show T9PA",
-                                                  labelWidth = "130px"),
-                                      switchInput("l1pa_line_show",
-                                                  "Show L1PA",
-                                                  labelWidth = "130px"),
-                                      switchInput("t1_c2_ha_line_show",
-                                                  "Show T1-C2-HA",
-                                                  labelWidth = "130px"),
-                                      switchInput("t9_c2_ha_line_show",
-                                                  "Show T9-C2-HA",
-                                                  labelWidth = "130px"),
-                                      h4("Sagittal Cobb Angles:"),
-                                      switchInput("tk_line_show",
-                                                  "Show TK",
-                                                  labelWidth = "130px"),
-                                      switchInput("l1s1_line_show",
-                                                  "Show L1-S1 Angle",
-                                                  labelWidth = "130px"),
-                                      # switchInput("l1l4_line_show",
-                                      #             "Show L1-L4 Angle",
-                                      #             labelWidth = "130px"),
-                                      switchInput("l4s1_line_show",
-                                                  "Show L4-S1 Angle",
-                                                  labelWidth = "130px"),
-                                      h4("Pelvic Parameters:"),
-                                      switchInput("pt_line_show",
-                                                  "Show PT",
-                                                  labelWidth = "130px"),
-                                      switchInput("ss_line_show",
-                                                  "Show SS",
-                                                  labelWidth = "130px"),
-                                      switchInput("pi_line_show",
-                                                  "Show PI",
-                                                  labelWidth = "130px"),
-                                      h5(strong("Predict Postop PT:")),
-                                      dropdownButton(
-                                          circle = TRUE,
-                                          label = "Predict Postop PT", 
-                                          icon = icon("calculator"),
-                                          numericInput(inputId = "predict_pt_preop_pt", label = "Preop PT", value = 25),
-                                          numericInput(inputId = "predict_pt_preop_c2pa", label = "Preop C2PA", value = 20),
-                                          numericInput(inputId = "predict_pt_postop_c2pa", label = "Postop C2PA", value = 11),
-                                          textOutput(outputId = "predicted_pt")
+                                      h4(strong("Pelvic Lines:")),
+                                      colorPickr(inputId = "pi_line_color", label = "Choose PT Line Color", "darkred"),
+                                      colorPickr(inputId = "pt_line_color", label = "Choose PT Line Color", "darkviolet"),
+                                      switchInput("pt_line_vertex_at_hips",
+                                                  "Vertex at hips?",
+                                                  labelWidth = "130px", 
+                                                  value = TRUE),
+                                      colorPickr(inputId = "ss_line_color", label = "Choose SS Line Color", "yellow"),
+                                      colorPickr(inputId = "c2_tilt_line_color", label = "Choose C2 Tilt Line Color", "#F090D8"),
+                                      h4(strong("Vertebral Pelvic Angle Lines:")),
+                                      colorPickr(inputId = "c2pa_line_color",
+                                                 label = "Choose C2 Pelvic Angle Line Color", 
+                                                 selected = "darkgreen"),
+                                      colorPickr(inputId = "t1pa_line_color", label = "Choose T1PA Line Color", "darkblue"),
+                                      colorPickr(inputId = "t9pa_line_color", label = "Choose T9 Pelvic Angle Line Color", "#CC79A7"),
+                                      colorPickr(inputId = "t4pa_line_color", label = "Choose T4 Pelvic Angle Line Color", "purple"),
+                                      colorPickr(inputId = "l1pa_line_color", label = "Choose L1 Pelvic Angle Line Color", "blue"),
+                                      colorPickr(inputId = "t1_c2_ha_line_color", label = "Choose T1-C2-Hip Angle Line Color", "orange"),
+                                      colorPickr(inputId = "t9_c2_ha_line_color", label = "Choose T9-C2-Hip Angle Line Color", "darkorange"),
+                                      h4(strong("Sagittal Cobb Angle Lines:")),
+                                      colorPickr(inputId = "tk_line_color", label = "Choose TK Line Color", "blue"),
+                                      br(),
+                                      switchInput("lines_posterior",
+                                                  "Show Lordosis Lines Posteriorly",
+                                                  labelWidth = "130px", value = TRUE),
+                                      colorPickr(inputId = "l1s1_line_color", label = "Choose L1-S1 Color", "#00B97A"),
+                                      sliderInput(
+                                        "l1l4_angle_line_length",
+                                        "L1-L4 Angle Display Length",
+                                        min = 0,
+                                        max = 30,
+                                        value = 10
+                                      ),
+                                      colorPickr(inputId = "l1l4_line_color", label = "Choose L1-L4 Line Color", "darkred"),
+                                      br(),
+                                      sliderInput(
+                                        "l4s1_angle_line_length",
+                                        "L4-S1 Angle Display Length",
+                                        min = 0,
+                                        max = 30,
+                                        value = 10
+                                      ),
+                                      colorPickr(inputId = "l4s1_line_color", label = "Choose L4-S1 Line Color", "#00754D"),
+                                      sliderInput(
+                                        "posterior_lordosis_line_lengths",
+                                        "Posterior Lordosis Line Lengths",
+                                        min = 0,
+                                        max = 70,
+                                        value = 30
                                       )
-                                  )
-                              )
-                          )
-                 ), 
-                 ###################################### SURGICAL PLANNING TAB #####################################
-                 ###################################### SURGICAL PLANNING TAB #####################################
-                 ###################################### SURGICAL PLANNING TAB #####################################
-                 ###################################### SURGICAL PLANNING TAB #####################################
-                 ###################################### SURGICAL PLANNING TAB #####################################
-                 ###################################### SURGICAL PLANNING TAB #####################################
-                 # pi_preop <- 43
-                 # pt_preop <- 37
-                 # lpa_preop <- 9
-                 # l1s1_preop <- 17
-                 # t4pa_preop <- 29
-                 # t4_t12_preop <- 37
-                 # cl_preop <- 5
-                 # rigid_levels <- c("l3_l4", "l4_l5")
-                 tabPanel("Preoperative Sagittal Alignment Planning", 
-                          sidebarLayout(
-                              sidebarPanel(
-                                  width = 3,
-                                  h3(strong("Patient Factors:")),
-                                  sliderInput(
-                                    "preop_age",
-                                    "Patient Age:",
-                                    min = 18,
-                                    max = 90,
-                                    value = 60
-                                  ),
-                                  radioGroupButtons(
-                                    inputId = "preop_sex",
-                                    label = "Sex:",
-                                    choices = c("Male", "Female"),
-                                    selected = "Female"
-                                  ),
-                                  hr(),
-                                  h3(strong("Pre-operative Alignment:")),
-                                  # sliderInput(
-                                  #     "preop_pelvic_incidence",
-                                  #     "Pelvic Incidence:",
-                                  #     min = 25,
-                                  #     max = 90,
-                                  #     value = 50
-                                  # ),
-                                  # sliderInput(
-                                  #     "preop_pt",
-                                  #     "Preop Pelvic Tilt:",
-                                  #     min = -15,
-                                  #     max = 60,
-                                  #     value = 22
-                                  # ),
-                                  # sliderInput(
-                                  #   "preop_l1pa",
-                                  #   "Preop L1 Pelvic Angle:",
-                                  #   min = -15,
-                                  #   max = 45,
-                                  #   value = 10
-                                  # ),
-                                  # sliderInput(
-                                  #   "preop_t9pa",
-                                  #   "Preop T9 Pelvic Angle:",
-                                  #   min = -10,
-                                  #   max = 40,
-                                  #   value = 9
-                                  # ),
-                                  # sliderInput(
-                                  #   "preop_t4pa",
-                                  #   "Preop T4 Pelvic Angle:",
-                                  #   min = -15,
-                                  #   max = 70,
-                                  #   value = 12
-                                  # ),
-                                  # sliderInput(
-                                  #   "preop_c2pa",
-                                  #   "Preop C2 Pelvic Angle:",
-                                  #   min = 0,
-                                  #   max = 80,
-                                  #   value = 18
-                                  # ),
-                                  numericInput(
-                                    inputId = "preop_pelvic_incidence", 
-                                    label = "Pelvic Incidence", 
-                                    value = 50,
-                                    min = 25, 
-                                    max = 110
-                                  ),
-                                  numericInput(
-                                    "preop_pt",
-                                    "Preop Pelvic Tilt:",
-                                    min = -15,
-                                    max = 60,
-                                    value = 22
-                                  ),
-                                  numericInput(
-                                    "preop_l1pa",
-                                    "Preop L1 Pelvic Angle:",
-                                    min = -15,
-                                    max = 45,
-                                    value = 10
-                                  ),
-                                  numericInput(
-                                    "preop_t9pa",
-                                    "Preop T9 Pelvic Angle:",
-                                    min = -10,
-                                    max = 40,
-                                    value = 9
-                                  ),
-                                  numericInput(
-                                    "preop_t4pa",
-                                    "Preop T4 Pelvic Angle:",
-                                    min = -15,
-                                    max = 70,
-                                    value = 12
-                                  ),
-                                  numericInput(
-                                    "preop_c2pa",
-                                    "Preop C2 Pelvic Angle:",
-                                    min = 0,
-                                    max = 80,
-                                    value = 18
-                                  ),
-                                  br(), 
-                                  awesomeCheckboxGroup(
-                                    inputId = "rigid_lumbar_levels",
-                                    label = "Select any Rigid Lumbar Levels", 
-                                    # choices = c("T10-T11", "T11-T12", "T12-L1", "L1-L2", "L2-L3", "L3-L4", "L4-L5", "L5-S1"),
-                                    choices = c("L5-S1", "L4-L5", "L3-L4", "L2-L3", "L1-L2", "T12-L1", "T11-T12", "T10-T11"), 
-                                    inline = TRUE,
-                                    status = "danger"
-                                  ),
-                                  hr(),
-                                  actionBttn(
-                                    inputId = "build_preop_spine",
-                                    label = "Simulate Preop Spine",
-                                    style = "unite", 
-                                    color = "success"
-                                  ),
-                                  h5("(May take up to 20 seconds)"),
-                              ),
-                              mainPanel(
-                                fluidRow(
-                                  column(width = 4, 
-                                         # h3("Preop Lumbar Alignment:"),
-                                         plotOutput(outputId = "preop_spine_alignment", height = 800),
-                                  ),
-                                  column(width = 8, 
-                                         actionBttn(
-                                           inputId = "compute_plan",
-                                           label = "Compute Plan",
-                                           style = "unite", 
-                                           color = "danger"
-                                         ),
-                                         h3("Prescribed Alignment:"),
-                                         plotOutput(outputId = "spine_plan", height = 800)
-                                  )
-                                ), 
-                                fluidRow(
-                                  plotOutput(outputId = "preop_risk_plot", height = 400)
-                                ), 
-                                fluidRow(
-                                  tableOutput(outputId = "measures_table")
-                                )
- 
-                                  
-                                  # h3("Possible Options"),
-                                  # tableOutput(outputId = "close_lumbar_segment_levels_df")
-                              )
-                          )
-                 )
+                                    )
+                             ),
+                             column(width = 7, 
+                                    h4("Plot Settings"))
+                           ),
+                           switchInput("cone_of_economy_show",
+                                       "Show Cone of Economy",
+                                       labelWidth = "130px", 
+                                       value = FALSE),
+                           switchInput("c2_tilt_line_show",
+                                       "Show C2 Tilt",
+                                       labelWidth = "130px"),
+                           h4("Pelvic Angles:"),
+                           switchInput("c2pa_line_show",
+                                       "Show C2 Pelvic Angle",
+                                       labelWidth = "130px"),
+                           switchInput("t1pa_line_show",
+                                       "Show T1PA",
+                                       labelWidth = "130px"),
+                           switchInput("t4pa_line_show",
+                                       "Show T4PA",
+                                       labelWidth = "130px"),
+                           switchInput("t9pa_line_show",
+                                       "Show T9PA",
+                                       labelWidth = "130px"),
+                           switchInput("l1pa_line_show",
+                                       "Show L1PA",
+                                       labelWidth = "130px"),
+                           switchInput("t1_c2_ha_line_show",
+                                       "Show T1-C2-HA",
+                                       labelWidth = "130px"),
+                           switchInput("t9_c2_ha_line_show",
+                                       "Show T9-C2-HA",
+                                       labelWidth = "130px"),
+                           h4("Sagittal Cobb Angles:"),
+                           switchInput("tk_line_show",
+                                       "Show TK",
+                                       labelWidth = "130px"),
+                           switchInput("l1s1_line_show",
+                                       "Show L1-S1 Angle",
+                                       labelWidth = "130px"),
+                           # switchInput("l1l4_line_show",
+                           #             "Show L1-L4 Angle",
+                           #             labelWidth = "130px"),
+                           switchInput("l4s1_line_show",
+                                       "Show L4-S1 Angle",
+                                       labelWidth = "130px"),
+                           h4("Pelvic Parameters:"),
+                           switchInput("pt_line_show",
+                                       "Show PT",
+                                       labelWidth = "130px"),
+                           switchInput("ss_line_show",
+                                       "Show SS",
+                                       labelWidth = "130px"),
+                           switchInput("pi_line_show",
+                                       "Show PI",
+                                       labelWidth = "130px")
+                       )
+                )
+              )
+      ),
+      tabItem(tabName = "prescribe_alignment",
+              column(width = 2,
+                     style = "primary",
+                       box(width = 12,
+                           h3(strong("Patient Factors:")),
+                           sliderInput(
+                             "preop_age",
+                             "Patient Age:",
+                             min = 18,
+                             max = 90,
+                             value = 60
+                           ),
+                           radioGroupButtons(
+                             inputId = "preop_sex",
+                             label = "Sex:",
+                             choices = c("Male", "Female"),
+                             selected = "Female"
+                           ),
+                           hr(),
+                           h3(strong("Pre-operative Alignment:")),
+                           # sliderInput(
+                           #     "preop_pelvic_incidence",
+                           #     "Pelvic Incidence:",
+                           #     min = 25,
+                           #     max = 90,
+                           #     value = 50
+                           # ),
+                           # sliderInput(
+                           #     "preop_pt",
+                           #     "Preop Pelvic Tilt:",
+                           #     min = -15,
+                           #     max = 60,
+                           #     value = 22
+                           # ),
+                           # sliderInput(
+                           #   "preop_l1pa",
+                           #   "Preop L1 Pelvic Angle:",
+                           #   min = -15,
+                           #   max = 45,
+                           #   value = 10
+                           # ),
+                           # sliderInput(
+                           #   "preop_t9pa",
+                           #   "Preop T9 Pelvic Angle:",
+                           #   min = -10,
+                           #   max = 40,
+                           #   value = 9
+                           # ),
+                           # sliderInput(
+                           #   "preop_t4pa",
+                           #   "Preop T4 Pelvic Angle:",
+                           #   min = -15,
+                           #   max = 70,
+                           #   value = 12
+                           # ),
+                           # sliderInput(
+                           #   "preop_c2pa",
+                           #   "Preop C2 Pelvic Angle:",
+                           #   min = 0,
+                           #   max = 80,
+                           #   value = 18
+                           # ),
+                           numericInput(
+                             inputId = "preop_pelvic_incidence", 
+                             label = "Pelvic Incidence", 
+                             value = 64,
+                             min = 25, 
+                             max = 110
+                           ),
+                           numericInput(
+                             "preop_pt",
+                             "Preop Pelvic Tilt:",
+                             min = -15,
+                             max = 60,
+                             value = 42
+                           ),
+                           numericInput(
+                             "preop_l1pa",
+                             "Preop L1 Pelvic Angle:",
+                             min = -15,
+                             max = 45,
+                             value = 25
+                           ),
+                           numericInput(
+                             "preop_l1s1",
+                             "Preop L1_S1:",
+                             min = -60,
+                             max = 120,
+                             value = 20
+                           ),
+                           numericInput(
+                             "preop_t9pa",
+                             "Preop T9 Pelvic Angle:",
+                             min = -10,
+                             max = 40,
+                             value = 30
+                           ),
+                           numericInput(
+                             "preop_t4pa",
+                             "Preop T4 Pelvic Angle:",
+                             min = -15,
+                             max = 70,
+                             value = 32
+                           ),
+                           numericInput(
+                             "preop_c2pa",
+                             "Preop C2 Pelvic Angle:",
+                             min = 0,
+                             max = 80,
+                             value = 36
+                           ),
+                           numericInput(
+                             "preop_t10_l2",
+                             "Preop T10-L2 Lordosis:",
+                             min = -75,
+                             max = 30,
+                             value = -10
+                           ),
+                           br(), 
+                           awesomeCheckboxGroup(
+                             inputId = "rigid_lumbar_levels",
+                             label = "Select any Rigid Lumbar Levels", 
+                             # choices = c("T10-T11", "T11-T12", "T12-L1", "L1-L2", "L2-L3", "L3-L4", "L4-L5", "L5-S1"),
+                             choices = c("L5-S1", "L4-L5", "L3-L4", "L2-L3", "L1-L2", "T12-L1", "T11-T12", "T10-T11"), 
+                             inline = TRUE,
+                             status = "danger"
+                           ),
+                           hr(),
+                           actionBttn(
+                             inputId = "build_preop_spine",
+                             label = "Simulate Preop Spine",
+                             style = "unite", 
+                             color = "success"
+                           ),
+                           h5("(May take up to 20 seconds)")
+                           )
+                     
+                     ), 
+              ########################### PREOP ALIGNMENT PLOT ############################
+              ########################### PREOP ALIGNMENT PLOT ############################
+              ########################### PREOP ALIGNMENT PLOT ############################
+              ########################### PREOP ALIGNMENT PLOT ############################
+              ########################### PREOP ALIGNMENT PLOT ############################
+              column(width = 4, 
+                     plotOutput(outputId = "preop_spine_alignment", height = 800)
+                     ), 
+              ########################### PRESCRIBED ALIGNMENT PLOT ############################
+              ########################### PRESCRIBED ALIGNMENT PLOT ############################
+              ########################### PRESCRIBED ALIGNMENT PLOT ############################
+              ########################### PRESCRIBED ALIGNMENT PLOT ############################
+              ########################### PRESCRIBED ALIGNMENT PLOT ############################
+              column(width = 6, 
+                     actionBttn(
+                       inputId = "compute_plan",
+                       label = "Compute Plan",
+                       style = "unite", 
+                       color = "danger"
+                     ),
+                     h3("Prescribed Alignment:"),
+                     plotOutput(outputId = "spine_plan", height = 800)
+              ),
+              fluidRow(
+                tableOutput(outputId = "measures_table")
+              ),
+              fluidRow(
+                plotOutput(outputId = "preop_risk_plot", height = 400)
+              )
+      )
+    )
+  )
 )
 
 
@@ -609,17 +664,88 @@ server <- function(input, output, session) {
     # numericInput(inputId = "predict_pt_postop_c2pa", label = "Postop C2PA"),
     # textOutput(outputId = "predicted_pt")
     ### predicting PT
-    ### this is just the function at the bottom right. 
     output$predicted_pt <- renderText({
-        predicting_pt_function <- function(postop_c2pa = 21.298135,
-                                           preop_c2pa = 28.33507,
-                                           preop_pt = 26.092608) {1.4817532+0.77386313*postop_c2pa-0.31861799*preop_c2pa+0.49868069*preop_pt }
+      
+      #### PREDICTION FUNCTIONS ###
         
-        predicted_pt <- predicting_pt_function(postop_c2pa = input$predict_pt_postop_c2pa, preop_c2pa = input$predict_pt_preop_c2pa, preop_pt = input$predict_pt_preop_pt)
         
-        paste("Predicted PT = ", round(predicted_pt, 1), sep = "")
+        #### PREDICTION FUNCTIONS END ###
+        
+        if(input$pt_prediction_model_uiv == "upper_t_uiv"){
+          predicting_pt_function <- function(postop_c2pa = 21.298135,
+                                             preop_c2pa = 28.33507,
+                                             preop_pt = 26.092608) {
+            1.4817532+0.77386313*postop_c2pa-0.31861799*preop_c2pa+0.49868069*preop_pt }
+          
+          predicted_pt <- predicting_pt_function(postop_c2pa = input$predict_pt_postop_c2pa, preop_c2pa = input$predict_pt_preop_c2pa, preop_pt = input$predict_pt_preop_pt)
+          
+        }else{
+          if(input$pt_prediction_model_choice == "c2pa_and_pt"){
+            predicting_pt_lower_t_uiv_by_c2pa_pt_function <- function(preop_pt = 24.168039,
+                                                                      preop_c2pa = 25.165139,
+                                                                      postop_c2pa = 18.427933
+            ) {
+              predicted_pt <- -0.16693402+0.60333401* preop_pt-0.0004011702*pmax(preop_pt-14.610783,0)^3+0.00073921326*pmax(preop_pt-24.168039,0)^3-0.00033804306*pmax(preop_pt-35.510044,0)^3-0.39091716* preop_c2pa+0.0002074262*pmax(preop_c2pa-13.487531,0)^3-0.00036754744*pmax(preop_c2pa-25.165139,0)^3+0.00016012124*pmax(preop_c2pa-40.292689,0)^3+0.79018266*postop_c2pa 
+              
+              round(predicted_pt, 1)
+            }
+            predicted_pt <- predicting_pt_lower_t_uiv_by_c2pa_pt_function(preop_pt = input$predict_pt_preop_pt, 
+                                                                               preop_c2pa = input$predict_pt_preop_c2pa, 
+                                                                               postop_c2pa = input$predict_pt_postop_c2pa
+            )
+          
+        }else if(input$pt_prediction_model_choice == "c2pa_and_pt_and_l1pa")
+          predicting_pt_lower_t_uiv_by_c2pa_pt_l1pa_function <- function(preop_pt = 24.168039,
+                                                                         preop_c2pa = 25.165139,
+                                                                         preop_l1pa = 12.159217,
+                                                                         postop_l1pa = 9.1099133,
+                                                                         postop_c2pa = 18.427933) {
+            predicted_pt <- 0.17891039 + 0.57925383* preop_pt-0.00036858808*pmax(preop_pt-14.610783,0)^3+0.00067917607*pmax(preop_pt-24.168039,0)^3-0.00031058799*pmax(preop_pt-35.510044,0)^3-0.29549706* preop_c2pa+0.00019181124*pmax(preop_c2pa-13.487531,0)^3-0.00033987862*pmax(preop_c2pa-25.165139,0)^3+0.00014806738*pmax(preop_c2pa-40.292689,0)^3-0.14545127*preop_l1pa+0.22297945*postop_l1pa+
+              0.66158104*postop_c2pa 
+            
+            round(predicted_pt, 1)
+          }
+        
+        predicted_pt <- predicting_pt_lower_t_uiv_by_c2pa_pt_l1pa_function(preop_pt = input$predict_pt_preop_pt, 
+                                                                           preop_c2pa = input$predict_pt_preop_c2pa, 
+                                                                           preop_l1pa = input$predict_pt_preop_l1pa, 
+                                                                           postop_l1pa = input$predict_pt_postop_l1pa,
+                                                                           postop_c2pa = input$predict_pt_postop_c2pa
+                                                                           )
+        
+          }
+        
+        paste("Predicted PT = ", round(predicted_pt), "º", sep = "")
         
     })
+    
+    ############ PRESCRIBING T10-L2 ALIGNMENT
+    output$prescribed_t10_l2 <- renderText({
+      
+      prescribe_t10_l2_function <- function(preop_t10_l2 = -6,
+               preop_l1pa = 12.159217,
+               postop_l1pa = 9.1099133,
+               preop_l1s1 = 36.3,
+               postop_l1s1 = 53.5) {
+        prescribed_t10_l2_lordosis <- -11.180538+0.4917326*preop_t10_l2-1.0704503*preop_l1pa+1.3448489*postop_l1pa-0.38980884*preop_l1s1+0.42280467*postop_l1s1 
+        prescribed_t10_l2_lordosis
+      }
+      
+      prescribed_t10_l2_value <- prescribe_t10_l2_function(preop_t10_l2 = input$prescribe_tl_preop_t10_l2,
+                                  preop_l1pa = input$prescribe_tl_preop_l1pa,
+                                postop_l1pa = input$prescribe_tl_postop_l1pa,
+                                preop_l1s1 = input$prescribe_tl_preop_l1s1, 
+                                postop_l1s1 = input$prescribe_tl_postop_l1s1)
+      
+      if(prescribed_t10_l2_value < 0){
+        paste("Prescribed T10-L2 Kyphosis = ", round(prescribed_t10_l2_value*-1), "º", sep = "")
+      }else{
+        paste("Prescribed T10-L2 Lordosis = ", round(prescribed_t10_l2_value), "º", sep = "")  
+      }
+      
+    })
+    
+    #########################
 
     
     ### DEFINE THE DATAFRAME WITH THE LUMBAR SEGMENT ANGLES
@@ -1070,28 +1196,13 @@ server <- function(input, output, session) {
         line_size <- 1
         # facing_left_or_right <- c(if_else(input$face_right == TRUE, -1, 1), 1)
     
-        
         if(input$c2pa_line_show == TRUE){
-            # lines_list$c2pa_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$c2pa_line_sf,
-            #                                    color = input$c2pa_line_color, 
-            #                                    fill = input$c2pa_line_color, 
-            #                                    size = line_size, 
-            #                                    lineend="round", 
-            #                                    linejoin="round")
-            
             lines_list$c2pa_line_sf <- jh_make_colored_line_geom_function(sf_geom_input = reactive_spine()$spine_build_list$lines_list$c2pa_line_extended_curve_sf, 
                                                color_input = input$c2pa_line_color, 
                                                line_size =  1.75)
         }
         
         if(input$c2_tilt_line_show == TRUE){
-            # lines_list$c2_tilt_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$c2_tilt_line_sf, 
-            #                                       color = input$c2_tilt_line_color, 
-            #                                       fill = input$c2_tilt_line_color, 
-            #                                       size = line_size,
-            #                                       lineend="round", 
-            #                                       linejoin="round",
-            #                                       linetype = "dashed")
           lines_list$c2_tilt_line_sf <- jh_make_colored_line_geom_function(sf_geom_input = reactive_spine()$spine_build_list$lines_list$c2_tilt_up_curve_sf, 
                                                                         color_input = input$c2_tilt_line_color, 
                                                                         line_size =  line_size,
@@ -1099,38 +1210,22 @@ server <- function(input, output, session) {
         }
         
         if(input$t1pa_line_show == TRUE){
-            # lines_list$t1pa_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t1pa_line_sf,
-            #                                   color = input$t1pa_line_color, 
-            #                                   fill = input$t1pa_line_color, 
-            #                                   size = line_size,lineend="round", linejoin="round")
           lines_list$t1pa_line_sf <- jh_make_colored_line_geom_function(sf_geom_input = reactive_spine()$spine_build_list$lines_list$t1pa_line_curve_sf, 
                                                                         color_input = input$t1pa_line_color, 
                                                                         line_size =  1.5)
         }
 
         if(input$t4pa_line_show == TRUE){
-            # lines_list$t4pa_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t4pa_line_sf, 
-            #                                    color = input$t4pa_line_color, 
-            #                                    fill = input$t4pa_line_color, 
-            #                                    size = line_size,lineend="round", linejoin="round")
             lines_list$t4pa_line_sf <- jh_make_colored_line_geom_function(sf_geom_input = reactive_spine()$spine_build_list$lines_list$t4pa_line_curve_sf, 
                                                                           color_input = input$t4pa_line_color, 
                                                                           line_size =  1.25)
         }
         if(input$t9pa_line_show == TRUE){
-          # lines_list$t9pa_line_sf <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$t9pa_line_sf, 
-          #                                    color = input$t9pa_line_color, 
-          #                                    fill = input$t9pa_line_color, 
-          #                                    size = line_size,lineend="round", linejoin="round")
           lines_list$t9pa_line_sf <- jh_make_colored_line_geom_function(sf_geom_input = reactive_spine()$spine_build_list$lines_list$t9pa_line_curve_sf, 
                                                                         color_input = input$t9pa_line_color, 
                                                                         line_size =  1)
         }
         if(input$l1pa_line_show == TRUE){
-            # lines_list$l1pa_line <- geom_sf(data = reactive_spine()$spine_build_list$spine_list$l1pa_line_sf, 
-            #                                 color = input$l1pa_line_color, 
-            #                                 fill = input$l1pa_line_color, 
-            #                                 size = line_size,lineend="round", linejoin="round")
             lines_list$l1pa_line <- jh_make_colored_line_geom_function(sf_geom_input = reactive_spine()$spine_build_list$lines_list$l1pa_line_curve_sf, 
                                                                           color_input = input$l1pa_line_color, 
                                                                           line_size =  0.75)
@@ -1147,6 +1242,7 @@ server <- function(input, output, session) {
                                            fill = input$tk_line_color, 
                                            size = line_size, lineend="round", linejoin="round")
         }
+        
         if(input$l1s1_line_show == TRUE){
             lines_list$l1_s1_line <- geom_sf(data = reactive_spine()$spine_build_list$lines_list$l1s1_line_sf_1, 
                                              color = input$l1s1_line_color, 
@@ -1160,14 +1256,14 @@ server <- function(input, output, session) {
 
         
         if(input$l4s1_line_show == TRUE){
-            lines_list$l1_s1_line <- geom_sf(data = reactive_spine()$spine_build_list$lines_list$l4s1_line_sf_1, 
+            lines_list$l4_s1_line <- geom_sf(data = reactive_spine()$spine_build_list$lines_list$l4s1_line_sf_1, 
                                              color = input$l1s1_line_color, 
                                              fill = input$l1s1_line_color, 
                                              size = line_size,
                                              lineend="round", 
                                              linejoin="round")
             
-            lines_list$l1_s1_line2 <- geom_sf(data = reactive_spine()$spine_build_list$lines_list$l4s1_line_sf_2, 
+            lines_list$l4_s1_line2 <- geom_sf(data = reactive_spine()$spine_build_list$lines_list$l4s1_line_sf_2, 
                                               color = input$l4s1_line_color, 
                                               fill = input$l4s1_line_color, 
                                               size = line_size,
@@ -1308,18 +1404,19 @@ server <- function(input, output, session) {
                 xlim(-40, 40) +
                 ylim(-6, 110) +
                 theme_void() +
-                labs(title = "The Cone of Economy") +
+                # labs(title = "The Cone of Economy") +
                 theme(
                     axis.text = element_blank(),
                     axis.title = element_blank(),
-                    plot.title = element_text(
-                        size = 16,
-                        hjust = 0.5,
-                        vjust = -0.5,
-                        face = "bold.italic"
-                    ),
-                    plot.background = element_rect(fill = "transparent", colour = NA),
-                    panel.background = element_rect(fill = "transparent", colour = NA)
+                    # plot.title = element_text(
+                    #     size = 16,
+                    #     hjust = 0.5,
+                    #     vjust = -0.5,
+                    #     face = "bold.italic"
+                    # ),
+                    plot.background = element_blank()
+                    # plot.background = element_rect(fill = "transparent", colour = NA),
+                    # panel.background = element_rect(fill = "transparent", colour = NA)
                 ) + 
                 scale_fill_identity() +
                 scale_alpha_identity()
@@ -1412,12 +1509,14 @@ server <- function(input, output, session) {
     
     # preop_spine_build_list_reactive <- reactive({
     preop_spine_build_list_reactive <- eventReactive(input$build_preop_spine, ignoreInit = TRUE, ignoreNULL = TRUE, {
+      
       build_full_spine_from_vertebral_pelvic_angles_function(pelv_inc_value = input$preop_pelvic_incidence, 
-                                                                                 pt_value = input$preop_pt, 
-                                                                                 l1pa_value_input = input$preop_l1pa, 
-                                                                                 t9pa_value_input = input$preop_t9pa, 
-                                                                                 t4pa_value_input = input$preop_t4pa, 
-                                                                                 c2pa_value_input = input$preop_c2pa)
+                                                             pt_value = input$preop_pt, 
+                                                             l1pa_value_input = input$preop_l1pa, 
+                                                             l1s1_value_input = input$preop_l1s1,
+                                                             t9pa_value_input = input$preop_t9pa, 
+                                                             t4pa_value_input = input$preop_t4pa, 
+                                                             c2pa_value_input = input$preop_c2pa)
     })
     
     
@@ -2019,12 +2118,23 @@ server <- function(input, output, session) {
     ############################ NEW NEW T11 UIV with risk ###############################
     ############################ NEW NEW T11 UIV with risk ###############################
     ############################ NEW NEW T11 UIV with risk ###############################
+    
+    # prescribe_t10_l2_function <- function(preop_t10_l2 = -6,
+    #                                       preop_l1pa = 12.159217,
+    #                                       postop_l1pa = 9.1099133,
+    #                                       preop_l1s1 = 36.3,
+    #                                       postop_l1s1 = 53.5) {
+    #   prescribed_t10_l2_lordosis <- -11.180538+0.4917326*preop_t10_l2-1.0704503*preop_l1pa+1.3448489*postop_l1pa-0.38980884*preop_l1s1+0.42280467*postop_l1s1 
+    #   prescribed_t10_l2_lordosis
+    # }
+    
     spine_plan_uiv_t11 <- eventReactive(input$compute_plan, {
       
       pso_list <- list()
       
       starting_segment_angles <- segment_angles_function_from_vertebral_pelvic_angles_function(pelvic_incidence_input = input$preop_pelvic_incidence,
                                                                                                l1pa_input = input$preop_l1pa, 
+                                                                                               l1s1_input = input$preop_l1s1,
                                                                                                t9pa_input = input$preop_t9pa, 
                                                                                                t4pa_input = input$preop_t4pa, 
                                                                                                c2pa_input = input$preop_c2pa)
@@ -2045,7 +2155,19 @@ server <- function(input, output, session) {
       
       segment_angles_plan <- starting_segment_angles
       
-      l1pa_target <- target_l1pa_function(pelvic_incidence = input$preop_pelvic_incidence)
+      # estimate_starting_t10_l2_function <- function(rad_pre_l1pa = 12.159217,
+      #                                               rad_pre_t9pa = 15.363093,
+      #                                               rad_pre_l1_s1 = 36.3) {
+      #   15.44324+4.9909856*rad_pre_l1pa-4.3207251*rad_pre_t9pa-0.63583372*rad_pre_l1_s1 
+      #   }
+      
+      # starting_t10_l2 <- (segment_angles_plan$t10_segment_angle + segment_angles_plan$t11_segment_angle + segment_angles_plan$t12_segment_angle + segment_angles_plan$l1_segment_angle)
+      
+      starting_t10_l2 <- input$preop_t10_l2
+      
+      # l1pa_target <- target_l1pa_function(pelvic_incidence = input$preop_pelvic_incidence)
+      
+      l1pa_target <- -16.45955+0.46672707*input$preop_pelvic_incidence 
       
       optimized_segment_angles_list <- compute_optimized_lumbar_segmental_lordosis_values(pelvic_incidence = input$preop_pelvic_incidence, 
                                                                                           l1_l2_start = starting_segment_angles$l1_segment_angle, 
@@ -2057,62 +2179,61 @@ server <- function(input, output, session) {
                                                                                           non_modifiable = input$rigid_lumbar_levels)
       
       
-      # if(optimized_segment_angles_list$needs_pso == "yes"){
-      #   ## choose L4 PSO
-      #   segment_angles_plan$l1_segment_angle <-  optimized_segment_angles_list$l1_l2
-      #   segment_angles_plan$l2_segment_angle <-  optimized_segment_angles_list$l2_l3
-      #   segment_angles_plan$l3_segment_angle <-  optimized_segment_angles_list$l3_l4
-      #   # segment_angles_plan$l4_segment_angle <-  optimized_segment_angles_list$l4_l5
-      #   segment_angles_plan$l5_segment_angle <-  optimized_segment_angles_list$l5_s1
-      #   
-      #   checking_vpas <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = input$preop_pelvic_incidence, 
-      #                                                                    pt_value = 10,
-      #                                                                    segment_angle_list = segment_angles_plan)
-      #   
-      #   segment_angles_plan$l4_segment_angle <- jh_pso_degree_calculator(pso_level = "L4", 
-      #                                                                    current_lpa = checking_vpas$l1pa_value, 
-      #                                                                    desired_lpa = l1pa_target)
-      #   
-      #   t4pa_target <-  checking_vpas$l1pa_value
-      #   
-      #   checking_vpas <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = input$preop_pelvic_incidence, 
-      #                                                                    pt_value = 10,
-      #                                                                    segment_angle_list = segment_angles_plan)
-      #   
-      #   
-      #   while(round(checking_vpas$l1pa_value, 0) != round(l1pa_target, 0)){
-      #     
-      #     if(checking_vpas$l1pa_value > l1pa_target){
-      #       pso_modifier <-  -0.5
-      #     }else{
-      #       pso_modifier <- 0.5
-      #     }
-      #     
-      #     segment_angles_plan$l4_segment_angle <- segment_angles_plan$l4_segment_angle + pso_modifier
-      #     
-      #     checking_vpas <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = input$preop_pelvic_incidence, 
-      #                                                                      pt_value = 10,
-      #                                                                      segment_angle_list = segment_angles_plan)
-      #   }
-      #   
-      #   
-      #   
-      #   pso_list$l4 <- "l4" 
-      #   
-      # }else{
+      
         segment_angles_plan$l1_segment_angle <-  optimized_segment_angles_list$l1_l2
         segment_angles_plan$l2_segment_angle <-  optimized_segment_angles_list$l2_l3
         segment_angles_plan$l3_segment_angle <-  optimized_segment_angles_list$l3_l4
         segment_angles_plan$l4_segment_angle <-  optimized_segment_angles_list$l4_l5
         segment_angles_plan$l5_segment_angle <-  optimized_segment_angles_list$l5_s1
         
+        postop_plan_l1s1 <- segment_angles_plan$l1_segment_angle + 
+          segment_angles_plan$l2_segment_angle + 
+          segment_angles_plan$l3_segment_angle + 
+          segment_angles_plan$l4_segment_angle + 
+          segment_angles_plan$l5_segment_angle
+        
         checking_vpas <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = input$preop_pelvic_incidence,
                                                                          pt_value = 10,
-                                                                         segment_angle_list =segment_angles_plan)
+                                                                         segment_angle_list = segment_angles_plan)
         
-        t4pa_lower_target <- checking_vpas$l1pa_value - 3
-        t4pa_upper_target <- checking_vpas$l1pa_value + 1
-        t4pa_target <- checking_vpas$l1pa_value - 1
+        prescribe_t10_l2_function <- function(preop_t10_l2 = -6,
+                                              preop_l1pa = 12.159217,
+                                              postop_l1pa = 9.1099133,
+                                              preop_l1s1 = 36.3,
+                                              postop_l1s1 = 53.5) {
+          prescribed_t10_l2_lordosis <- -11.180538+0.4917326*preop_t10_l2-1.0704503*preop_l1pa+1.3448489*postop_l1pa-0.38980884*preop_l1s1+0.42280467*postop_l1s1
+          prescribed_t10_l2_lordosis
+        }
+        
+        prescribed_t10_l2 <- prescribe_t10_l2_function(preop_t10_l2 = starting_t10_l2, 
+                                  preop_l1pa = input$preop_l1pa, 
+                                  postop_l1pa = checking_vpas$l1pa_value, 
+                                  preop_l1s1 = input$preop_l1s1, 
+                                  postop_l1s1 = postop_plan_l1s1)
+        
+        planned_t10_l2_sa <- (prescribed_t10_l2 - segment_angles_plan$l1_segment_angle)/3
+        
+        segment_angles_plan$t10_segment_angle <- planned_t10_l2_sa
+        segment_angles_plan$t11_segment_angle <- planned_t10_l2_sa
+        segment_angles_plan$t12_segment_angle <- planned_t10_l2_sa
+        
+        planned_t10_l2 <- (segment_angles_plan$t10_segment_angle + segment_angles_plan$t11_segment_angle + segment_angles_plan$t12_segment_angle + segment_angles_plan$l1_segment_angle)
+        
+        t4pa_target_function_by_l1pa_t10_l2_function <- function(postop_t10_l2 = -7.2,
+                                                                 postop_l1pa = 9.1099133) {
+          -0.60812742-0.30700625*postop_t10_l2+1.1220431*postop_l1pa
+        }
+        
+        
+        # t4pa_lower_target <- checking_vpas$l1pa_value - 3
+        # t4pa_upper_target <- checking_vpas$l1pa_value + 1
+        # t4pa_target <- checking_vpas$l1pa_value - 1
+        
+        t4pa_target <- t4pa_target_function_by_l1pa_t10_l2_function(postop_t10_l2 = planned_t10_l2, 
+                                                                    postop_l1pa = checking_vpas$l1pa_value)
+        
+        t4pa_lower_target <- t4pa_target - 2
+        t4pa_upper_target <- t4pa_target + 2
         
         current_t4_l1pa_mismatch <- checking_vpas$t4pa_value - checking_vpas$l1pa_value
         
@@ -2141,7 +2262,7 @@ server <- function(input, output, session) {
           
         } ## end of while loop
         
-      # }
+
       
       new_vpa_list <- checking_vpas
       
@@ -2310,7 +2431,8 @@ server <- function(input, output, session) {
       pso_list <- list()
       
       starting_segment_angles <- segment_angles_function_from_vertebral_pelvic_angles_function(pelvic_incidence_input = input$preop_pelvic_incidence,
-                                                                                               l1pa_input = input$preop_l1pa, 
+                                                                                               l1pa_input = input$preop_l1pa,
+                                                                                               l1s1_input = input$preop_l1s1,
                                                                                                t9pa_input = input$preop_t9pa, 
                                                                                                t4pa_input = input$preop_t4pa, 
                                                                                                c2pa_input = input$preop_c2pa)

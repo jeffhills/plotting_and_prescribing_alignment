@@ -811,6 +811,9 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
   #   
   # }
   
+  
+  
+  
   compute_optimized_lumbar_segmental_lordosis_values <- function(pelvic_incidence,
                                                                  l1_l2_start, 
                                                                  l2_l3_start, 
@@ -818,7 +821,8 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
                                                                  l4_l5_start, 
                                                                  l5_s1_start,
                                                                  desired_l1pa, 
-                                                                 non_modifiable = NULL) {
+                                                                 non_modifiable = NULL, 
+                                                                 pso_option_number = 1) {
     
     non_modifiable <- str_to_lower(str_replace_all(non_modifiable, "-", "_"))
     
@@ -916,7 +920,31 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
     
     pso_level <- "na"
     
-    if(needs_pso == "yes"){
+    if(needs_pso == "yes" & length(non_modifiable) > 4){
+      pso_options_df <- compute_pso_segment_angles_for_upper_t_uiv_function(pelvic_incidence = pi_input, 
+                                                                 l5_segment_angle = l5_s1_start, 
+                                                                 l4_segment_angle = l4_l5_start, 
+                                                                 l3_segment_angle = l3_l4_start,
+                                                                 l2_segment_angle = l2_l3_start, 
+                                                                 l1_segment_angle = l1_l2_start
+      )
+      
+      pso_level <- (pso_options_df %>%
+                      filter(row_number() == pso_option_number))$segment[[1]]
+      
+      pso_adjustment <- (pso_options_df %>%
+                           filter(row_number() == pso_option_number))$adjustment[[1]] 
+      
+      # new_segment_angles_list <- as.list(confirming_segment_angles_df$confirmed_value)
+      
+      new_segment_angles_list$l5_s1 <- if_else(pso_level == "L5", l5_s1_start + pso_adjustment, l5_s1_start)
+      new_segment_angles_list$l4_l5 <- if_else(pso_level == "L4", l4_l5_start + pso_adjustment, l4_l5_start)
+      new_segment_angles_list$l3_l4 <- if_else(pso_level == "L3", l3_l4_start + pso_adjustment, l3_l4_start)
+      new_segment_angles_list$l2_l3 <- if_else(pso_level == "L2", l2_l3_start + pso_adjustment, l2_l3_start)
+      new_segment_angles_list$l1_l2 <- if_else(pso_level == "L1", l1_l2_start + pso_adjustment, l1_l2_start)
+      
+  
+    }else if(needs_pso == "yes" & length(non_modifiable) < 4){
       lordosis_needed_list <- list()
       lordosis_needed_list$l1_l2 <- l4_l5_for_desired_l1pa_function(
         l1_pelvic_angle = desired_l1pa,
@@ -926,7 +954,7 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
         l3_l4 = start_values_list$l3_l4,
         l5_s1 = start_values_list$l5_s1
       )
-      
+
       lordosis_needed_list$l2_l3 <- l3_l4_for_desired_l1pa_function(
         l1_pelvic_angle = desired_l1pa,
         pelvic_incidence = pelvic_incidence,
@@ -935,7 +963,7 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
         l4_l5 = start_values_list$l4_l5,
         l5_s1 = start_values_list$l5_s1
       )
-      
+
       lordosis_needed_list$l3_l4 <- l3_l4_for_desired_l1pa_function(
         l1_pelvic_angle = desired_l1pa,
         pelvic_incidence = pelvic_incidence,
@@ -944,7 +972,7 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
         l4_l5 = start_values_list$l4_l5,
         l5_s1 = start_values_list$l5_s1
       )
-      
+
       lordosis_needed_list$l4_l5 <- l4_l5_for_desired_l1pa_function(
         l1_pelvic_angle = desired_l1pa,
         pelvic_incidence = pelvic_incidence,
@@ -953,8 +981,8 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
         l3_l4 = start_values_list$l3_l4,
         l5_s1 = start_values_list$l5_s1
       )
-      
-      
+
+
       lordosis_needed_list$l5_s1 <- l5_s1_for_desired_l1pa_function(
         l1_pelvic_angle = desired_l1pa,
         pelvic_incidence = pelvic_incidence,
@@ -963,7 +991,7 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
         l3_l4 = start_values_list$l3_l4,
         l4_l5 = start_values_list$l4_l5
       )
-      
+
       identifying_pso_level_df <- confirming_segment_angles_df  %>%
         left_join(tibble(level = names(start_values_list), starting_value = start_values_list) %>%
                     unnest(starting_value)) %>%
@@ -983,7 +1011,7 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
           TRUE ~ 0
         )) %>%
         filter(level %in% non_modifiable)
-      
+
       if(nrow(identifying_pso_level_df %>%
               filter(needed_value_normal_offset == 0))>0){
 
@@ -1002,46 +1030,46 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
           select(level, starting_value, total_lordosis_needed, pso_level)
       }
 
-      
+
       pso_level <- pso_level_df$pso_level
       pso_value <- pso_level_df$total_lordosis_needed
-      
-      
+
+
       # Set the starting values
-      start_values <- c(if_else(pso_level == "l1", 
-                                pso_value, 
+      start_values <- c(if_else(pso_level == "l1",
+                                pso_value,
                                 l1_l2_start),
-                        if_else(pso_level == "l2", 
-                                pso_value, 
+                        if_else(pso_level == "l2",
+                                pso_value,
                                 l2_l3_start),
-                        if_else(pso_level == "l3", 
-                                pso_value, 
+                        if_else(pso_level == "l3",
+                                pso_value,
                                 l3_l4_start),
-                        if_else(pso_level == "l4", 
-                                pso_value, 
+                        if_else(pso_level == "l4",
+                                pso_value,
                                 l4_l5_start),
-                        if_else(pso_level == "l5", 
-                                pso_value, 
+                        if_else(pso_level == "l5",
+                                pso_value,
                                 l5_s1_start))
-      
+
       non_modifiable <- non_modifiable[!(non_modifiable %in% pso_level_df$level)]
-      
+
       # Use the Nelder-Mead method to find the new values
       result <- optim(start_values, objective, method = "Nelder-Mead")
-      
+
       # Extract the optimized values
       new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
       new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
       new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
       new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
       new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
-      
+
       segmental_lordosis_range_list <- compute_segmental_lordosis_range_by_pi_function(pelvic_incidence = pelvic_incidence)
-      
-      new_sa_values_df <- tibble(level = c("l5_s1", "l4_l5", "l3_l4", "l2_l3", "l1_l2"), 
+
+      new_sa_values_df <- tibble(level = c("l5_s1", "l4_l5", "l3_l4", "l2_l3", "l1_l2"),
                                  value = c(new_l5_s1, new_l4_l5, new_l3_l4, new_l2_l3, new_l1_l2))
-      
-      
+
+
       confirming_segment_angles_df <- enframe(segmental_lordosis_range_list) %>%
         unnest(value) %>%
         mutate(min_max = if_else(str_detect(name, "min"), "min", "max")) %>%
@@ -1051,29 +1079,31 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
         left_join(new_sa_values_df) %>%
         mutate(confirmed_value = case_when(
           value < min ~ min,
-          value > max ~ max, 
+          value > max ~ max,
           TRUE ~ value
         )) %>%
         mutate(confirmed_value_limit = case_when(
           value < min ~ "out_of_range",
-          value > max ~ "out_of_range", 
+          value > max ~ "out_of_range",
           TRUE ~ "within_range"
         ))
-      
+
       new_segment_angles_list <- as.list(confirming_segment_angles_df$confirmed_value)
-      
+
       names(new_segment_angles_list) <- confirming_segment_angles_df$level
-      
-      new_l1pa <- estimate_l1pa_by_lumbar_segment_angles_function(l1_l2 = new_segment_angles_list$l1_l2, 
+
+      new_l1pa <- estimate_l1pa_by_lumbar_segment_angles_function(l1_l2 = new_segment_angles_list$l1_l2,
                                                                   l2_l3 = new_segment_angles_list$l2_l3,
-                                                                  l3_l4 = new_segment_angles_list$l3_l4, 
+                                                                  l3_l4 = new_segment_angles_list$l3_l4,
                                                                   l4_l5 = new_segment_angles_list$l4_l5,
-                                                                  l5_s1 = new_segment_angles_list$l5_s1, 
+                                                                  l5_s1 = new_segment_angles_list$l5_s1,
                                                                   pelvic_incidence = pelvic_incidence)
-      
-      results_list$l1_s1 <- new_segment_angles_list$l1_l2 + new_segment_angles_list$l2_l3 + new_segment_angles_list$l3_l4 + new_segment_angles_list$l4_l5 + new_segment_angles_list$l5_s1 
-      
+
+      results_list$l1_s1 <- new_segment_angles_list$l1_l2 + new_segment_angles_list$l2_l3 + new_segment_angles_list$l3_l4 + new_segment_angles_list$l4_l5 + new_segment_angles_list$l5_s1
+
     }
+    
+    
     
     results_list$l1_l2 <- new_segment_angles_list$l1_l2
     results_list$l2_l3 <- new_segment_angles_list$l2_l3

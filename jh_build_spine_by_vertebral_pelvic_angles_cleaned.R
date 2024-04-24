@@ -57,10 +57,8 @@ jh_plot_angle_curve_function <- function(line_st_geometry = NULL,
 }
 
 
-###########
 
-
-
+####################################################################################
 
 
 segment_angle_function_using_lpa_tpa <- function(l1_pelvic_angle_input = 10,
@@ -372,10 +370,16 @@ estimate_tk_by_pelvic_angles_function <-
        1.9875228 * rad_c2pa)*-1
   }
 
-estimate_cervical_lordosis_by_pelvic_angles_function <- function(rad_t4pa = 13.186254,
-                                                                 rad_c2pa = 20.321441) {
-  (-10.121229-2.8580181*rad_t4pa+2.8455292*rad_c2pa)*-1
-}
+# estimate_cervical_lordosis_by_pelvic_angles_function <- function(rad_t4pa = 13.186254,
+#                                                                  rad_c2pa = 20.321441) {
+#   (-10.121229-2.8580181*rad_t4pa+2.8455292*rad_c2pa)*1
+# }
+
+estimate_cervical_lordosis_by_pelvic_angles_function <- function(rad_t9pa = 18.201023,
+                                                                 rad_t4pa = 19.872244,
+                                                                 rad_c2pa = 25.037304) {
+  -7.8442273-0.78207256*rad_t9pa-0.77342221*rad_t4pa+1.7021151*rad_c2pa 
+  }
 
 ################## Now that you can estimate LL, TK and CL, compute ESTIMATED LUMBAR, THORACIC, and CERVICAL SEGMENT ANGLES #################
 
@@ -439,9 +443,15 @@ thoracic_segment_angles_function <- function(l1_s1_input = 39.5,l1_pelvic_angle_
               t1_segment_angle = t1_sa))
 }
 
-cervical_segment_angles_function <- function(rad_t4pa_input, rad_c2pa_input){
+cervical_segment_angles_function <- function(rad_t9pa_input,
+                                             rad_t4pa_input, 
+                                             rad_c2pa_input){
   
-  cervical_lordosis <- estimate_cervical_lordosis_by_pelvic_angles_function(rad_t4pa = rad_t4pa_input, rad_c2pa = rad_c2pa_input)
+  # cervical_lordosis <- estimate_cervical_lordosis_by_pelvic_angles_function(rad_t9pa = rad_t9pa_input,
+  #                                                                           rad_t4pa = rad_t4pa_input, 
+  #                                                                           rad_c2pa = rad_c2pa_input)
+  
+  cervical_lordosis <- -7.8442273-0.78207256*rad_t9pa_input-0.77342221*rad_t4pa_input+1.7021151*rad_c2pa_input 
   
   cervical_segment_angle <- cervical_lordosis/6
   
@@ -493,7 +503,8 @@ compute_estimated_segment_angle_list_from_pelvic_angles_function <- function(pel
                                                                    t4_pelvic_angle_input = t4_pelvic_angle_input)
   
   
-  cervical_segment_angles_list <- cervical_segment_angles_function(rad_t4pa_input =  t4_pelvic_angle_input,
+  cervical_segment_angles_list <- cervical_segment_angles_function(rad_t9pa_input = t9_pelvic_angle_input,
+                                                                   rad_t4pa_input =  t4_pelvic_angle_input,
                                                                    rad_c2pa_input = c2_pelvic_angle_input)
   
   segment_angle_list <-
@@ -1035,7 +1046,9 @@ segment_angles_function_from_vertebral_pelvic_angles_function <- function(pelvic
 build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_value = 50, 
                                                                    pt_value = 10,
                                                                    l1pa_value_input,
-                                                                   l1s1_value_input = 99,
+                                                                   l1s1_value_input = 199,
+                                                                   t10_l2_value_input = -44,
+                                                                   c2_c7_value_input = 29,
                                                                    t9pa_value_input,
                                                                    t4pa_value_input,
                                                                    c2pa_value_input,
@@ -1045,28 +1058,46 @@ build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_valu
                                                                    posterior_line_length = 30,
                                                                    fem_head_center_x = 0, 
                                                                    spine_faces = "right",
-                                                                   pso_levels = c("")
+                                                                   pso_levels = c(""), 
+                                                                   return_spine_plot = "no"
 ) {
   
-  # segment_angle_list <- segment_angles_function_from_vertebral_pelvic_angles_function(pelvic_incidence_input = pelv_inc_value, 
+  # segment_angle_list <- segment_angles_function_from_vertebral_pelvic_angles_function(pelvic_incidence_input = pelv_inc_value,
+  #                                                                                     l1s1_input = l1s1_value_input,
   #                                                                                     l1pa_input = l1pa_value_input,
-  #                                                                                     t9pa_input = t9pa_value_input, 
-  #                                                                                     t4pa_input = t4pa_value_input, 
+  #                                                                                     t9pa_input = t9pa_value_input,
+  #                                                                                     t4pa_input = t4pa_value_input,
   #                                                                                     c2pa_input = c2pa_value_input)
   
-  # segment_angle_list <- compute_estimated_segment_angle_list_from_pelvic_angles_function(pelvic_incidence_input = pelv_inc_value, 
-  #                                                                             l1_pelvic_angle_input = l1pa_value_input,
-  #                                                                             l1s1_input =  l1s1_value_input,
-  #                                                                             t9_pelvic_angle_input = t9pa_value_input, 
-  #                                                                             t4_pelvic_angle_input = t4pa_value_input, 
-  #                                                                             c2_pelvic_angle_input = c2pa_value_input)
+  # segment_angle_list <- compute_sa_list_from_sim_data_function(pelvic_incidence = pelv_inc_value,
+  #                                                              l1_s1 = l1s1_value_input,
+  #                                                              # t10_l2 = t10_l2_value_input, 
+  #                                                              c2_c7 = c2_c7_value_input,
+  #                                                              l1pa = l1pa_value_input, 
+  #                                                              t9pa = t9pa_value_input, 
+  #                                                              t4pa = t4pa_value_input, 
+  #                                                              c2pa = c2pa_value_input)
+  # 
   
-  segment_angle_list <- segment_angles_function_from_vertebral_pelvic_angles_function(pelvic_incidence_input = pelv_inc_value,
-                                                                                      l1s1_input = l1s1_value_input,
-                                                                                      l1pa_input = l1pa_value_input,
-                                                                                      t9pa_input = t9pa_value_input,
-                                                                                      t4pa_input = t4pa_value_input,
-                                                                                      c2pa_input = c2pa_value_input)
+  segment_angle_list <- compute_segment_angles_list_function(pelvic_incidence = pelv_inc_value,
+                                       l1_s1 = l1s1_value_input,
+                                       t10_l2 = t10_l2_value_input,
+                                       c2_c7 = c2_c7_value_input,
+                                       l1pa = l1pa_value_input,
+                                       t9pa = t9pa_value_input,
+                                       t4pa = t4pa_value_input,
+                                       c2pa = c2pa_value_input
+                                       )
+  
+  # segment_angle_list <-  compute_segment_angle_list_pi_vpa_function(pelvic_incidence = pelv_inc_value,
+  #                                            # l1_s1 = l1s1_value_input,
+  #                                            # t10_l2 = t10_l2_value_input, 
+  #                                            # c2_c7 = c2_c7_value_input,
+  #                                            l1pa = l1pa_value_input, 
+  #                                            t9pa = t9pa_value_input, 
+  #                                            t4pa = t4pa_value_input, 
+  #                                            c2pa = c2pa_value_input
+  #                                            )
   
   l1_s1 <- (segment_angle_list$l5_segment_angle + segment_angle_list$l4_segment_angle + segment_angle_list$l3_segment_angle + segment_angle_list$l2_segment_angle + segment_angle_list$l1_segment_angle)
   
@@ -1790,9 +1821,39 @@ build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_valu
                               ilium_list = ilium_list)
   
   
-  return(list(spine_list = spine_list, 
-              spine_df = spine_geoms_df, 
-              lines_list = lines_list,
-              vertebral_body_list = vertebral_body_list))
+  full_list <- list(spine_list = spine_list, 
+       spine_df = spine_geoms_df, 
+       lines_list = lines_list,
+       vertebral_body_list = vertebral_body_list)
+  
+  if(return_spine_plot == "yes"){
+    spine_plotting_geoms_df <- spine_geoms_df %>%
+      select(object, geom, geom_alpha)
+    
+    
+    full_list$spine_plot <- ggplot() +
+      geom_sf(data = spine_plotting_geoms_df, 
+              color = "black", 
+              fill = "grey90",
+              aes(geometry = geom, 
+                  alpha = geom_alpha
+              )) +
+      jh_make_colored_line_geom_function(sf_geom_input =lines_list$l1pa_line_curve_sf, 
+                                         color_input = "blue", 
+                                         line_size =  1) +
+      jh_make_colored_line_geom_function(sf_geom_input =lines_list$t9pa_line_curve_sf, 
+                                         color_input = "orange", 
+                                         line_size =  1) +
+      jh_make_colored_line_geom_function(sf_geom_input = lines_list$t4pa_line_curve_sf, 
+                                         color_input = "purple", 
+                                         line_size =  1) +
+      jh_make_colored_line_geom_function(sf_geom_input = lines_list$c2pa_line_curve_sf, 
+                                         color_input = "darkgreen", 
+                                         line_size =  1) +
+      theme_nothing()
+    
+  }
+  
+  return(full_list)
   
 }

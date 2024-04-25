@@ -921,7 +921,7 @@ estimate_t4pa_by_segment_angles_function <- function(pelvic_incidence = 51.75934
     pso_level <- "na"
     
     if(needs_pso == "yes" & length(non_modifiable) > 4){
-      pso_options_df <- compute_pso_segment_angles_for_upper_t_uiv_function(pelvic_incidence = pi_input, 
+      pso_options_df <- compute_pso_segment_angles_for_upper_t_uiv_function(pelvic_incidence = pelvic_incidence, 
                                                                  l5_segment_angle = l5_s1_start, 
                                                                  l4_segment_angle = l4_l5_start, 
                                                                  l3_segment_angle = l3_l4_start,

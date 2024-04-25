@@ -2080,7 +2080,7 @@ server <- function(input, output, session) {
         uiv_label <- "UIV: T2"
       }else{
         uiv_for_rod <- 11 ## for T4 UIV
-        uiv_label <- "UIV: T2"
+        uiv_label <- "UIV: T4"
       }
       
       instrumented_vertebral_body_list <- spine_prescribed_list$vertebral_body_list[uiv_for_rod:length(spine_prescribed_list$vertebral_body_list)]
@@ -2342,7 +2342,7 @@ server <- function(input, output, session) {
         uiv_label <- "UIV: T2"
       }else{
         uiv_for_rod <- 11 ## for T4 UIV
-        uiv_label <- "UIV: T2"
+        uiv_label <- "UIV: T4"
       }
       
       # uiv_for_rod <- 11 ## for T4 UIV

@@ -1059,7 +1059,9 @@ build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_valu
                                                                    fem_head_center_x = 0, 
                                                                    spine_faces = "right",
                                                                    pso_levels = c(""), 
-                                                                   return_spine_plot = "no"
+                                                                   return_spine_plot = "no", 
+                                                                   input_segment_angles = "no", 
+                                                                   segment_angles_input = c()
 ) {
   
   # segment_angle_list <- segment_angles_function_from_vertebral_pelvic_angles_function(pelvic_incidence_input = pelv_inc_value,
@@ -1078,27 +1080,21 @@ build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_valu
   #                                                              t4pa = t4pa_value_input, 
   #                                                              c2pa = c2pa_value_input)
   # 
-  
-  segment_angle_list <- compute_segment_angles_list_function(pelvic_incidence = pelv_inc_value,
-                                       l1_s1 = l1s1_value_input,
-                                       t10_l2 = t10_l2_value_input,
-                                       c2_c7 = c2_c7_value_input,
-                                       l1pa = l1pa_value_input,
-                                       t9pa = t9pa_value_input,
-                                       t4pa = t4pa_value_input,
-                                       c2pa = c2pa_value_input
-                                       )
-  
-  # segment_angle_list <-  compute_segment_angle_list_pi_vpa_function(pelvic_incidence = pelv_inc_value,
-  #                                            # l1_s1 = l1s1_value_input,
-  #                                            # t10_l2 = t10_l2_value_input, 
-  #                                            # c2_c7 = c2_c7_value_input,
-  #                                            l1pa = l1pa_value_input, 
-  #                                            t9pa = t9pa_value_input, 
-  #                                            t4pa = t4pa_value_input, 
-  #                                            c2pa = c2pa_value_input
-  #                                            )
-  
+  if(input_segment_angles == "no"){
+    segment_angle_list <- compute_segment_angles_list_function(pelvic_incidence = pelv_inc_value,
+                                                               l1_s1 = l1s1_value_input,
+                                                               t10_l2 = t10_l2_value_input,
+                                                               c2_c7 = c2_c7_value_input,
+                                                               l1pa = l1pa_value_input,
+                                                               t9pa = t9pa_value_input,
+                                                               t4pa = t4pa_value_input,
+                                                               c2pa = c2pa_value_input
+    )
+  }else{
+    segment_angle_list <- segment_angles_input
+  }
+
+
   l1_s1 <- (segment_angle_list$l5_segment_angle + segment_angle_list$l4_segment_angle + segment_angle_list$l3_segment_angle + segment_angle_list$l2_segment_angle + segment_angle_list$l1_segment_angle)
   
   t1_l1 <- (segment_angle_list$t12_segment_angle +

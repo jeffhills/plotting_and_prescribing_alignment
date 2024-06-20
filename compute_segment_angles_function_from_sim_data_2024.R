@@ -131,7 +131,12 @@ compute_pso_segment_angles_for_upper_t_uiv_function <- function(pelvic_incidence
         goal3_diff <- abs(new_l1_s1 - (pelvic_incidence * 1.4 - 1.7 * new_L1PA - 2))
         error <- goal2_diff + goal3_diff  # Combine error from less strict goals
         
-        adjustments_list[[length(adjustments_list) + 1]] <- list(Segment = segment_names[i], Adjustment = adjustment, new_L1PA = new_L1PA, new_T4PA = new_T4PA, new_l1_s1 = new_l1_s1, error = error) 
+        adjustments_list[[length(adjustments_list) + 1]] <- list(Segment = segment_names[i],
+                                                                 Adjustment = adjustment, 
+                                                                 new_L1PA = new_L1PA,
+                                                                 new_T4PA = new_T4PA,
+                                                                 new_l1_s1 = new_l1_s1,
+                                                                 error = error) 
         
         
         # Update the best adjustment if this score is better
@@ -157,3 +162,86 @@ compute_pso_segment_angles_for_upper_t_uiv_function <- function(pelvic_incidence
   
   return(results_tibble)
 }
+
+
+compute_pso_segment_angles_for_lower_t_uiv_function <- function(pelvic_incidence, 
+                                                                l5_segment_angle, 
+                                                                l4_segment_angle, 
+                                                                l3_segment_angle, 
+                                                                l2_segment_angle, 
+                                                                l1_segment_angle) {
+  # Define a vector of initial angles
+  segment_angles <- c(l5_segment_angle, l4_segment_angle, l3_segment_angle, l2_segment_angle, l1_segment_angle)
+  segment_names <- c("L5", "L4", "L3", "L2", "L1")
+  
+  starting_l1pa <- -0.95701027+0.5964649*pelvic_incidence-0.54476989*l5_segment_angle-0.42489229*l4_segment_angle-0.30168395*l3_segment_angle-0.17685974*l2_segment_angle-0.047199579*l1_segment_angle 
+  
+  # Function to compute L1PA
+  compute_L1PA <- function(pelvic_incidence, angles) {
+    -0.95701027 + 0.5964649 * pelvic_incidence - sum(c(0.54476989, 0.42489229, 0.30168395, 0.17685974, 0.047199579) * angles)
+  }
+  
+  # Function to compute T4PA
+  compute_T4PA <- function(l1pa_value, l1_s1, pelvic_incidence) {
+    6.8194357 + 0.51959288 * l1pa_value - 0.51659266 * l1_s1 + 0.48005429 * pelvic_incidence
+  }
+  
+  # Initialize best adjustment tracking
+  best_adjustment <- list(Score = Inf)
+  
+  adjustments_list <- list()
+  
+  # Test adjustments for each segment
+  for (i in 1:5) {
+    for (adjustment in seq(5, 35, by = 1)) {  # Fine-tuned adjustments
+      # Adjust the segment angle
+      temp_angles <- segment_angles
+      temp_angles[i] <- segment_angles[i] + adjustment
+      
+      # compute_optimized_lumbar_segmental_lordosis_values_no_pso_function()
+      
+      # Recompute L1PA and l1_s1
+      new_L1PA <- compute_L1PA(pelvic_incidence, temp_angles)
+      new_l1_s1 <- sum(temp_angles)
+      new_T4PA <- compute_T4PA(new_L1PA, new_l1_s1, pelvic_incidence)
+      
+      # Check against the mandatory goal
+      t4pa_l1pa_diff <- new_T4PA - new_L1PA
+      if (t4pa_l1pa_diff >= -5 && t4pa_l1pa_diff <= 7) {
+        # Check against the other goals with tolerance
+        goal2_diff <- abs(new_L1PA - (pelvic_incidence * 0.5 - 19))*1.5
+        goal3_diff <- abs(new_l1_s1 - (pelvic_incidence * 1.4 - 1.7 * new_L1PA - 2))
+        error <- goal2_diff + goal3_diff  # Combine error from less strict goals
+        
+        adjustments_list[[length(adjustments_list) + 1]] <- list(Segment = segment_names[i],
+                                                                 Adjustment = adjustment,
+                                                                 new_L1PA = new_L1PA,
+                                                                 new_T4PA = new_T4PA, 
+                                                                 new_l1_s1 = new_l1_s1, 
+                                                                 error = error) 
+        
+        
+        # Update the best adjustment if this score is better
+        # if (score < best_adjustment$Score) {
+        #   best_adjustment <- list(Segment = segment_names[i], Adjustment = adjustment, new_L1PA = new_L1PA, new_T4PA = new_T4PA, new_l1_s1 = new_l1_s1, Score = score)
+        # }
+      }
+    }
+  }
+  
+  # return(best_adjustment)
+  # Convert the list to a tibble, sort by score, and select the top two results
+  results_tibble <- bind_rows(adjustments_list) %>%
+    clean_names() %>%
+    arrange(error) %>%
+    mutate(initial_l1pa = starting_l1pa) %>%
+    mutate(l1pa_change = new_l1pa - initial_l1pa) %>%
+    select(segment, adjustment, initial_l1pa, new_l1pa, l1pa_change, everything()) %>%
+    group_by(segment) %>%
+    filter(row_number() == 1) %>%
+    ungroup()
+  # slice_head(n = 2)
+  
+  return(results_tibble)
+}
+

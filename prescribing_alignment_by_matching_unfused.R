@@ -1,3 +1,11 @@
+### predict recipricol changes
+predict_postop_c2_c7_function <- function(rad_pre_c2_c7 = 10.95, final_t4pa_goal = 10, starting_t4pa = 20) {
+  rad_6w_t4pa_change <- final_t4pa_goal - starting_t4pa
+  
+  round(5.33485+0.7683201*rad_pre_c2_c7+0.27750464*rad_6w_t4pa_change, 2)
+  
+  }
+
 ### required functions for estimating vpas and segment angles:
 compute_c2_t1_function <- function(segment_angles_list){
   sum(segment_angles_list$c2_segment_angle, 
@@ -606,14 +614,14 @@ build_t11_spine_plot_function <- function(pso_option_number = 1,
     prescribed_segment_angles$l1_segment_angle <- t10_l2_prescribed_list$new_segment_angles$l1_segment_angle
     prescribed_segment_angles$t12_segment_angle <- t10_l2_prescribed_list$new_segment_angles$t12_segment_angle
     prescribed_segment_angles$t11_segment_angle <- t10_l2_prescribed_list$new_segment_angles$t11_segment_angle
-    prescribed_segment_angles$t10_segment_angle <- t10_l2_prescribed_list$new_segment_angles$t10_segment_angle
+    # prescribed_segment_angles$t10_segment_angle <- t10_l2_prescribed_list$new_segment_angles$t10_segment_angle
     
   }else{
     
     prescribed_segment_angles$l1_segment_angle <- t10_l2_prescribed_list$new_segment_angles$l1_segment_angle
     prescribed_segment_angles$t12_segment_angle <- t10_l2_prescribed_list$new_segment_angles$t12_segment_angle
     prescribed_segment_angles$t11_segment_angle <- t10_l2_prescribed_list$new_segment_angles$t11_segment_angle
-    prescribed_segment_angles$t10_segment_angle <- t10_l2_prescribed_list$new_segment_angles$t10_segment_angle
+    # prescribed_segment_angles$t10_segment_angle <- t10_l2_prescribed_list$new_segment_angles$t10_segment_angle
     
   }
   
@@ -624,10 +632,29 @@ build_t11_spine_plot_function <- function(pso_option_number = 1,
   ############################################################ MATCHING ALIGNMENT ENDS #############################################
   ############################################################ MATCHING ALIGNMENT ENDS #############################################
   ############################################################ MATCHING ALIGNMENT ENDS #############################################
+  checking_vpa_list <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = starting_pi, 
+                                                                  pt_value = 10,
+                                                                  segment_angle_list = prescribed_segment_angles)
+  
+  current_c2_t1 <- sum(unlist(prescribed_segment_angles[18:23]))
+  
+  predicted_c2_c7_lordosis <- predict_postop_c2_c7_function(rad_pre_c2_c7 = current_c2_t1,
+                                                            final_t4pa_goal = checking_vpa_list$t4pa_value,
+                                                            starting_t4pa = preop_t4pa)
+  
+  prescribed_segment_angles$c2_segment_angle <- predicted_c2_c7_lordosis/6
+  prescribed_segment_angles$c3_segment_angle <- predicted_c2_c7_lordosis/6
+  prescribed_segment_angles$c4_segment_angle <- predicted_c2_c7_lordosis/6
+  prescribed_segment_angles$c5_segment_angle <- predicted_c2_c7_lordosis/6
+  prescribed_segment_angles$c6_segment_angle <- predicted_c2_c7_lordosis/6
+  prescribed_segment_angles$c7_segment_angle <- predicted_c2_c7_lordosis/6
+  
   
   new_vpa_list <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = starting_pi, 
                                                                   pt_value = 10,
                                                                   segment_angle_list = prescribed_segment_angles)
+  
+  
   predicted_pt <- predict_postop_pt_function(preop_pt = preop_pt, 
                                              preop_c2_tilt = (preop_c2pa - preop_pt), 
                                              postop_c2pa = (new_vpa_list$c2pa_value))
@@ -757,7 +784,7 @@ build_t11_spine_plot_function <- function(pso_option_number = 1,
     draw_text(text = pso_label, x = -26, y = 12, size = 16, fontface = "bold", color = "blue") +
     draw_text(text = paste("PJK Risk = ", pjk_risk), x = 0, y = -5, size = 16, color = pjk_risk_color, fontface = "bold") +
     lines_list +
-    xlim(-32, 32) +
+    xlim(-35, 32) +
     # ylim(-6, 110) +
     theme_void() +
     # labs(title = "T11 UIV") +
@@ -947,6 +974,7 @@ adjusting_tl_segment_angles_function <- function(segment_angles_list_input,
     
     if (!("l1_segment" %in% rigid_levels)) {
       current_segment_angles_list$l1_segment_angle <- specific_tl_segments_list$prescribed_l1_l2[1] + l1_flexible_modifier
+      
     } else if (between(current_segment_angles_list$l1_segment_angle, specific_tl_segments_list$prescribed_l1_l2 - 3, specific_tl_segments_list$prescribed_l1_l2 + 3)) {
       NA
     } else {
@@ -1154,7 +1182,13 @@ build_upper_t_uiv_spine_plot_function <- function(pso_option_number = 1,
     pso_options_df <- pso_options_list$pso_options_summary_df 
     
     ############ pso option ############
+    if(nrow(pso_options_df)>1){
+      pso_option_number <- pso_option_number
+    }else{
+      pso_option_number <- 1
+    }
     pso_level <- str_to_upper(pso_options_df$pso_level[[pso_option_number]])
+    
     
     pso_list$lumbar_pso <- pso_level
     
@@ -1201,15 +1235,24 @@ build_upper_t_uiv_spine_plot_function <- function(pso_option_number = 1,
                                                        c2_t1 = current_c2_t1, 
                                                        t1_t4 = current_t1_t4)
   
+  predicted_c2_c7_lordosis <- predict_postop_c2_c7_function(rad_pre_c2_c7 = current_c2_t1,
+                                final_t4pa_goal = target_t4pa,
+                                starting_t4pa = preop_t4pa)
+  
+  prescribed_segment_angles$c2_segment_angle <- predicted_c2_c7_lordosis/6
+  prescribed_segment_angles$c3_segment_angle <- predicted_c2_c7_lordosis/6
+  prescribed_segment_angles$c4_segment_angle <- predicted_c2_c7_lordosis/6
+  prescribed_segment_angles$c5_segment_angle <- predicted_c2_c7_lordosis/6
+  prescribed_segment_angles$c6_segment_angle <- predicted_c2_c7_lordosis/6
+  prescribed_segment_angles$c7_segment_angle <- predicted_c2_c7_lordosis/6
+  
   alignment_targets_list$"T4PA" <- paste0(round(target_t4pa -2, 0), "º to ", round(target_t4pa +2, 0), "º")
   
   t4pa_positive_offset <- checking_vpas$t4pa_value - target_t4pa
   
-  # if(abs(t4pa_positive_offset)>1.5){
     tl_segment_angles_modified_output_list <-  adjusting_tl_segment_angles_function(segment_angles_list_input = prescribed_segment_angles, 
                                                             pelvic_incidence_input = starting_pi,
                                                             rigid_levels_input = rigid_levels)
-  # }
   
   ######## IDENTIFYING PSO LEVEL #######
   if(tl_segment_angles_modified_output_list$needs_pso){
@@ -1239,8 +1282,8 @@ build_upper_t_uiv_spine_plot_function <- function(pso_option_number = 1,
     
     add_lordosis_modifier <- 0
     
-    # while (tl_segment_angles_modified_output_list$needs_pso == TRUE) {
-    while (abs(tl_segment_angles_modified_output_list$t4pa_positive_offset) >2) {
+    while (tl_segment_angles_modified_output_list$needs_pso == TRUE) {
+    # while (abs(tl_segment_angles_modified_output_list$t4pa_positive_offset) >2) {
       if(tl_segment_angles_modified_output_list$t4pa_positive_offset > 0){
         add_lordosis_modifier <- add_lordosis_modifier + 1
       }else{
@@ -1263,13 +1306,15 @@ build_upper_t_uiv_spine_plot_function <- function(pso_option_number = 1,
       
     }
     
-    # prescribed_segment_angles <- tl_segment_angles_modified_output_list$segment_angles_list
+    prescribed_segment_angles <- tl_segment_angles_modified_output_list$segment_angles_list
     
     if(nrow(pso_options_df) >0){
       pso_list$tl_pso <- tl_pso_level
     }
-  }
+  }else{
     prescribed_segment_angles <- tl_segment_angles_modified_output_list$segment_angles_list
+  }
+    
   
   ############################################################ MATCHING ALIGNMENT ENDS #############################################
   ############################################################ MATCHING ALIGNMENT ENDS #############################################
@@ -1422,7 +1467,7 @@ build_upper_t_uiv_spine_plot_function <- function(pso_option_number = 1,
     draw_text(text = pso_label, x = -26, y = 12, size = 16, fontface = "bold", color = "blue") +
     draw_text(text = paste("PJK Risk = ", pjk_risk), x = 0, y = -5, size = 16, color = pjk_risk_color, fontface = "bold") +
     lines_list +
-    xlim(-32, 32) +
+    xlim(-35, 32) +
     # ylim(-6, 110) +
     theme_void() +
     # labs(title = "T11 UIV") +

@@ -674,11 +674,11 @@ ui <- dashboardPage(
                      ),
                      h3("Prescribed Alignment:"),
                      fluidRow(
-                       plotOutput(outputId = "spine_plan_lower_t", height = 500),
+                       plotOutput(outputId = "spine_plan_lower_t", height = 650),
                      ),
                      hr(),
                      fluidRow(
-                       plotOutput(outputId = "spine_plan_upper_t", height = 500),
+                       plotOutput(outputId = "spine_plan_upper_t", height = 650),
                      )
               ),
               fluidRow(
@@ -1732,9 +1732,11 @@ server <- function(input, output, session) {
     
     output$spine_plan_lower_t <- renderPlot({
       
-      plot_grid(NULL, NULL,
-                spine_plan_uiv_t11_option_1(), spine_plan_uiv_t11_option_2(), 
-                nrow = 2, rel_heights = c(0.075, 0.925)) + 
+      plot_grid(NULL, NULL, NULL,
+                spine_plan_uiv_t11_option_1(), NULL, spine_plan_uiv_t11_option_2(), 
+                nrow = 2, rel_heights = c(0.075, 0.925), 
+                rel_widths = c(1, -0.15, 1)
+                ) + 
         draw_text(text = "Lower Thoracic UIV", x = 0.5, y = 0.975, size = 18, fontfact = "bold")
       
       # plot_grid(spine_plan_uiv_t11_option_1(), spine_plan_uiv_t11_option_2(), nrow = 1)
@@ -2717,9 +2719,10 @@ server <- function(input, output, session) {
     
  output$spine_plan_upper_t <- renderPlot({
    
-   plot_grid(NULL, NULL,
-             spine_plan_uiv_t4(), spine_plan_uiv_t4_option_2(), 
-             nrow = 2, rel_heights = c(0.075, 0.925)) + 
+   plot_grid(NULL, NULL, NULL,
+             spine_plan_uiv_t4(), NULL, spine_plan_uiv_t4_option_2(), 
+             nrow = 2, rel_heights = c(0.075, 0.925),
+             rel_widths = c(1, -0.15, 1)) + 
      draw_text(text = "Upper Thoracic UIV", x = 0.5, y = 0.975, size = 18, fontfact = "bold")
    
  })

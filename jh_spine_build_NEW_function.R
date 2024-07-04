@@ -66,7 +66,8 @@ jh_compute_pelvic_angles_and_pt_function <- function(pelvic_incidence_start = 50
 vertebral_body_build_function_new <- function(vertebral_slope, 
                                           inferior_vert_list, 
                                           endplate_width = 5, 
-                                          endplate_height = 4, 
+                                          endplate_height = 4,
+                                          posterior_body_height = 99,
                                           wedge_body = TRUE, 
                                           build_lines = FALSE,
                                           line_down_length = 15,
@@ -80,76 +81,165 @@ vertebral_body_build_function_new <- function(vertebral_slope,
                                           pso = FALSE){
   
   spine_orientation <- if_else(spine_facing == "left", 1, -1)
+
+  disc_height <- 0.5
+  # endplate_width <- 5
+  # endplate_height <- 4
+  posterior_vertebral_body_height <- endplate_height 
+  anterior_body_height <- 4
+  # pso <- "yes"
+  # pso <- "no"
   
-  #inf list requires sl, sa, sp
+  ######### INFERIOR POSTERIOR CORNER ########### Start here, go up the height of the disc and make the point. 
+  vert_ip_x <- inferior_vert_list$sp[[1]] - spine_orientation * (disc_height * sin(vertebral_slope)) ### establishes the inferior posterior corner X 
+  vert_ip_y <- inferior_vert_list$sp[[2]] + (disc_height * cos(vertebral_slope)) ### establishes the inferior posterior corner y
+  vert_ip <- c(vert_ip_x, vert_ip_y)
   
   if(pso == TRUE){
-    box_slope <- inferior_vert_list$sl
+    posterior_vertebral_body_height_pso <- posterior_vertebral_body_height*0.5
+    ######### SUPERIOR POSTERIOR CORNER ###########
+    vert_sp_x <- vert_ip_x - spine_orientation * (posterior_vertebral_body_height_pso * sin(vertebral_slope)) ### establishes the superior posterior corner X 
+    vert_sp_y <- vert_ip_y + (posterior_vertebral_body_height_pso * cos(vertebral_slope)) ### establishes the inferior posterior corner y
+    vert_sp <- c(vert_sp_x, vert_sp_y)
     
-    body_a <- endplate_width * cos(box_slope) ## endplate width as a straight line on x
-    body_b <- endplate_height * sin(box_slope) ## height as a straight line on y
-    body_c <- endplate_height * cos(box_slope) ## this number correlates to the height
-    body_d <- endplate_width * sin(box_slope) ## this number correlates to the width of the endplate
+    ######### SUPERIOR ANTERIOR CORNER ###########
+    vert_sa_x <- vert_sp_x - spine_orientation * (endplate_width * cos(vertebral_slope)) ### establishes the superior posterior corner X 
+    vert_sa_y <- vert_sp_y - (endplate_width * sin(vertebral_slope)) ### establishes the inferior posterior corner y
+    vert_sa <- c(vert_sa_x, vert_sa_y)
     
-    vert_ip <- c(inferior_vert_list$sp[[1]] - spine_orientation*0.5 * sin(inferior_vert_list$sl), inferior_vert_list$sp[[2]] + 0.5 * cos(inferior_vert_list$sl))
+    ######### INFERIOR ANTERIOR CORNER ###########
+    vert_ia_x <- inferior_vert_list$sa[[1]] - spine_orientation * (disc_height * sin(vertebral_slope)) ### establishes the inferior posterior corner X
+    vert_ia_y <- inferior_vert_list$sa[[2]] + (disc_height * cos(vertebral_slope)) ### establishes the inferior posterior corner y
+    vert_ia <- c(vert_ia_x, vert_ia_y)
     
-    vert_ia <- c(inferior_vert_list$sa[[1]] - spine_orientation*0.5 * sin(inferior_vert_list$sl), inferior_vert_list$sa[[2]] + 0.5 * cos(inferior_vert_list$sl))
-    vert_ia_w <- vert_ia
-    vert_sa <- c(vert_ia[[1]]  - spine_orientation*body_b, vert_ia[[2]] + body_c)
+    # vert_ia_x <- vert_sa_x + spine_orientation * (posterior_vertebral_body_height * sin(vertebral_slope)) ### establishes the inferior posterior corner X 
+    # vert_ia_y <- vert_sa_y - (posterior_vertebral_body_height * cos(vertebral_slope)) ### establishes the inferior posterior corner y
+    # vert_ia <- c(vert_ia_x, vert_ia_y)
     
-    vert_sp <-  c(vert_sa[[1]] + spine_orientation*body_a, vert_sa[[2]] + body_d) 
     
-    pso_cut_too_long_length <- vert_sa[[1]]  - vert_ip[[1]]
-    pso_cut_height <- tan(vertebral_slope)*pso_cut_too_long_length
-    post_box_line <- st_linestring(rbind(vert_sp, vert_ip))
-    post_pso_line <- st_linestring(rbind(vert_sa, c(vert_sa[[1]] - pso_cut_too_long_length, vert_sa[[2]] + pso_cut_height)))
+  }else{
+    ######### SUPERIOR POSTERIOR CORNER ###########
+    vert_sp_x <- vert_ip_x - spine_orientation * (posterior_vertebral_body_height * sin(vertebral_slope)) ### establishes the superior posterior corner X 
+    vert_sp_y <- vert_ip_y + (posterior_vertebral_body_height * cos(vertebral_slope)) ### establishes the inferior posterior corner y
+    vert_sp <- c(vert_sp_x, vert_sp_y)
     
-    vert_sp <- st_intersection(x = post_box_line, y = post_pso_line)
-    if(st_is_empty(vert_sp)){
-      vert_sp <- vert_ip
-    }
+    ######### SUPERIOR ANTERIOR CORNER ###########
+    vert_sa_x <- vert_sp_x - spine_orientation * (endplate_width * cos(vertebral_slope)) ### establishes the superior posterior corner X 
+    vert_sa_y <- vert_sp_y - (endplate_width * sin(vertebral_slope)) ### establishes the inferior posterior corner y
+    vert_sa <- c(vert_sa_x, vert_sa_y)
     
-    # vert_ia_w <- c(inferior_vert_list$sa[[1]] - spine_orientation*0.5 * sin(vertebral_slope), inferior_vert_list$sa[[2]] + 0.5 * cos(vertebral_slope))
-    vert_body <- rbind(vert_ip, vert_ia, vert_sa, vert_sp, vert_ip) ## binds the corners to make a square
-    
+    ######### INFERIOR ANTERIOR CORNER ###########
+    vert_ia_x <- vert_ip_x - spine_orientation * (endplate_width * cos(vertebral_slope)) ### establishes the inferior posterior corner X 
+    vert_ia_y <- vert_ip_y - (endplate_width * sin(vertebral_slope)) ### establishes the inferior posterior corner y
+    vert_ia <- c(vert_ia_x, vert_ia_y)
+  }
+  
+  if(vert_ia_y < inferior_vert_list$sa[[2]]){
+    vert_ia_x <- inferior_vert_list$sa[[1]] - spine_orientation * (disc_height * sin(vertebral_slope)) ### establishes the inferior posterior corner X 
+    vert_ia_y <- inferior_vert_list$sa[[2]] + (disc_height * cos(vertebral_slope)) ### establishes the inferior posterior corner y
+    vert_ia <- c(vert_ia_x, vert_ia_y)
+  }
+  
+  if(pso == TRUE){
     screw_sf <- NULL
   }else{
-    ### picture a normal square with a rotated square inside it
-    body_a <- endplate_width * cos(vertebral_slope) ## endplate width as a straight line on x
-    body_b <- endplate_height * sin(vertebral_slope) ## height as a straight line on y
-    body_c <- endplate_height * cos(vertebral_slope) ## this number correlates to the height
-    body_d <- endplate_width * sin(vertebral_slope) ## this number correlates to the width of the endplate
-    
-    ### start at the IP - making a 0.5 rectangle on top of the inferior body (essentially the disk)
-    vert_ip <- c(inferior_vert_list$sp[[1]] - spine_orientation*0.5 * sin(inferior_vert_list$sl), inferior_vert_list$sp[[2]] + 0.5 * cos(inferior_vert_list$sl)) ## ip for inferior posterior corner
-    
-    ### then go to the IA - starting at the IP, go along the X axis the length of 'body_a', then down or up the length of body_d
-    vert_ia <- c(vert_ip[[1]] - spine_orientation*body_a, vert_ip[[2]] - body_d) ## ia for inferior anterior corner
-    ### then go to the SA - starting at the IA, go along the x axis the length of body_b, then up the height of body_c
-    vert_sa <- c(vert_ia[[1]] - spine_orientation*body_b, vert_ia[[2]] + body_c) ## sa for superior anterior corner
-    ## then to SP - starting at SA, go along x axis the length of body_a, then up or down the length of body_d
-    vert_sp <- c(vert_sa[[1]] + spine_orientation*body_a, vert_sa[[2]] + body_d) ## sp for superior posterior corner, closing the vert
-    vert_ia_w <- c(inferior_vert_list$sa[[1]] - spine_orientation*0.5 * sin(vertebral_slope), inferior_vert_list$sa[[2]] + 0.5 * cos(vertebral_slope))
-
-    if(wedge_body == TRUE){
-      vert_body <- rbind(vert_ip, vert_ia_w, vert_sa, vert_sp, vert_ip) ## binds the corners to make a square
-    }else{
-      vert_body <- rbind(vert_ip, vert_ia, vert_sa, vert_sp, vert_ip) ## binds the corners to make a square
-    }
     anterior_screw_point_y <- ((vert_sa + vert_ia)/2)[2]
     anterior_screw_point_x <- vert_sp[1] - (vert_sp[1] - vert_sa[1])*0.9
     
     screw_sf <- st_buffer(x = st_linestring(rbind((vert_sp + vert_ip)/2,
-                                                  c(anterior_screw_point_x, anterior_screw_point_y))), 
+                                                  c(anterior_screw_point_x, anterior_screw_point_y))),
                           dist = 0.5, nQuadSegs = 1, mitreLimit = 3)
+    
   }
   
+  #inf list requires sl, sa, sp
+  
+  # if(pso == TRUE){
+  #   box_slope <- inferior_vert_list$sl  ## this is the slope of the superior endplate of the vertebra below
+  #   
+  #   body_a <- endplate_width * cos(box_slope) ## endplate width as a straight line on x
+  #   body_b <- endplate_height * sin(box_slope) ## height as a straight line on y
+  #   body_c <- endplate_height * cos(box_slope) ## this number correlates to the height
+  #   body_d <- endplate_width * sin(box_slope) ## this number correlates to the width of the endplate
+  #   
+  #   vert_ip <- c(inferior_vert_list$sp[[1]] - spine_orientation*0.5 * sin(inferior_vert_list$sl), inferior_vert_list$sp[[2]] + 0.5 * cos(inferior_vert_list$sl))
+  #   
+  #   vert_ia <- c(inferior_vert_list$sa[[1]] - spine_orientation*0.5 * sin(inferior_vert_list$sl), inferior_vert_list$sa[[2]] + 0.5 * cos(inferior_vert_list$sl))
+  #   # vert_ia_w <- vert_ia
+  #   vert_ia_w <- c(inferior_vert_list$sa[[1]] - spine_orientation*0.5 * sin(vertebral_slope), inferior_vert_list$sa[[2]] + 0.5 * cos(vertebral_slope))
+  #   
+  #   vert_sa <- c(vert_ia[[1]]  - spine_orientation*body_b, vert_ia[[2]] + body_c)
+  #   vert_sp <-  c(vert_sa[[1]] + spine_orientation*body_a, vert_sa[[2]] + body_d)
+  #   
+  #   pso_cut_too_long_length <- vert_sa[[1]]  - vert_ip[[1]]
+  #   pso_cut_height <- tan(vertebral_slope)*pso_cut_too_long_length
+  #   post_box_line <- st_linestring(rbind(vert_sp, vert_ip))
+  #   post_pso_line <- st_linestring(rbind(vert_sa, c(vert_sa[[1]] - pso_cut_too_long_length, vert_sa[[2]] + pso_cut_height)))
+  #   
+  #   vert_sp <- st_intersection(x = post_box_line, y = post_pso_line)
+  #   if(st_is_empty(vert_sp)){
+  #     # vert_sp <- vert_ip
+  #     
+  #     body_a <- endplate_width * cos(box_slope) ## endplate width as a straight line on x
+  #     body_b <- 0.6*endplate_height * sin(box_slope) ## height as a straight line on y
+  #     body_c <- 0.6*endplate_height * cos(box_slope) ## this number correlates to the height
+  #     body_d <- endplate_width * sin(box_slope) ## this number correlates to the width of the endplate
+  #     
+  #     vert_ip <- c(inferior_vert_list$sp[[1]] - spine_orientation*0.5 * sin(inferior_vert_list$sl), inferior_vert_list$sp[[2]] + 0.5 * cos(inferior_vert_list$sl))
+  #     vert_ia <- c(inferior_vert_list$sa[[1]] - spine_orientation*0.5 * sin(inferior_vert_list$sl), inferior_vert_list$sa[[2]] + 0.5 * cos(inferior_vert_list$sl))
+  #     vert_ia_w <- c(inferior_vert_list$sa[[1]] - spine_orientation*0.5 * sin(vertebral_slope), inferior_vert_list$sa[[2]] + 0.5 * cos(vertebral_slope))
+  #     vert_sa <- c(vert_ia[[1]]  - spine_orientation*body_b, vert_ia[[2]] + body_c)
+  #     vert_sp <-  c(vert_sa[[1]] + spine_orientation*body_a, vert_sa[[2]] + body_d)
+  #   }
+  #   
+  #   if(wedge_body == TRUE){
+  #     vert_body <- rbind(vert_ip, vert_ia_w, vert_sa, vert_sp, vert_ip) ## binds the corners to make a square
+  #   }else{
+  #     vert_body <- rbind(vert_ip, vert_ia, vert_sa, vert_sp, vert_ip) ## binds the corners to make a square
+  #   }
+  #   
+  #   # vert_ia_w <- c(inferior_vert_list$sa[[1]] - spine_orientation*0.5 * sin(vertebral_slope), inferior_vert_list$sa[[2]] + 0.5 * cos(vertebral_slope))
+  #   vert_body <- rbind(vert_ip, vert_ia, vert_sa, vert_sp, vert_ip) ## binds the corners to make a square
+  #   
+  #   screw_sf <- NULL
+  # }else{
+  #   ### picture a normal square with a rotated square inside it
+  #   body_a <- endplate_width * cos(vertebral_slope) ## endplate width as a straight line on x. This is the superior endplate sp_x to sa_x distance.
+  #   body_b <- endplate_height * sin(vertebral_slope) ## height as a straight line on y
+  #   body_c <- endplate_height * cos(vertebral_slope) ## this number correlates to the height
+  #   body_d <- endplate_width * sin(vertebral_slope) ## this number correlates to the width of the endplate
+  #   
+  #   ### start at the IP - making a 0.5 rectangle on top of the inferior body (essentially the disk)
+  #   vert_ip <- c(inferior_vert_list$sp[[1]] - spine_orientation*0.5 * sin(inferior_vert_list$sl), inferior_vert_list$sp[[2]] + 0.5 * cos(inferior_vert_list$sl)) ## ip for inferior posterior corner
+  #   
+  #   ### then go to the IA - starting at the IP, go along the X axis the length of 'body_a', then down or up the length of body_d
+  #   vert_ia <- c(vert_ip[[1]] - spine_orientation*body_a, vert_ip[[2]] - body_d) ## ia for inferior anterior corner
+  #   ### then go to the SA - starting at the IA, go along the x axis the length of body_b, then up the height of body_c
+  #   vert_sa <- c(vert_ia[[1]] - spine_orientation*body_b, vert_ia[[2]] + body_c) ## sa for superior anterior corner
+  #   ## then to SP - starting at SA, go along x axis the length of body_a, then up or down the length of body_d
+  #   vert_sp <- c(vert_sa[[1]] + spine_orientation*body_a, vert_sa[[2]] + body_d) ## sp for superior posterior corner, closing the vert
+  #   vert_ia_w <- c(inferior_vert_list$sa[[1]] - spine_orientation*0.5 * sin(vertebral_slope), inferior_vert_list$sa[[2]] + 0.5 * cos(vertebral_slope))
+  # 
+  #   if(wedge_body == TRUE){
+  #     vert_body <- rbind(vert_ip, vert_ia_w, vert_sa, vert_sp, vert_ip) ## binds the corners to make a square
+  #   }else{
+  #     vert_body <- rbind(vert_ip, vert_ia, vert_sa, vert_sp, vert_ip) ## binds the corners to make a square
+  #   }
+  #   anterior_screw_point_y <- ((vert_sa + vert_ia)/2)[2]
+  #   anterior_screw_point_x <- vert_sp[1] - (vert_sp[1] - vert_sa[1])*0.9
+  #   
+  #   screw_sf <- st_buffer(x = st_linestring(rbind((vert_sp + vert_ip)/2,
+  #                                                 c(anterior_screw_point_x, anterior_screw_point_y))), 
+  #                         dist = 0.5, nQuadSegs = 1, mitreLimit = 3)
+  # }
+  
+
+  vert_body <- rbind(vert_ip, vert_ia, vert_sa, vert_sp, vert_ip) ## binds the corners to make a square
 
   vert_body_sf <- st_polygon(list(vert_body)) ## convert to an sf figure
   vert_body_centroid_sf <- st_centroid(vert_body_sf)
   
 
-  
   if(build_lines == TRUE){
     sup_endplate_parallel_line <-  st_linestring(rbind(vert_sp, # start at superior posterior corner of body and then --> end here:
                                                        c(vert_sp[[1]] - horizontal_line_length * cos(vertebral_slope), # X coord
@@ -187,10 +277,13 @@ vertebral_body_build_function_new <- function(vertebral_slope,
                                                                c(vert_sa[[1]] + line_direction*posterior_lordosis_line_length * cos(vertebral_slope), # X coord
                                                                  vert_sa[[2]] + posterior_lordosis_line_length * sin(vertebral_slope)))) # Y coord
     
-    inf_endplate_line_posterior_output <-  st_linestring(rbind(vert_ia_w, # start at inferior anterior corner of body and then --> end here:
-                                                               c(vert_ia_w[[1]] + line_direction*horizontal_line_length * cos(vertebral_slope), # X coord
-                                                                 vert_ia_w[[2]] + horizontal_line_length * sin(vertebral_slope)))) # Y coord
+    # inf_endplate_line_posterior_output <-  st_linestring(rbind(vert_ia_w, # start at inferior anterior corner of body and then --> end here:
+    #                                                            c(vert_ia_w[[1]] + line_direction*horizontal_line_length * cos(vertebral_slope), # X coord
+    #                                                              vert_ia_w[[2]] + horizontal_line_length * sin(vertebral_slope)))) # Y coord
     
+    inf_endplate_line_posterior_output <-  st_linestring(rbind(vert_ia, # start at inferior anterior corner of body and then --> end here:
+                                                               c(vert_ia[[1]] + line_direction*horizontal_line_length * cos(vertebral_slope), # X coord
+                                                                 vert_ia[[2]] + horizontal_line_length * sin(vertebral_slope)))) # Y coord
   }else{
     sup_endplate_parallel_line <- NULL
     inf_endplate_parallel_line <- NULL
@@ -367,19 +460,46 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
                                            posterior_lordosis_line_length = posterior_line_length, 
                                            pso = if_else(any(str_to_lower(pso_levels) == "l4"), TRUE, FALSE))
   
-  l3_list <- vertebral_body_build_function_new(vertebral_slope = l3s, inferior_vert_list = l4_list, endplate_width = 5, endplate_height = 4, wedge_body = if_else(segment_angle_list$l3_segment_angle < 0, TRUE, FALSE), spine_facing = spine_faces, 
-                                               pso = if_else(any(str_to_lower(pso_levels) == "l3"), TRUE, FALSE))
+  l3_list <- vertebral_body_build_function_new(vertebral_slope = l3s, 
+                                               inferior_vert_list = l4_list, 
+                                               endplate_width = 5,
+                                               endplate_height = 4, 
+                                               wedge_body = if_else(segment_angle_list$l3_segment_angle < 0, TRUE, FALSE), 
+                                               spine_facing = spine_faces, 
+                                               pso = if_else(any(str_to_lower(pso_levels) == "l3"), TRUE, FALSE)
+                                               )
   
-  l2_list <- vertebral_body_build_function_new(vertebral_slope = l2s, inferior_vert_list = l3_list, endplate_width = 5, endplate_height = 4, wedge_body = if_else(segment_angle_list$l2_segment_angle < 0, TRUE, FALSE), spine_facing = spine_faces, 
-                                               pso = if_else(any(str_to_lower(pso_levels) == "l2"), TRUE, FALSE))
+  l2_list <- vertebral_body_build_function_new(vertebral_slope = l2s,
+                                               inferior_vert_list = l3_list, 
+                                               endplate_width = 5, 
+                                               endplate_height = 4, 
+                                               wedge_body = if_else(segment_angle_list$l2_segment_angle < 0, TRUE, FALSE), 
+                                               spine_facing = spine_faces, 
+                                               pso = if_else(any(str_to_lower(pso_levels) == "l2"), TRUE, FALSE)
+                                               )
   
-  l1_list <- vertebral_body_build_function_new(vertebral_slope = l1s, inferior_vert_list = l2_list, endplate_width = 5, endplate_height = 4, wedge_body = if_else(segment_angle_list$l1_segment_angle < 0, TRUE, FALSE), spine_facing = spine_faces, 
-                                           build_lines = TRUE, 
-                                           line_down_length = l1l4_angle_line_length, 
-                                           horizontal_line_down_length = horizontal_line_down_length, 
-                                           horizontal_line_length = 40, 
-                                           posterior_lordosis_line_length = posterior_line_length, 
-                                           pso = if_else(any(str_to_lower(pso_levels) == "l1"), TRUE, FALSE))
+  # l3_list <- vertebral_body_build_function_new(vertebral_slope = l3s, 
+  #                                              inferior_vert_list = l4_list, 
+  #                                              endplate_width = 5,
+  #                                              endplate_height = 4, 
+  #                                              wedge_body = if_else(segment_angle_list$l3_segment_angle < 0, TRUE, FALSE), 
+  #                                              spine_facing = spine_faces, 
+  #                                              pso = if_else(any(str_to_lower(pso_levels) == "l3"), TRUE, FALSE)
+  # )
+  
+  l1_list <- vertebral_body_build_function_new(vertebral_slope = l1s, 
+                                               inferior_vert_list = l2_list,
+                                               endplate_width = 5,
+                                               endplate_height = 4,
+                                               wedge_body = if_else(segment_angle_list$l1_segment_angle < 0, TRUE, FALSE),
+                                               spine_facing = spine_faces, 
+                                               build_lines = TRUE, 
+                                               line_down_length = l1l4_angle_line_length, 
+                                               horizontal_line_down_length = horizontal_line_down_length, 
+                                               horizontal_line_length = 40, 
+                                               posterior_lordosis_line_length = posterior_line_length, 
+                                               pso = if_else(any(str_to_lower(pso_levels) == "l1"), TRUE, FALSE)
+                                               )
   
   
   ############################################# THORACIC ############################################
@@ -529,7 +649,13 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
   
   
   
-  t12_list <- vertebral_body_build_function_new(vertebral_slope = t12s, inferior_vert_list = l1_list, endplate_width = 4.9, endplate_height = 3.8, wedge_body = if_else(segment_angle_list$t12_segment_angle < 0, TRUE, FALSE), build_lines = TRUE, spine_facing = spine_faces, 
+  t12_list <- vertebral_body_build_function_new(vertebral_slope = t12s, 
+                                                inferior_vert_list = l1_list,
+                                                endplate_width = 4.9,
+                                                endplate_height = 3.8, 
+                                                wedge_body = if_else(segment_angle_list$t12_segment_angle < 0, TRUE, FALSE),
+                                                build_lines = TRUE, 
+                                                spine_facing = spine_faces, 
                                                 pso = if_else(any(str_to_lower(pso_levels) == "t12"), TRUE, FALSE))
   
   t11_list <- vertebral_body_build_function_new(vertebral_slope = t11s, inferior_vert_list = t12_list, endplate_width = 4.8, endplate_height = 3.7, wedge_body = if_else(segment_angle_list$t11_segment_angle < 0, TRUE, FALSE), spine_facing = spine_faces, 
@@ -538,13 +664,17 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
   t10_list <- vertebral_body_build_function_new(vertebral_slope = t10s, inferior_vert_list = t11_list, endplate_width = 4.8, endplate_height = 3.6, wedge_body = if_else(segment_angle_list$t10_segment_angle < 0, TRUE, FALSE), spine_facing = spine_faces, 
                                                 pso = if_else(any(str_to_lower(pso_levels) == "t10"), TRUE, FALSE))
   
-  t9_list <- vertebral_body_build_function_new(vertebral_slope = t9s, inferior_vert_list = t10_list, endplate_width = 4.7, endplate_height = 3.4, wedge_body = TRUE, spine_facing = spine_faces)
+  t9_list <- vertebral_body_build_function_new(vertebral_slope = t9s, inferior_vert_list = t10_list, endplate_width = 4.7, endplate_height = 3.4, wedge_body = TRUE, spine_facing = spine_faces,
+                                               pso = if_else(any(str_to_lower(pso_levels) == "t9"), TRUE, FALSE))
   
-  t8_list <- vertebral_body_build_function_new(vertebral_slope = t8s, inferior_vert_list = t9_list, endplate_width = 4.6, endplate_height = 3.3, wedge_body = TRUE, spine_facing = spine_faces)
+  t8_list <- vertebral_body_build_function_new(vertebral_slope = t8s, inferior_vert_list = t9_list, endplate_width = 4.6, endplate_height = 3.3, wedge_body = TRUE, spine_facing = spine_faces,
+                                               pso = if_else(any(str_to_lower(pso_levels) == "t8"), TRUE, FALSE))
   
-  t7_list <- vertebral_body_build_function_new(vertebral_slope = t7s, inferior_vert_list = t8_list, endplate_width = 4.5, endplate_height = 3.2, wedge_body = TRUE, spine_facing = spine_faces)
+  t7_list <- vertebral_body_build_function_new(vertebral_slope = t7s, inferior_vert_list = t8_list, endplate_width = 4.5, endplate_height = 3.2, wedge_body = TRUE, spine_facing = spine_faces,
+                                               pso = if_else(any(str_to_lower(pso_levels) == "t7"), TRUE, FALSE))
   
-  t6_list <- vertebral_body_build_function_new(vertebral_slope = t6s, inferior_vert_list = t7_list, endplate_width = 4.4, endplate_height = 3, wedge_body = TRUE, spine_facing = spine_faces)
+  t6_list <- vertebral_body_build_function_new(vertebral_slope = t6s, inferior_vert_list = t7_list, endplate_width = 4.4, endplate_height = 3, wedge_body = TRUE, spine_facing = spine_faces,
+                                               pso = if_else(any(str_to_lower(pso_levels) == "t6"), TRUE, FALSE))
   
   t5_list <- vertebral_body_build_function_new(vertebral_slope = t5s, inferior_vert_list = t6_list, endplate_width = 4.3, endplate_height = 2.8, wedge_body = TRUE, spine_facing = spine_faces)
   

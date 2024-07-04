@@ -24,16 +24,41 @@ estimate_t4pa_from_l1s1_pi_l1pa_function <- function(l1_s1 = 58.895,
 
 
 ############# PREDICT PJK RISK ############
-pjk_risk_function <- function(age = 66.1,
+# pjk_risk_function <- function(age = 66.1,
+#                               sex = "Female",
+#                               uiv_region = "Lower Thoracic",
+#                               preop_c2_t9pa_mismatch = 12.170434,
+#                               pelvic_incidence = 54.630633) {
+#   
+#   prediction <- -3.5046884+0.022398521*age-0.47900877*(sex=="Male")-0.75690545*(uiv_region=="Upper Thoracic")+0.19040964*preop_c2_t9pa_mismatch-0.0097770523*pelvic_incidence-0.099232384*(uiv_region=="Upper Thoracic")*preop_c2_t9pa_mismatch 
+#   
+#   round(plogis(prediction), 2)
+# }
+
+pjk_risk_function <- function(age = 64.5,
                               sex = "Female",
-                              uiv_region = "Lower Thoracic",
-                              preop_c2_t9pa_mismatch = 12.170434,
-                              pelvic_incidence = 54.630633) {
-  
-  prediction <- -3.5046884+0.022398521*age-0.47900877*(sex=="Male")-0.75690545*(uiv_region=="Upper Thoracic")+0.19040964*preop_c2_t9pa_mismatch-0.0097770523*pelvic_incidence-0.099232384*(uiv_region=="Upper Thoracic")*preop_c2_t9pa_mismatch 
-  
-  round(plogis(prediction), 2)
+                              preop_c2pa_t9pa_mismatch = 13.829296,
+                              pelvic_incidence = 54.630633,
+                              postop_l1pa_undercorrection = 99,
+                              postop_t4l1pa_mismatch = 99, 
+                              uiv_region = "Lower Thoracic") {
+  if(uiv_region == "Lower Thoracic"){
+      prediction <- -3.5046884+0.022398521*age-0.47900877*(sex=="Male")-0.75690545*(uiv_region=="Upper Thoracic")+0.19040964*preop_c2pa_t9pa_mismatch-0.0097770523*pelvic_incidence-0.099232384*(uiv_region=="Upper Thoracic")*preop_c2pa_t9pa_mismatch
+
+      predicted_risk <- round(plogis(prediction), 2)
+  }else{
+    yhat <- -2.0602845-0.013447506*age+0.35942783*(sex=="Male")+
+      0.093758989*preop_c2pa_t9pa_mismatch-0.01734184*pelvic_incidence-
+      0.023547139* postop_l1pa_undercorrection+
+      3.792562e-05*pmax(postop_l1pa_undercorrection+3.8109099,0)^3-6.1591888e-05*pmax(postop_l1pa_undercorrection-1.4441251,0)^3+
+      2.3666268e-05*pmax(postop_l1pa_undercorrection-9.865413,0)^3-0.14680941* postop_t4l1pa_mismatch+
+      0.0011675493*pmax(postop_t4l1pa_mismatch+4.4705169,0)^3-0.0020066687*pmax(postop_t4l1pa_mismatch-0.66524477,0)^3+
+      0.00083911949*pmax(postop_t4l1pa_mismatch-7.8111338,0)^3 
+    
+    predicted_risk <-round(plogis(yhat), 2) 
   }
+  predicted_risk
+}
 
 ############### COMPUTE TARGET PELVIC ANGLES #####################
 target_l4pa_function <- function(pelvic_incidence = 51.75934) {-10.140792+0.36078574*pelvic_incidence }
@@ -828,7 +853,7 @@ value
                                                                  pso_option_number = 1, 
                                                                  uiv_region = "upper") {
     
-    non_modifiable <- str_to_lower(str_replace_all(non_modifiable, "-", "_"))
+    # non_modifiable <- str_to_lower(str_replace_all(non_modifiable, "-", "_"))
     
     results_list <- list()
     
@@ -843,11 +868,11 @@ value
     
     # Define the objective function to minimize the change at each given level
     objective <- function(x) {
-      l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, x[1])
-      l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, x[2])
-      l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, x[3])
-      l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, x[4])
-      l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, x[5])
+      l1_l2 <- ifelse("l1_segment" %in% non_modifiable, l1_l2_start, x[1])
+      l2_l3 <- ifelse("l2_segment" %in% non_modifiable, l2_l3_start, x[2])
+      l3_l4 <- ifelse("l3_segment" %in% non_modifiable, l3_l4_start, x[3])
+      l4_l5 <- ifelse("l4_segment" %in% non_modifiable, l4_l5_start, x[4])
+      l5_s1 <- ifelse("l5_segment" %in% non_modifiable, l5_s1_start, x[5])
       
       l1pa_diff <- desired_l1pa - (constant1 + constant2 * pelvic_incidence + constant3 * l1_l2 + constant4 * l2_l3 + constant5 * l3_l4 + constant6 * l4_l5 + constant7 * l5_s1)
       
@@ -870,11 +895,11 @@ value
     result <- optim(start_values, objective, method = "Nelder-Mead")
     
     # Extract the optimized values
-    new_l1_l2 <- ifelse("l1_l2" %in% non_modifiable, l1_l2_start, result$par[1])
-    new_l2_l3 <- ifelse("l2_l3" %in% non_modifiable, l2_l3_start, result$par[2])
-    new_l3_l4 <- ifelse("l3_l4" %in% non_modifiable, l3_l4_start, result$par[3])
-    new_l4_l5 <- ifelse("l4_l5" %in% non_modifiable, l4_l5_start, result$par[4])
-    new_l5_s1 <- ifelse("l5_s1" %in% non_modifiable, l5_s1_start, result$par[5])
+    new_l1_l2 <- ifelse("l1_segment" %in% non_modifiable, l1_l2_start, result$par[1])
+    new_l2_l3 <- ifelse("l2_segment" %in% non_modifiable, l2_l3_start, result$par[2])
+    new_l3_l4 <- ifelse("l3_segment" %in% non_modifiable, l3_l4_start, result$par[3])
+    new_l4_l5 <- ifelse("l4_segment" %in% non_modifiable, l4_l5_start, result$par[4])
+    new_l5_s1 <- ifelse("l5_segment" %in% non_modifiable, l5_s1_start, result$par[5])
     
     segmental_lordosis_range_list <- compute_segmental_lordosis_range_by_pi_function(pelvic_incidence = pelvic_incidence)
     

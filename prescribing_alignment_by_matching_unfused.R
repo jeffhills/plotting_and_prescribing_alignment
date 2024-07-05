@@ -4,7 +4,14 @@ predict_postop_c2_c7_function <- function(rad_pre_c2_c7 = 10.95, final_t4pa_goal
   
   round(5.33485+0.7683201*rad_pre_c2_c7+0.27750464*rad_6w_t4pa_change, 2)
   
-  }
+}
+
+c2_segment_weight = 0.3
+c3_segment_weight = 0.2
+c4_segment_weight = 0
+c5_segment_weight = 0
+c6_segment_weight = 0.2
+c7_segment_weight = 0.3
 
 ### required functions for estimating vpas and segment angles:
 compute_c2_t1_function <- function(segment_angles_list){
@@ -16,6 +23,7 @@ compute_c2_t1_function <- function(segment_angles_list){
       segment_angles_list$c7_segment_angle
   )
 }
+
 
 compute_t1_t10_function <- function(segment_angles_list){
   sum(segment_angles_list$t1_segment_angle, 
@@ -547,9 +555,16 @@ build_t11_spine_plot_function <- function(pso_option_number = 1,
     pso_options_df <- pso_options_list$pso_options_summary_df 
 
     ############ pso option ############
-    pso_level <- str_to_upper(pso_options_df$pso_level[[pso_option_number]])
     
-    pso_l2s1_segment_angles <- pso_options_list$new_segment_angles_by_pso_level_list[[paste0(pso_options_df$pso_level[[pso_option_number]], "_pso_segment_angles")]]
+    if(nrow(pso_options_df)>1){
+      pso_option <- pso_option_number
+    }else{
+      pso_option <- 1
+    }
+    
+    pso_level <- str_to_upper(pso_options_df$pso_level[[pso_option]])
+    
+    pso_l2s1_segment_angles <- pso_options_list$new_segment_angles_by_pso_level_list[[paste0(pso_options_df$pso_level[[pso_option]], "_pso_segment_angles")]]
     
     prescribed_segment_angles$l5_segment_angle <- pso_l2s1_segment_angles$l5_segment_angle
     prescribed_segment_angles$l4_segment_angle <- pso_l2s1_segment_angles$l4_segment_angle
@@ -642,12 +657,12 @@ build_t11_spine_plot_function <- function(pso_option_number = 1,
                                                             final_t4pa_goal = checking_vpa_list$t4pa_value,
                                                             starting_t4pa = preop_t4pa)
   
-  prescribed_segment_angles$c2_segment_angle <- predicted_c2_c7_lordosis/6
-  prescribed_segment_angles$c3_segment_angle <- predicted_c2_c7_lordosis/6
-  prescribed_segment_angles$c4_segment_angle <- predicted_c2_c7_lordosis/6
-  prescribed_segment_angles$c5_segment_angle <- predicted_c2_c7_lordosis/6
-  prescribed_segment_angles$c6_segment_angle <- predicted_c2_c7_lordosis/6
-  prescribed_segment_angles$c7_segment_angle <- predicted_c2_c7_lordosis/6
+  prescribed_segment_angles$c2_segment_angle <- predicted_c2_c7_lordosis*c2_segment_weight
+  prescribed_segment_angles$c3_segment_angle <- predicted_c2_c7_lordosis*c3_segment_weight
+  prescribed_segment_angles$c4_segment_angle <- predicted_c2_c7_lordosis*c4_segment_weight
+  prescribed_segment_angles$c5_segment_angle <- predicted_c2_c7_lordosis*c5_segment_weight
+  prescribed_segment_angles$c6_segment_angle <- predicted_c2_c7_lordosis*c6_segment_weight
+  prescribed_segment_angles$c7_segment_angle <- predicted_c2_c7_lordosis*c7_segment_weight
   
   
   new_vpa_list <- build_spine_for_checking_pelvic_angles_function(pelv_inc_value = starting_pi, 
@@ -1183,16 +1198,17 @@ build_upper_t_uiv_spine_plot_function <- function(pso_option_number = 1,
     
     ############ pso option ############
     if(nrow(pso_options_df)>1){
-      pso_option_number <- pso_option_number
+      pso_option <- pso_option_number
     }else{
-      pso_option_number <- 1
+      pso_option <- 1
     }
-    pso_level <- str_to_upper(pso_options_df$pso_level[[pso_option_number]])
+    
+    pso_level <- str_to_upper(pso_options_df$pso_level[[pso_option]])
     
     
     pso_list$lumbar_pso <- pso_level
     
-    pso_l2s1_segment_angles <- pso_options_list$new_segment_angles_by_pso_level_list[[paste0(pso_options_df$pso_level[[pso_option_number]], "_pso_segment_angles")]]
+    pso_l2s1_segment_angles <- pso_options_list$new_segment_angles_by_pso_level_list[[paste0(pso_options_df$pso_level[[pso_option]], "_pso_segment_angles")]]
     
     prescribed_segment_angles$l5_segment_angle <- pso_l2s1_segment_angles$l5_segment_angle
     prescribed_segment_angles$l4_segment_angle <- pso_l2s1_segment_angles$l4_segment_angle
@@ -1239,12 +1255,12 @@ build_upper_t_uiv_spine_plot_function <- function(pso_option_number = 1,
                                 final_t4pa_goal = target_t4pa,
                                 starting_t4pa = preop_t4pa)
   
-  prescribed_segment_angles$c2_segment_angle <- predicted_c2_c7_lordosis/6
-  prescribed_segment_angles$c3_segment_angle <- predicted_c2_c7_lordosis/6
-  prescribed_segment_angles$c4_segment_angle <- predicted_c2_c7_lordosis/6
-  prescribed_segment_angles$c5_segment_angle <- predicted_c2_c7_lordosis/6
-  prescribed_segment_angles$c6_segment_angle <- predicted_c2_c7_lordosis/6
-  prescribed_segment_angles$c7_segment_angle <- predicted_c2_c7_lordosis/6
+  prescribed_segment_angles$c2_segment_angle <- predicted_c2_c7_lordosis*c2_segment_weight
+  prescribed_segment_angles$c3_segment_angle <- predicted_c2_c7_lordosis*c3_segment_weight
+  prescribed_segment_angles$c4_segment_angle <- predicted_c2_c7_lordosis*c4_segment_weight
+  prescribed_segment_angles$c5_segment_angle <- predicted_c2_c7_lordosis*c5_segment_weight
+  prescribed_segment_angles$c6_segment_angle <- predicted_c2_c7_lordosis*c6_segment_weight
+  prescribed_segment_angles$c7_segment_angle <- predicted_c2_c7_lordosis*c7_segment_weight
   
   alignment_targets_list$"T4PA" <- paste0(round(target_t4pa -2, 0), "º to ", round(target_t4pa +2, 0), "º")
   

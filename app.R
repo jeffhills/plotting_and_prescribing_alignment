@@ -35,9 +35,6 @@ source("jh_build_spine_by_vertebral_pelvic_angles_cleaned.R", local = TRUE)
 source("prescribing_alignment_by_matching_unfused.R", local = TRUE)
 
 all_possible_lumbar_segments_angles_with_lpa_df <- read_csv("all_possible_lumbar_segment_angles_for_lpa.csv")
-# 
-# getwd()
-# setw
 
 # reactlog_enable()
 spinal_segments_labels_vector <- c('L5-S1', 'L4-L5', 'L3-L4', 'L2-L3', 'L1-L2', 

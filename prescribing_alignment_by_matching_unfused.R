@@ -13,6 +13,7 @@ c5_segment_weight = 0
 c6_segment_weight = 0.2
 c7_segment_weight = 0.3
 
+
 ### required functions for estimating vpas and segment angles:
 compute_c2_t1_function <- function(segment_angles_list){
   sum(segment_angles_list$c2_segment_angle, 

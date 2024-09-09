@@ -19,6 +19,8 @@ library(cowplot)
 # library(assertr)
 library(lubridate)
 library(shinydashboard)
+library(magick)
+library(ggforce)
 
 source("jh_functions.R", local = TRUE)
 source("compute_segment_angles_function_from_sim_data_2024.R", local = TRUE)
@@ -33,6 +35,79 @@ source("spinal_regional_alignment_analysis_by_vpa.R", local = TRUE)
 # source("jh_build_spine_by_vertebral_pelvic_angles_only.R", local = TRUE)
 source("jh_build_spine_by_vertebral_pelvic_angles_cleaned.R", local = TRUE)
 source("prescribing_alignment_by_matching_unfused.R", local = TRUE)
+
+jh_calculate_distance_between_2_points_function <- function(point_1, point_2){
+  sqrt((point_1[1] - point_2[1])^2 + 
+         (point_1[2] - point_2[2])^2)
+}
+
+jh_compute_vpa_from_xray_data_function <- function(fem_head_center = c(0,0), 
+                                                   vertebral_centroid = c(0.15, 0.3), 
+                                                   pelvic_tilt = 15){
+  
+  fem_head_to_centroid_length <- jh_calculate_distance_between_2_points_function(point_1 = vertebral_centroid, 
+                                                                                 point_2 = fem_head_center)
+  
+  fem_head_to_centroid_x_length <- jh_calculate_distance_between_2_points_function(point_1 = vertebral_centroid, 
+                                                                                   point_2 = c(fem_head_center[1],
+                                                                                               vertebral_centroid[2]))
+  
+  vertebral_tilt <- asin(fem_head_to_centroid_x_length/fem_head_to_centroid_length)*180/pi*-1
+  
+  vpa <- pelvic_tilt + vertebral_tilt 
+  
+  return(vpa)
+  
+}
+
+compute_perpendicular_points <- function(x1, y1, x2, y2, distance = 0.01) {
+  # Midpoint
+  midpoint_x <- (x1 + x2) / 2
+  midpoint_y <- (y1 + y2) / 2
+  
+  # Slope of the line (tangent)
+  slope <- (y2 - y1) / (x2 - x1)
+  
+  # Perpendicular slope (-1 / slope)
+  perpendicular_slope <- -1 / slope
+  
+  # Calculate the change in x and y for perpendicular points
+  delta_x <- distance / sqrt(1 + perpendicular_slope^2)
+  delta_y <- perpendicular_slope * delta_x
+  
+  # Two perpendicular points
+  point_1 <- c(midpoint_x + delta_x, midpoint_y + delta_y)
+  point_2 <- c(midpoint_x - delta_x, midpoint_y - delta_y)
+  
+  return(tibble(x1 = point_1[1], y1 = point_1[2], x2 = point_2[1], y2 = point_2[2]))
+}
+
+spine_click_targets_vector <- c("fem_head_center", 
+                                "s1_anterior_superior", 
+                                "s1_posterior_superior",
+                                "l5_centroid",
+                                "l4_centroid",
+                                "l3_centroid",
+                                "l2_centroid",
+                                "l1_centroid",
+                                "t12_centroid",
+                                "t11_centroid",
+                                "t10_centroid",
+                                "t9_centroid",
+                                "t8_centroid",
+                                "t7_centroid",
+                                "t6_centroid",
+                                "t5_centroid",
+                                "t4_centroid",
+                                "t3_centroid",
+                                "t2_centroid",
+                                "t1_centroid",
+                                "c7_centroid",
+                                "c6_centroid",
+                                "c5_centroid",
+                                "c4_centroid",
+                                "c3_centroid",
+                                "c2_centroid")
 
 all_possible_lumbar_segments_angles_with_lpa_df <- read_csv("all_possible_lumbar_segment_angles_for_lpa.csv")
 
@@ -73,10 +148,41 @@ create_spine_segment_input_function <- function(segment_input_label, segment_val
   )
 }
 
+create_spine_rigid_level_input_function <- function(segment_input_label){
+  segment_id <- paste0("preop_", str_to_lower(str_replace_all(segment_input_label, pattern = "-", "_")), "_segment")
+  rigid_segment_id <- str_replace_all(segment_id, "_segment", "_rigid_xray")
+  segment_label <- segment_input_label
+  # initial_value <- segment_value_input
+  
+  div(
+    class = "segment-input",
+    span(segment_label, 
+         class = "segment-label"),
+    # div(
+    #   numericInput(inputId = segment_id, 
+    #                label = NULL, 
+    #                value = round(initial_value, 0), 
+    #                step = 1, 
+    #                width = "45%"),
+    #   class = "custom-numeric-input",
+    # ),
+    div(
+      prettyCheckbox(
+        inputId = rigid_segment_id,
+        label = NULL,
+        value = FALSE,
+        bigger = TRUE,
+        status = "danger",
+        shape = "curve"
+      )
+    )
+  )
+}
+
 
 # Define UI for application that draws a histogram
 ui <- dashboardPage(
-  dashboardHeader(title = "Basic dashboard"),
+  dashboardHeader(title = "Solaspine"),
   dashboardSidebar(
     sidebarMenu(
       menuItem("Plot Spine Alignment",
@@ -86,7 +192,11 @@ ui <- dashboardPage(
       menuItem("Prescribe Spinal Alignment",
                tabName = "prescribe_alignment", 
                icon = icon("calculator")
-               )
+               ),
+      menuItem("Upload & Spine Alignment",
+               tabName = "upload_measure_xray", 
+               icon = icon("fas fa-ruler-combined")
+      )
     )
   ),
   dashboardBody(
@@ -651,7 +761,7 @@ ui <- dashboardPage(
               ########################### PREOP ALIGNMENT PLOT ############################
               ########################### PREOP ALIGNMENT PLOT ############################
               column(width = 4,
-                     uiOutput(outputId = "preop_segment_angles_ui"),
+                     uiOutput(outputId = "preop_segment_angles_ui"), 
                      column(width = 7, 
                             plotOutput(outputId = "preop_spine_alignment", height = 800),
                             textOutput(outputId = "rigid_levels_text")
@@ -685,6 +795,142 @@ ui <- dashboardPage(
               # fluidRow(
               #   plotOutput(outputId = "preop_risk_plot", height = 400)
               # )
+      ),
+      tabItem(tabName = "upload_measure_xray",
+              column(
+                width = 1,
+                fileInput("xray", "Upload an Xray"),
+                br(),
+                tags$div(
+                  style = "font-size:24px; font-weight:bold; color:darkblue; font-family:sans-serif; font-style:italic; hjust: 0.5", 
+                  htmlOutput(outputId = "xray_click_instructions")
+                ),
+                br(),
+                hr(),
+                tableOutput(outputId = "alignment_parameters_df")
+              ),
+              column(width = 1, 
+                     uiOutput(outputId = "preop_xray_rigid_segments_ui")
+              ),
+              column(width = 3,
+                     
+                div(
+                  id = "image_container",
+                  # plotlyOutput("xray_plot"), # Using plotly for interactive plot
+                  plotOutput(
+                    "xray", 
+                    click = "xray_click",
+                    height = "700px"
+                  ),
+                  # Style for container and image
+                  tags$style(HTML("
+      #image_container {
+        overflow: hidden;
+        width: 100%;
+        height: 700px;
+        position: relative;
+      }
+      #image_container img {
+        transition: transform 0.25s ease;
+        cursor: crosshair; /* Default cursor */
+      }
+      #image_container img:active {
+        cursor: grabbing;
+      }
+    ")),
+                  
+                  # JavaScript for zoom and pan functionality
+                  tags$script(HTML("
+      var zoomLevel = 1;
+      var panX = 0;
+      var panY = 0;
+      var isPanning = false;
+      var startX, startY;
+
+      // Function to apply the zoom and pan transformations
+      function applyTransform() {
+        var imgElement = document.querySelector('#image_container img');
+        if (imgElement) {
+          imgElement.style.transform = 'scale(' + zoomLevel + ') translate(' + panX + 'px, ' + panY + 'px)';
+        }
+      }
+
+      // Zoom in/out on scroll
+      document.getElementById('image_container').addEventListener('wheel', function(event) {
+        event.preventDefault();
+        if (event.deltaY > 0) {
+          zoomLevel *= 0.9; // Zoom out
+        } else {
+          zoomLevel *= 1.1; // Zoom in
+        }
+        applyTransform(); // Apply the updated zoom level
+      });
+
+      // Start panning on right-click (mousedown)
+      document.getElementById('image_container').addEventListener('mousedown', function(event) {
+        if (event.button === 2) { // Right-click for panning
+          isPanning = true;
+          startX = event.clientX;
+          startY = event.clientY;
+          var imgElement = document.querySelector('#image_container img');
+          if (imgElement) {
+            imgElement.style.cursor = 'grabbing';
+          }
+        }
+      });
+
+      // Stop panning on mouseup
+      document.addEventListener('mouseup', function(event) {
+        isPanning = false;
+        var imgElement = document.querySelector('#image_container img');
+        if (imgElement) {
+          imgElement.style.cursor = 'crosshair'; // Reset to crosshair
+        }
+      });
+
+      // Handle mouse movement for panning
+      document.addEventListener('mousemove', function(event) {
+        if (isPanning) {
+          var deltaX = event.clientX - startX;
+          var deltaY = event.clientY - startY;
+          panX += deltaX;
+          panY += deltaY;
+          applyTransform(); // Apply the updated pan
+          startX = event.clientX;
+          startY = event.clientY;
+        }
+      });
+
+      // Prevent the right-click menu from showing up
+      document.addEventListener('contextmenu', function(event) {
+        event.preventDefault();
+      });
+    "))
+                )
+              ),
+              column(width = 2, 
+                     plotOutput(outputId = "preop_spine_simulation_plot", height = "850px"),
+                     br(),
+                     hr(),
+                     tableOutput(outputId = "xray_click_df")
+                     ),
+              # column(width = 1), 
+              column(width = 4, 
+                     actionBttn(
+                       inputId = "compute_plan_xray",
+                       label = "Compute Plan",
+                       style = "unite", 
+                       color = "danger"
+                     ),
+                     # h3("Prescribed Alignment:"),
+                     fluidRow(
+                       plotOutput(outputId = "spine_plan_lower_t_xray", height = 650),
+                     ),
+                     hr(),
+                     fluidRow(
+                       plotOutput(outputId = "spine_plan_upper_t_xray", height = 650),
+                     )
+              ),
       )
     )
   )
@@ -1496,6 +1742,7 @@ server <- function(input, output, session) {
       segment_angles_input_list <- rev(map2(preop_segment_angles_list, spinal_segments_labels_vector, function(value, label) {
         create_spine_segment_input_function(segment_input_label = label, segment_value_input = value)
       }))
+      # create_spine_rigid_level_input_function
       
       column(width = 5,
              box(width = 12,title = "Cervical", 
@@ -2432,6 +2679,8 @@ server <- function(input, output, session) {
     # }
     # )
     
+
+    
     ############## PSO OPTION 2 UIV T4
     spine_plan_uiv_t4_option_2 <- eventReactive(input$compute_plan, {
       build_upper_t_uiv_spine_plot_function(pso_option_number = 2, 
@@ -2798,6 +3047,896 @@ server <- function(input, output, session) {
         distinct() %>%
         pivot_longer(cols = everything()) %>%
         mutate(value = round(value, 0))
+    })
+    
+    
+    #############     #############  UPLOAD TAB #######################     ############# 
+    #############     #############  UPLOAD TAB #######################     ############# 
+    #############     #############  UPLOAD TAB #######################     ############# 
+    #############     #############  UPLOAD TAB #######################     ############# 
+    #############     #############  UPLOAD TAB #######################     ############# 
+    #############     #############  UPLOAD TAB #######################     ############# 
+    #############     #############  UPLOAD TAB #######################     ############# 
+    #############     #############  UPLOAD TAB #######################     ############# 
+
+    
+      click_points <- reactiveVal(data.frame(x = numeric(0), y = numeric(0)))
+    
+    click_coord_reactive_list <- reactiveValues(coords = list(), index = 1)
+    
+    observeEvent(input$xray_click, {
+      new_points <- rbind(click_points(), data.frame(x = input$xray_click$x, y = input$xray_click$y))
+      click_points(new_points)
+    })
+    
+    observeEvent(input$xray_click, {
+      if (click_coord_reactive_list$index <= length(spine_click_targets_vector)) {
+        # Get the name from the vector based on the click index
+        target_name <- spine_click_targets_vector[click_coord_reactive_list$index]
+        
+        # Store the click coordinates with the name
+        click_coord_reactive_list$coords[[target_name]] <- c(input$xray_click$x, input$xray_click$y)
+        
+        # Increment the index for the next click
+        click_coord_reactive_list$index <- click_coord_reactive_list$index + 1
+      }
+    })
+    
+    output$xray_click_instructions <- renderText({
+      click_count <- length(click_coord_reactive_list$coords)
+      
+      instructions <- case_when(
+        click_count == 0 ~ "Click the center of the femoral heads",
+        click_count == 1 ~ "Click the ANTERIOR SUPERIOR CORNER of S1",
+        click_count == 2 ~ "Click the POSTERIOR SUPERIOR CORNER of S1",
+        click_count == 3 ~ "Click the L5 Centroid",
+        click_count == 4 ~ "Click the L4 Centroid",
+        click_count == 5 ~ "Click the L3 Centroid",
+        click_count == 6 ~ "Click the L2 Centroid",
+        click_count == 7 ~ "Click the L1 Centroid",
+        click_count == 8 ~ "Click the T12 Centroid",
+        click_count == 9 ~ "Click the T11 Centroid",
+        click_count == 10 ~ "Click the T10 Centroid",
+        click_count == 11 ~ "Click the T9 Centroid",
+        click_count == 12 ~ "Click the T8 Centroid",
+        click_count == 13 ~ "Click the T7 Centroid",
+        click_count == 14 ~ "Click the T6 Centroid",
+        click_count == 15 ~ "Click the T5 Centroid",
+        click_count == 16 ~ "Click the T4 Centroid",
+        click_count == 17 ~ "Click the T3 Centroid",
+        click_count == 18 ~ "Click the T2 Centroid",
+        click_count == 19 ~ "Click the T1 Centroid",
+        click_count == 20 ~ "Click the C7 Centroid",
+        click_count == 21 ~ "Click the C6 Centroid",
+        click_count == 22 ~ "Click the C5 Centroid",
+        click_count == 23 ~ "Click the C4 Centroid",
+        click_count == 24 ~ "Click the C3 Centroid",
+        click_count == 25 ~ "Click the Center of the Odontoid"
+      )
+      
+      # details <- glue("{input$patient_first_name} {input$patient_last_name}, {age}yo {input$sex}")
+      HTML("<div>", instructions, "</div>")
+      
+    })
+    
+    xray_named_clicks_reactive_df <- reactive({
+      coords_df <- tibble(click_target = character(), x = double(), y = double())
+      
+      if (length(click_coord_reactive_list$coords) > 0) {
+        # Convert the named list to a data frame
+        coords_df <- enframe(click_coord_reactive_list$coords, name = "click_target", value = "coords")
+        
+        # Split the 'coords' column into 'x' and 'y' columns
+        coords_df <- coords_df %>%
+          mutate(x = map_dbl(coords, 1), y = map_dbl(coords, 2)) %>%
+          select(click_target, x, y)
+      }
+      
+      coords_df
+    })
+    
+    
+    alignment_parameters_reactive_list <- reactive({
+      click_count <- length(click_coord_reactive_list$coords)
+      
+      spine_alignment_measures_list <- list()
+      
+      if(click_count >2){
+        fem_head_center <- click_coord_reactive_list$coords$fem_head_center
+        
+        s1_center <- c((click_coord_reactive_list$coords$s1_anterior_superior[[1]] + click_coord_reactive_list$coords$s1_posterior_superior[[1]])/2, 
+                       (click_coord_reactive_list$coords$s1_anterior_superior[[2]] + click_coord_reactive_list$coords$s1_posterior_superior[[2]])/2)
+        
+        ### COMPUTE PT ###
+        fem_head_to_s1_length <- jh_calculate_distance_between_2_points_function(point_1 = fem_head_center, 
+                                                                                 point_2 = s1_center)
+        
+        fem_head_to_s1_x_length <- jh_calculate_distance_between_2_points_function(point_1 = fem_head_center, 
+                                                                                   point_2 = c(s1_center[1], fem_head_center[2]))
+        
+        spine_alignment_measures_list$pelvic_tilt <- asin(fem_head_to_s1_x_length/fem_head_to_s1_length)*180/pi
+        
+        ### COMPUTE SS ###
+        s1_length <- jh_calculate_distance_between_2_points_function(point_1 = click_coord_reactive_list$coords$s1_anterior_superior, 
+                                                                     point_2 = click_coord_reactive_list$coords$s1_posterior_superior)
+        
+        s1_x_length <- jh_calculate_distance_between_2_points_function(point_1 = c(click_coord_reactive_list$coords$s1_anterior_superior[[1]], 
+                                                                                   click_coord_reactive_list$coords$s1_posterior_superior[[2]]), 
+                                                                       point_2 = click_coord_reactive_list$coords$s1_posterior_superior)
+        
+        spine_alignment_measures_list$sacral_slope <- acos(s1_x_length/s1_length)*180/pi
+        
+        ### COMPUTE PI ###
+        spine_alignment_measures_list$pelvic_incidence <- spine_alignment_measures_list$pelvic_tilt + spine_alignment_measures_list$sacral_slope
+        
+      }
+      
+      ## Compute L5PA ##
+      if(any(names(click_coord_reactive_list$coords) == "l5_centroid")){
+      
+        spine_alignment_measures_list$l5pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                               vertebral_centroid = click_coord_reactive_list$coords$l5_centroid,
+                                               pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute l4PA ##
+      if(any(names(click_coord_reactive_list$coords) == "l4_centroid")){
+        spine_alignment_measures_list$l4pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$l4_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute l3PA ##
+      if(any(names(click_coord_reactive_list$coords) == "l3_centroid")){
+        spine_alignment_measures_list$l3pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$l3_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute l2PA ##
+      if(any(names(click_coord_reactive_list$coords) == "l2_centroid")){
+        spine_alignment_measures_list$l2pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$l2_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute l1PA ##
+      if(any(names(click_coord_reactive_list$coords) == "l1_centroid")){
+        spine_alignment_measures_list$l1pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$l1_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute t12PA ##
+      if(any(names(click_coord_reactive_list$coords) == "t12_centroid")){
+        spine_alignment_measures_list$t12pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$t12_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute t11PA ##
+      if(any(names(click_coord_reactive_list$coords) == "t11_centroid")){
+        spine_alignment_measures_list$t11pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$t11_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute t10PA ##
+      if(any(names(click_coord_reactive_list$coords) == "t10_centroid")){
+        spine_alignment_measures_list$t10pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$t10_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute t9PA ##
+      if(any(names(click_coord_reactive_list$coords) == "t9_centroid")){
+        spine_alignment_measures_list$t9pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$t9_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute t8PA ##
+      if(any(names(click_coord_reactive_list$coords) == "t8_centroid")){
+        spine_alignment_measures_list$t8pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$t8_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute t7PA ##
+      if(any(names(click_coord_reactive_list$coords) == "t7_centroid")){
+        spine_alignment_measures_list$t7pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$t7_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute t6PA ##
+      if(any(names(click_coord_reactive_list$coords) == "t6_centroid")){
+        spine_alignment_measures_list$t6pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$t6_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute t5PA ##
+      if(any(names(click_coord_reactive_list$coords) == "t5_centroid")){
+        spine_alignment_measures_list$t5pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$t5_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute t4PA ##
+      if(any(names(click_coord_reactive_list$coords) == "t4_centroid")){
+        spine_alignment_measures_list$t4pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$t4_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute t3PA ##
+      if(any(names(click_coord_reactive_list$coords) == "t3_centroid")){
+        spine_alignment_measures_list$t3pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$t3_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute t2PA ##
+      if(any(names(click_coord_reactive_list$coords) == "t2_centroid")){
+        spine_alignment_measures_list$t2pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$t2_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute t1PA ##
+      if(any(names(click_coord_reactive_list$coords) == "t1_centroid")){
+        spine_alignment_measures_list$t1pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$t1_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute c7PA ##
+      if(any(names(click_coord_reactive_list$coords) == "c7_centroid")){
+        spine_alignment_measures_list$c7pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$c7_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute c6PA ##
+      if(any(names(click_coord_reactive_list$coords) == "c6_centroid")){
+        spine_alignment_measures_list$c6pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$c6_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute c5PA ##
+      if(any(names(click_coord_reactive_list$coords) == "c5_centroid")){
+        spine_alignment_measures_list$c5pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$c5_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute c4PA ##
+      if(any(names(click_coord_reactive_list$coords) == "c4_centroid")){
+        spine_alignment_measures_list$c4pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$c4_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute c3PA ##
+      if(any(names(click_coord_reactive_list$coords) == "c3_centroid")){
+        spine_alignment_measures_list$c3pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$c3_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      ## Compute c2PA ##
+      if(any(names(click_coord_reactive_list$coords) == "c2_centroid")){
+        spine_alignment_measures_list$c2pa <- jh_compute_vpa_from_xray_data_function(fem_head_center = fem_head_center, 
+                                                                                     vertebral_centroid = click_coord_reactive_list$coords$c2_centroid,
+                                                                                     pelvic_tilt = spine_alignment_measures_list$pelvic_tilt)
+      }
+      spine_alignment_measures_list
+    })
+    
+    ###############
+    
+    xray_estimated_segment_angles_reactive_list <- reactive({
+      segment_angles_estimated_list <- list()
+      
+      if(any(names(alignment_parameters_reactive_list()) == "c2pa")){
+  
+      pelvic_incidence <- alignment_parameters_reactive_list()$pelvic_incidence
+      
+      spine_alignment_measures_list <- alignment_parameters_reactive_list()
+      
+      segment_angles_estimated_list$l5_segment_angle <- xray_l5_segment_angle_function(pelvic_incidence = pelvic_incidence, 
+                                                                                       l5_pelvic_angle = spine_alignment_measures_list$l5pa, 
+                                                                                       l4_pelvic_angle = spine_alignment_measures_list$l4pa)
+      
+      segment_angles_estimated_list$l4_segment_angle <- xray_l4_segment_angle_function(pelvic_incidence = pelvic_incidence, 
+                                                                                       l5_pelvic_angle = spine_alignment_measures_list$l5pa, 
+                                                                                       l4_pelvic_angle = spine_alignment_measures_list$l4pa,
+                                                                                       l3_pelvic_angle = spine_alignment_measures_list$l3pa, 
+                                                                                       l5_s1 = sum(unlist(segment_angles_estimated_list)))
+      
+      
+      segment_angles_estimated_list$l3_segment_angle <- xray_l3_segment_angle_function(pelvic_incidence = pelvic_incidence, 
+                                                                                       l4_pelvic_angle = spine_alignment_measures_list$l4pa, 
+                                                                                       l3_pelvic_angle = spine_alignment_measures_list$l3pa, 
+                                                                                       l2_pelvic_angle = spine_alignment_measures_list$l2pa, 
+                                                                                       l4_s1 = sum(unlist(segment_angles_estimated_list)))
+      
+      # L2 Segment Angle
+      segment_angles_estimated_list$l2_segment_angle <- xray_l2_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        l3_pelvic_angle = spine_alignment_measures_list$l3pa, 
+        l2_pelvic_angle = spine_alignment_measures_list$l2pa, 
+        l1_pelvic_angle = spine_alignment_measures_list$l1pa, 
+        l3_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # L1 Segment Angle
+      segment_angles_estimated_list$l1_segment_angle <- xray_l1_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        l2_pelvic_angle = spine_alignment_measures_list$l2pa, 
+        l1_pelvic_angle = spine_alignment_measures_list$l1pa, 
+        t12_pelvic_angle = spine_alignment_measures_list$t12pa, 
+        l2_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # T12 Segment Angle
+      segment_angles_estimated_list$t12_segment_angle <- xray_t12_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        l1_pelvic_angle = spine_alignment_measures_list$l1pa, 
+        t12_pelvic_angle = spine_alignment_measures_list$t12pa, 
+        t11_pelvic_angle = spine_alignment_measures_list$t11pa, 
+        l1_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # T11 Segment Angle
+      segment_angles_estimated_list$t11_segment_angle <- xray_t11_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        t12_pelvic_angle = spine_alignment_measures_list$t12pa, 
+        t11_pelvic_angle = spine_alignment_measures_list$t11pa, 
+        t10_pelvic_angle = spine_alignment_measures_list$t10pa, 
+        t12_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # T10 Segment Angle
+      segment_angles_estimated_list$t10_segment_angle <- xray_t10_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        t11_pelvic_angle = spine_alignment_measures_list$t11pa, 
+        t10_pelvic_angle = spine_alignment_measures_list$t10pa, 
+        t9_pelvic_angle = spine_alignment_measures_list$t9pa, 
+        t11_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # T9 Segment Angle
+      segment_angles_estimated_list$t9_segment_angle <- xray_t9_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        t10_pelvic_angle = spine_alignment_measures_list$t10pa, 
+        t9_pelvic_angle = spine_alignment_measures_list$t9pa, 
+        t8_pelvic_angle = spine_alignment_measures_list$t8pa, 
+        t10_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # T8 Segment Angle
+      segment_angles_estimated_list$t8_segment_angle <- xray_t8_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        t9_pelvic_angle = spine_alignment_measures_list$t9pa, 
+        t8_pelvic_angle = spine_alignment_measures_list$t8pa, 
+        t7_pelvic_angle = spine_alignment_measures_list$t7pa, 
+        t9_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # T7 Segment Angle
+      segment_angles_estimated_list$t7_segment_angle <- xray_t7_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        t8_pelvic_angle = spine_alignment_measures_list$t8pa, 
+        t7_pelvic_angle = spine_alignment_measures_list$t7pa, 
+        t6_pelvic_angle = spine_alignment_measures_list$t6pa, 
+        t8_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # T6 Segment Angle
+      segment_angles_estimated_list$t6_segment_angle <- xray_t6_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        t7_pelvic_angle = spine_alignment_measures_list$t7pa, 
+        t6_pelvic_angle = spine_alignment_measures_list$t6pa, 
+        t5_pelvic_angle = spine_alignment_measures_list$t5pa, 
+        t7_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # T5 Segment Angle
+      segment_angles_estimated_list$t5_segment_angle <- xray_t5_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        t6_pelvic_angle = spine_alignment_measures_list$t6pa, 
+        t5_pelvic_angle = spine_alignment_measures_list$t5pa, 
+        t4_pelvic_angle = spine_alignment_measures_list$t4pa, 
+        t6_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # T4 Segment Angle
+      segment_angles_estimated_list$t4_segment_angle <- xray_t4_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        t5_pelvic_angle = spine_alignment_measures_list$t5pa, 
+        t4_pelvic_angle = spine_alignment_measures_list$t4pa, 
+        t3_pelvic_angle = spine_alignment_measures_list$t3pa, 
+        t5_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # T3 Segment Angle
+      segment_angles_estimated_list$t3_segment_angle <- xray_t3_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        t4_pelvic_angle = spine_alignment_measures_list$t4pa, 
+        t3_pelvic_angle = spine_alignment_measures_list$t3pa, 
+        t2_pelvic_angle = spine_alignment_measures_list$t2pa, 
+        t4_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      
+      # T2 Segment Angle
+      segment_angles_estimated_list$t2_segment_angle <- xray_t2_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        t3_pelvic_angle = spine_alignment_measures_list$t3pa, 
+        t2_pelvic_angle = spine_alignment_measures_list$t2pa, 
+        t1_pelvic_angle = spine_alignment_measures_list$t1pa, 
+        t3_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # T1 Segment Angle
+      segment_angles_estimated_list$t1_segment_angle <- xray_t1_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        t2_pelvic_angle = spine_alignment_measures_list$t2pa, 
+        t1_pelvic_angle = spine_alignment_measures_list$t1pa, 
+        c7_pelvic_angle = spine_alignment_measures_list$c7pa, 
+        t2_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # C7 Segment Angle
+      segment_angles_estimated_list$c7_segment_angle <- xray_c7_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        t1_pelvic_angle = spine_alignment_measures_list$t1pa, 
+        c7_pelvic_angle = spine_alignment_measures_list$c7pa, 
+        c6_pelvic_angle = spine_alignment_measures_list$c6pa, 
+        t1_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # C6 Segment Angle
+      segment_angles_estimated_list$c6_segment_angle <- xray_c6_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        c7_pelvic_angle = spine_alignment_measures_list$c7pa, 
+        c6_pelvic_angle = spine_alignment_measures_list$c6pa, 
+        c5_pelvic_angle = spine_alignment_measures_list$c5pa, 
+        c7_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # C5 Segment Angle
+      segment_angles_estimated_list$c5_segment_angle <- xray_c5_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        c6_pelvic_angle = spine_alignment_measures_list$c6pa, 
+        c5_pelvic_angle = spine_alignment_measures_list$c5pa, 
+        c4_pelvic_angle = spine_alignment_measures_list$c4pa, 
+        c6_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      # C4 Segment Angle
+      segment_angles_estimated_list$c4_segment_angle <- xray_c4_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        c5_pelvic_angle = spine_alignment_measures_list$c5pa, 
+        c4_pelvic_angle = spine_alignment_measures_list$c4pa, 
+        c3_pelvic_angle = spine_alignment_measures_list$c3pa, 
+        c5_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # C3 Segment Angle
+      segment_angles_estimated_list$c3_segment_angle <- xray_c3_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        c4_pelvic_angle = spine_alignment_measures_list$c4pa, 
+        c3_pelvic_angle = spine_alignment_measures_list$c3pa, 
+        c2_pelvic_angle = spine_alignment_measures_list$c2pa, 
+        c4_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      # C2 Segment Angle
+      segment_angles_estimated_list$c2_segment_angle <- xray_c2_segment_angle_function(
+        pelvic_incidence = pelvic_incidence, 
+        c3_pelvic_angle = spine_alignment_measures_list$c3pa, 
+        c2_pelvic_angle = spine_alignment_measures_list$c2pa, 
+        c3_s1 = sum(unlist(segment_angles_estimated_list))
+      )
+      
+      segment_angles_estimated_list$c1_segment_angle <- segment_angles_estimated_list$c2_segment_angle
+      
+      }
+      segment_angles_estimated_list
+      
+    })
+    
+    output$alignment_parameters_df <- renderTable({
+      
+      enframe(alignment_parameters_reactive_list()) 
+      
+    })
+
+  
+    output$xray_click_df <- renderTable({
+      xray_named_clicks_reactive_df()
+    })
+    
+    
+    ##############################
+
+    output$xray <- renderPlot({
+      req(input$xray)
+
+      xray <-  image_read(path = input$xray$datapath)
+
+      xray_plot <- ggdraw() +
+        draw_image(
+          xray,
+          y = 0,
+          valign = 0,
+          x = 0
+        )
+
+      if(nrow(xray_named_clicks_reactive_df()) > 0) {
+        coord_df <- xray_named_clicks_reactive_df()
+
+        xray_plot <- xray_plot +
+          geom_point(data = coord_df,
+                     aes(x = x, y = y), color = "red", size = 2)
+
+      }
+      alignment_parameters_list <- alignment_parameters_reactive_list()
+
+      if(any(names(alignment_parameters_list) == "pelvic_incidence")){
+        spine_coord_df <-  xray_named_clicks_reactive_df()
+
+        pelvic_incidence <- alignment_parameters_list$pelvic_incidence
+
+        pelvic_incidence_radians <- (pi / 180) * (pelvic_incidence)
+
+        pelvic_tilt <- alignment_parameters_list$pelvic_tilt
+
+        pelvic_tilt_radians <- (pi / 180) * (pelvic_tilt)
+
+        fem_head_center <- click_coord_reactive_list$coords$fem_head_center
+
+        s1_center <- c((click_coord_reactive_list$coords$s1_anterior_superior[[1]] + click_coord_reactive_list$coords$s1_posterior_superior[[1]])/2,
+                       (click_coord_reactive_list$coords$s1_anterior_superior[[2]] + click_coord_reactive_list$coords$s1_posterior_superior[[2]])/2)
+
+        fem_head_to_s1_distance <- jh_calculate_distance_between_2_points_function(point_1 = fem_head_center,
+                                                                                   point_2 = s1_center)
+        sac_inf_length <- fem_head_to_s1_distance/2
+
+        sac_inf_x <- s1_center[[1]] + (cos(pelvic_tilt_radians)*sac_inf_length)
+
+        sac_inf_y <- s1_center[[2]] - (sin(pelvic_tilt_radians)*sac_inf_length)
+
+        sac_inf <- c(sac_inf_x, sac_inf_y)
+
+
+        pi_df <- tibble(x = c(fem_head_center[[1]],
+                              s1_center[[1]],
+                              sac_inf[[1]]),
+                        y = c(fem_head_center[[2]],
+                              s1_center[[2]],
+                              sac_inf[[2]]))
+
+        xray_plot <- xray_plot +
+          geom_path(data = pi_df,
+                    aes(x = x, y = y), color = "darkgreen", size = 1.5)
+
+      }
+      
+      if(any(names(alignment_parameters_list) == "l1pa")){
+        spine_coordinates_df <- tibble(click_target = "s1_center",
+                                       x = s1_center[[1]],
+                                       y = s1_center[[2]]) %>%
+          union_all(xray_named_clicks_reactive_df()) %>%
+          filter(click_target %in% c("fem_head_center", "s1_anterior_superior", "s1_posterior_superior") == FALSE)
+        
+        # spline_fit <- as.data.frame(spline(spine_coordinates_df$y, spine_coordinates_df$x))
+        
+        spline_fit <- as_tibble(spline(spine_coordinates_df$x, spine_coordinates_df$y))%>%
+          arrange(y)
+        
+        l1pa_df <- tibble(x = c(s1_center[[1]],
+                                fem_head_center[[1]],
+                                click_coord_reactive_list$coords$l1_centroid[[1]]),
+                          y = c(s1_center[[2]],
+                                fem_head_center[[2]],
+                                click_coord_reactive_list$coords$l1_centroid[[2]]))
+        
+        xray_plot <- xray_plot +
+          geom_bspline(data = spine_coordinates_df, 
+                       aes(x = x, y = y),
+                       color = 'blue', size = 1) +
+          geom_path(data = l1pa_df,
+                    aes(x = x, y = y), 
+                    color = "darkblue", size = 1)
+
+      }
+      
+      if(any(names(alignment_parameters_list) == "t9pa")){
+
+        t9pa_df <- tibble(x = c(s1_center[[1]],
+                                fem_head_center[[1]],
+                                click_coord_reactive_list$coords$t9_centroid[[1]]),
+                        y = c(s1_center[[2]],
+                              fem_head_center[[2]],
+                              click_coord_reactive_list$coords$t9_centroid[[2]]))
+        
+        xray_plot <- xray_plot +
+          geom_path(data = t9pa_df,
+                    aes(x = x, y = y), color = "lightgreen", size = 1)
+      }
+      
+      if(any(names(alignment_parameters_list) == "t4pa")){
+        
+        t4pa_df <- tibble(x = c(s1_center[[1]],
+                                fem_head_center[[1]],
+                                click_coord_reactive_list$coords$t4_centroid[[1]]),
+                          y = c(s1_center[[2]],
+                                fem_head_center[[2]],
+                                click_coord_reactive_list$coords$t4_centroid[[2]]))
+        
+        xray_plot <- xray_plot +
+          geom_path(data = t4pa_df,
+                    aes(x = x, y = y), color = "purple", size = 1)
+      }
+      
+      if(any(names(alignment_parameters_list) == "c2pa")){
+        
+        c2pa_df <- tibble(x = c(s1_center[[1]],
+                                fem_head_center[[1]],
+                                click_coord_reactive_list$coords$c2_centroid[[1]]),
+                          y = c(s1_center[[2]],
+                                fem_head_center[[2]],
+                                click_coord_reactive_list$coords$c2_centroid[[2]]))
+        
+        xray_plot <- xray_plot +
+          geom_path(data = c2pa_df,
+                    aes(x = x, y = y), color = "darkgreen", size = 1)
+      }
+
+      xray_plot
+    })
+    
+    output$preop_spine_simulation_plot <- renderPlot({
+      if(any(names(alignment_parameters_reactive_list()) == "c2pa")){
+        alignment_parameters_list <- alignment_parameters_reactive_list()
+        
+        s1_center <- c((click_coord_reactive_list$coords$s1_anterior_superior[[1]] + click_coord_reactive_list$coords$s1_posterior_superior[[1]])/2,
+                       (click_coord_reactive_list$coords$s1_anterior_superior[[2]] + click_coord_reactive_list$coords$s1_posterior_superior[[2]])/2)
+        
+        spine_coordinates_df <- tibble(click_target = "s1_center",
+                                       x = s1_center[[1]],
+                                       y = s1_center[[2]]) %>%
+          union_all(xray_named_clicks_reactive_df()) %>%
+          filter(click_target %in% c("fem_head_center", "s1_anterior_superior", "s1_posterior_superior") == FALSE)
+        
+        
+        perpendicular_lines <- spine_coordinates_df %>%
+          mutate(next_x = lead(x), next_y = lead(y)) %>%
+          filter(!is.na(next_x)) %>%
+          rowwise() %>%
+          do(compute_perpendicular_points(.$x, .$y, .$next_x, .$next_y)) %>%
+          ungroup()
+        
+        segement_angles_df <- spine_coordinates_df %>%
+          filter(click_target != "s1_center") %>%
+          mutate(vert_slope = (perpendicular_lines %>%
+                                 mutate(slope = ((y2 - y1)/(x2 - x1))*180/pi))$slope) %>%
+          mutate(segment_level = str_replace_all(click_target, "_centroid", "_segment_angle"))
+        
+        segment_angles_list <- as.list(segement_angles_df$vert_slope)
+        
+        names(segment_angles_list) <- segement_angles_df$segment_level
+        
+        segment_angles_list$c1_segment_angle <- segment_angles_list$c2_segment_angle
+        
+        if(length(xray_estimated_segment_angles_reactive_list())>15){
+          spine_simulation_list <- build_full_spine_from_vertebral_pelvic_angles_function(pelv_inc_value = alignment_parameters_reactive_list()$pelvic_incidence, 
+                                                                                          pt_value = alignment_parameters_reactive_list()$pelvic_tilt, 
+                                                                                          l1pa_value_input = alignment_parameters_reactive_list()$l1pa, 
+                                                                                          # l1s1_value_input = alignment_parameters_reactive_list()$preop_l1s1,
+                                                                                          # t10_l2_value_input = alignment_parameters_reactive_list()$preop_t10_l2,
+                                                                                          t9pa_value_input = alignment_parameters_reactive_list()$t9pa, 
+                                                                                          t4pa_value_input = alignment_parameters_reactive_list()$t4pa, 
+                                                                                          c2pa_value_input = alignment_parameters_reactive_list()$c2pa, 
+                                                                                          # c2_c7_value_input = alignment_parameters_reactive_list()$preop_c2c7,
+                                                                                          input_segment_angles = "yes",
+                                                                                          segment_angles_input = xray_estimated_segment_angles_reactive_list(),
+                                                                                          spine_faces = "left" 
+          )
+        }else{
+          spine_simulation_list <- build_full_spine_from_vertebral_pelvic_angles_function(pelv_inc_value = alignment_parameters_reactive_list()$pelvic_incidence, 
+                                                                                          pt_value = alignment_parameters_reactive_list()$pelvic_tilt, 
+                                                                                          l1pa_value_input = alignment_parameters_reactive_list()$l1pa, 
+                                                                                          # l1s1_value_input = alignment_parameters_reactive_list()$preop_l1s1,
+                                                                                          # t10_l2_value_input = alignment_parameters_reactive_list()$preop_t10_l2,
+                                                                                          t9pa_value_input = alignment_parameters_reactive_list()$t9pa, 
+                                                                                          t4pa_value_input = alignment_parameters_reactive_list()$t4pa, 
+                                                                                          c2pa_value_input = alignment_parameters_reactive_list()$c2pa, 
+                                                                                          # c2_c7_value_input = alignment_parameters_reactive_list()$preop_c2c7,
+                                                                                          # input_segment_angles = "yes", 
+                                                                                          # segment_angles_input = segment_angles_list,
+                                                                                          spine_faces = "left" 
+          )
+        }
+        
+        spine_geoms_df <- spine_simulation_list$spine_df %>%
+          select(object, geom, geom_alpha)
+        
+        ggplot() +
+          geom_sf(data = spine_geoms_df, 
+                  color = "black", 
+                  aes(geometry = geom, 
+                      alpha = geom_alpha,
+                      fill = "grey90")) +
+          ylim(-20, 110) +
+          theme_void() +
+          labs(title = "Preop Alignment") +
+          theme(
+            axis.text = element_blank(),
+            axis.title = element_blank(),
+            plot.title = element_text(
+              size = 16,
+              hjust = 0.5,
+              vjust = -0.5,
+              face = "bold.italic"
+            ),
+            plot.background = element_rect(fill = "transparent", colour = NA),
+            panel.background = element_rect(fill = "transparent", colour = NA)
+          ) + 
+          # draw_text(text = measurements_df$label,
+          #           x = measurements_df$x, 
+          #           y = measurements_df$y, size = 11) +
+          scale_fill_identity() +
+          scale_alpha_identity()
+        
+      }
+      
+    })
+    
+    output$preop_xray_rigid_segments_ui <- renderUI({
+      # preop_segment_angles_list <- preop_segment_angles_list_reactive()
+      
+      segment_angles_input_list <- rev(map(spinal_segments_labels_vector, function(label) {
+        create_spine_rigid_level_input_function(segment_input_label = label)
+      }))
+      # create_spine_rigid_level_input_function
+      
+      column(width = 5,
+             box(width = 12,title = "Cervical", 
+                 collapsible = TRUE, 
+                 collapsed = TRUE,
+                 h5("Check box if Rigid Level"),
+                 segment_angles_input_list[1:6] %>% tagList()
+             ),
+             box(width = 12,title = "Thoracic", 
+                 collapsible = TRUE, 
+                 collapsed = TRUE,
+                 h5("Check box if Rigid Level"),
+                 segment_angles_input_list[7:19] %>% tagList()
+             ),
+             box(width = 12,title = "Lumbar", 
+                 collapsible = TRUE, 
+                 collapsed = FALSE,
+                 h5("Check box if Rigid Level"),
+                 segment_angles_input_list[20:24]%>% tagList()
+             )
+      )
+    })
+    
+    preop_rigid_levels_vector_reactive_xray <- reactive({
+      # segment_id <- paste0("preop_", str_to_lower(str_replace_all(segment_input_label, pattern = "-", "_")), "_rigid")
+      rigid_levels <- c("na")
+      if(input$preop_l5_s1_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "L5-S1")} 
+      if(input$preop_l4_l5_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "L4-L5")} 
+      if(input$preop_l3_l4_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "L3-L4")} 
+      if(input$preop_l2_l3_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "L2-L3")} 
+      if(input$preop_l1_l2_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "L1-L2")} 
+      if(input$preop_t12_l1_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "T12-L1")} 
+      if(input$preop_t11_t12_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "T11-T12")} 
+      if(input$preop_t10_t11_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "T10-T11")} 
+      if(input$preop_t9_t10_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "T10-T9")} 
+      if(input$preop_t8_t9_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "T8-T9")} 
+      if(input$preop_t7_t8_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "T7-T8")} 
+      if(input$preop_t6_t7_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "T6-T7")} 
+      if(input$preop_t5_t6_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "T5-T6")} 
+      if(input$preop_t4_t5_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "T4-T5")} 
+      if(input$preop_t3_t4_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "T3-T4")} 
+      if(input$preop_t2_t3_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "T2-T3")} 
+      if(input$preop_t1_t2_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "T1-T2")} 
+      if(input$preop_c7_t1_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "C7-T1")} 
+      if(input$preop_c6_c7_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "C6-C7")} 
+      if(input$preop_c5_c6_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "C5-C6")} 
+      if(input$preop_c4_c5_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "C4-C5")} 
+      if(input$preop_c3_c4_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "C3-C4")} 
+      if(input$preop_c2_c3_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "C2-C3")} 
+      if(input$preop_c1_c2_rigid_xray == TRUE){rigid_levels <- append(rigid_levels, "C1-C2")} 
+      # set_names(map_chr(spinal_segments_labels_vector, ~ paste0(str_to_lower(strsplit(.x, "-")[[1]][1]), "_segment_angle")))
+      if(length(rigid_levels)>0){
+        rigid_levels <- map_chr(rigid_levels, ~ paste0(str_to_lower(strsplit(.x, "-")[[1]][1]), "_segment"))
+      }
+      rigid_levels
+    })
+    
+    
+    spine_plan_uiv_t11_option_1_xray <- eventReactive(input$compute_plan_xray, {
+      build_t11_spine_plot_function(pso_option_number = 1, 
+                                    preop_age = input$preop_age,
+                                    preop_sex = input$preop_sex,
+                                    preop_pelvic_incidence = alignment_parameters_reactive_list()$pelvic_incidence,
+                                    preop_pt = alignment_parameters_reactive_list()$pelvic_tilt,
+                                    preop_l1pa = alignment_parameters_reactive_list()$l1pa,
+                                    preop_t9pa = alignment_parameters_reactive_list()$t9pa,
+                                    preop_t4pa = alignment_parameters_reactive_list()$t4pa,
+                                    preop_c2pa = alignment_parameters_reactive_list()$c2pa,
+                                    l1pa_line_color = input$l1pa_line_color,
+                                    t4pa_line_color = input$t4pa_line_color,
+                                    c2pa_line_color = input$c2pa_line_color, 
+                                    preop_segment_angles_input_list_reactive = xray_estimated_segment_angles_reactive_list(),
+                                    preop_rigid_levels_vector_reactive = preop_rigid_levels_vector_reactive_xray() #preop_rigid_levels_vector_reactive()
+      )
+    })
+    
+    
+    spine_plan_uiv_t11_option_2_xray <- eventReactive(input$compute_plan_xray, {
+      build_t11_spine_plot_function(pso_option_number = 2, 
+                                    preop_age = input$preop_age,
+                                    preop_sex = input$preop_sex,
+                                    preop_pelvic_incidence = alignment_parameters_reactive_list()$pelvic_incidence,
+                                    preop_pt = alignment_parameters_reactive_list()$pelvic_tilt,
+                                    preop_l1pa = alignment_parameters_reactive_list()$l1pa,
+                                    preop_t9pa = alignment_parameters_reactive_list()$t9pa,
+                                    preop_t4pa = alignment_parameters_reactive_list()$t4pa,
+                                    preop_c2pa = alignment_parameters_reactive_list()$c2pa,
+                                    l1pa_line_color = input$l1pa_line_color,
+                                    t4pa_line_color = input$t4pa_line_color,
+                                    c2pa_line_color = input$c2pa_line_color, 
+                                    preop_segment_angles_input_list_reactive = xray_estimated_segment_angles_reactive_list(),
+                                    preop_rigid_levels_vector_reactive = preop_rigid_levels_vector_reactive_xray() # preop_rigid_levels_vector_reactive()
+      )
+    })
+    
+    
+    output$spine_plan_lower_t_xray <- renderPlot({
+      
+      plot_grid(NULL, NULL, NULL,
+                spine_plan_uiv_t11_option_1_xray(), NULL, spine_plan_uiv_t11_option_2_xray(), 
+                nrow = 2, rel_heights = c(0.075, 0.925), 
+                rel_widths = c(1, -0.15, 1)
+      ) + 
+        draw_text(text = "Prescribed Alignment: Lower Thoracic UIV", x = 0.5, y = 0.975, size = 18, fontfact = "bold")
+      
+      # plot_grid(spine_plan_uiv_t11_option_1(), spine_plan_uiv_t11_option_2(), nrow = 1)
+      
+    })
+    
+    spine_plan_uiv_t4_option_1_xray <- eventReactive(input$compute_plan_xray, {
+      build_upper_t_uiv_spine_plot_function(pso_option_number = 1, 
+                                            preop_age = input$preop_age,
+                                            preop_sex = input$preop_sex,
+                                            preop_pelvic_incidence = alignment_parameters_reactive_list()$pelvic_incidence,
+                                            preop_pt = alignment_parameters_reactive_list()$pelvic_tilt,
+                                            preop_l1pa = alignment_parameters_reactive_list()$l1pa,
+                                            preop_t9pa = alignment_parameters_reactive_list()$t9pa,
+                                            preop_t4pa = alignment_parameters_reactive_list()$t4pa,
+                                            preop_c2pa = alignment_parameters_reactive_list()$c2pa,
+                                            l1pa_line_color = input$l1pa_line_color,
+                                            t4pa_line_color = input$t4pa_line_color,
+                                            c2pa_line_color = input$c2pa_line_color, 
+                                            preop_segment_angles_input_list_reactive = xray_estimated_segment_angles_reactive_list(),
+                                            preop_rigid_levels_vector_reactive = preop_rigid_levels_vector_reactive_xray() #preop_rigid_levels_vector_reactive()
+      )
+    })
+    
+    
+    ############## PSO OPTION 2 UIV T4
+    spine_plan_uiv_t4_option_2_xray <- eventReactive(input$compute_plan_xray, {
+      build_upper_t_uiv_spine_plot_function(pso_option_number = 2, 
+                                            preop_age = input$preop_age,
+                                            preop_sex = input$preop_sex,
+                                            preop_pelvic_incidence = alignment_parameters_reactive_list()$pelvic_incidence,
+                                            preop_pt = alignment_parameters_reactive_list()$pelvic_tilt,
+                                            preop_l1pa = alignment_parameters_reactive_list()$l1pa,
+                                            preop_t9pa = alignment_parameters_reactive_list()$t9pa,
+                                            preop_t4pa = alignment_parameters_reactive_list()$t4pa,
+                                            preop_c2pa = alignment_parameters_reactive_list()$c2pa,
+                                            l1pa_line_color = input$l1pa_line_color,
+                                            t4pa_line_color = input$t4pa_line_color,
+                                            c2pa_line_color = input$c2pa_line_color, 
+                                            preop_segment_angles_input_list_reactive = xray_estimated_segment_angles_reactive_list(),
+                                            preop_rigid_levels_vector_reactive = preop_rigid_levels_vector_reactive_xray() #preop_rigid_levels_vector_reactive()
+      )
+    })
+    
+    output$spine_plan_upper_t_xray <- renderPlot({
+      
+      plot_grid(NULL, NULL, NULL,
+                spine_plan_uiv_t4_option_1_xray(), NULL, spine_plan_uiv_t4_option_2_xray(), 
+                nrow = 2, rel_heights = c(0.075, 0.925),
+                rel_widths = c(1, -0.15, 1)) + 
+        draw_text(text = "Prescribed Alignment: Upper Thoracic UIV", x = 0.5, y = 0.975, size = 18, fontfact = "bold")
+      
     })
     
 }

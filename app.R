@@ -44,6 +44,7 @@ jh_calculate_distance_between_2_points_function <- function(point_1, point_2){
 
 jh_compute_vpa_from_xray_data_function <- function(fem_head_center = c(0,0), 
                                                    vertebral_centroid = c(0.15, 0.3), 
+                                                   spine_facing = "left",
                                                    pelvic_tilt = 15){
   
   fem_head_to_centroid_length <- jh_calculate_distance_between_2_points_function(point_1 = vertebral_centroid, 
@@ -53,11 +54,18 @@ jh_compute_vpa_from_xray_data_function <- function(fem_head_center = c(0,0),
                                                                                    point_2 = c(fem_head_center[1],
                                                                                                vertebral_centroid[2]))
   
-  vertebral_tilt <- asin(fem_head_to_centroid_x_length/fem_head_to_centroid_length)*180/pi*-1
+  tilt_orientation_modifier <- case_when(
+    spine_facing == "left" & fem_head_center[[1]] > vertebral_centroid[[1]] ~ 1,
+    spine_facing == "left" & fem_head_center[[1]] < vertebral_centroid[[1]] ~ -1,
+    spine_facing == "right" & fem_head_center[[1]] > vertebral_centroid[[1]] ~ -1,
+    spine_facing == "right" & fem_head_center[[1]] < vertebral_centroid[[1]] ~ 1
+  )
   
-  if(vertebral_centroid[[1]] < fem_head_center[[1]]){
-    vertebral_tilt <- vertebral_tilt*-1
-  }
+  vertebral_tilt <- asin(fem_head_to_centroid_x_length/fem_head_to_centroid_length)*180/pi*tilt_orientation_modifier
+  
+  # if(vertebral_centroid[[1]] < fem_head_center[[1]]){
+  #   vertebral_tilt <- vertebral_tilt*-1
+  # }
   
   vpa <- pelvic_tilt + vertebral_tilt 
   
@@ -87,9 +95,74 @@ compute_perpendicular_points <- function(x1, y1, x2, y2, distance = 0.01) {
   return(tibble(x1 = point_1[1], y1 = point_1[2], x2 = point_2[1], y2 = point_2[2]))
 }
 
+# calculate_pelvic_incidence_line_coordinates <- function(fem_head_center = c(0,0), 
+#                                                         s1_anterior, 
+#                                                         s1_posterior, 
+#                                                         spine_facing = "left") {
+#   
+#   # Step 1: Calculate the center (midpoint)
+#   center_x <- (s1_anterior[1] + s1_posterior[1]) / 2
+#   center_y <- (s1_anterior[2] + s1_posterior[2]) / 2
+#   center <- c(center_x, center_y)
+#   
+#   # Step 2: Calculate the length of the line between s1_anterior and s1_posterior
+#   line_length <- sqrt((s1_anterior[1] - s1_posterior[1])^2 + (s1_anterior[2] - s1_posterior[2])^2)
+#   
+#   # Step 3: Calculate the perpendicular slope (negative reciprocal of original slope)
+#   # If the line is vertical (undefined slope), we set the perpendicular to be horizontal
+#   if (s1_anterior[1] == s1_posterior[1]) {
+#     slope_perpendicular <- 0  # Horizontal line
+#   } else {
+#     original_slope <- (s1_posterior[2] - s1_anterior[2]) / (s1_posterior[1] - s1_anterior[1])
+#     slope_perpendicular <- -1 / original_slope
+#     if(spine_facing == "right"){
+#       slope_perpendicular <- slope_perpendicular*-1
+#     }
+#   }
+#   
+#   # Step 4: Calculate the length of the perpendicular line (5 times the original length)
+#   extended_length <- 3 * line_length
+#   
+#   # Step 5: Calculate the inferior point
+#   # The displacement (dx, dy) is based on the perpendicular slope and the extended length
+#   if (s1_anterior[1] == s1_posterior[1]) {
+#     # For vertical lines, the perpendicular is horizontal
+#     dx <- extended_length
+#     dy <- 0
+#   } else if (s1_anterior[2] == s1_posterior[2]) {
+#     # For horizontal lines, the perpendicular is vertical
+#     dx <- 0
+#     dy <- extended_length
+#   } else {
+#     # For all other lines, use the slope to calculate displacement
+#     dx <- extended_length / sqrt(1 + slope_perpendicular^2)
+#     dy <- slope_perpendicular * dx
+#   }
+#   
+#   # Inferior point is displaced from the center by (dx, dy)
+#   inferior_x <- center[1] + dx
+#   inferior_y <- center[2] + dy
+#   inferior <- c(inferior_x, inferior_y)
+#   
+#   pi_line_coordinates_df <- tibble(spine_point = c("fem_head_center", "s1_center", "s1_inferior"), 
+#          x = c(fem_head_center[1], 
+#                center[1],
+#                inferior_x),
+#          y = c(fem_head_center[2],
+#                center[2],
+#                inferior_y)
+#          )
+#   
+#   # Return the center and inferior points as a list
+#   # return(list(center = center, inferior = inferior))
+#   pi_line_coordinates_df
+# }
 calculate_pelvic_incidence_line_coordinates <- function(fem_head_center = c(0,0), 
                                                         s1_anterior, 
-                                                        s1_posterior) {
+                                                        s1_posterior, 
+                                                        spine_facing = "left",
+                                                        pelvic_tilt = 10, 
+                                                        pelvic_incidence_value = 50) {
   
   # Step 1: Calculate the center (midpoint)
   center_x <- (s1_anterior[1] + s1_posterior[1]) / 2
@@ -99,20 +172,9 @@ calculate_pelvic_incidence_line_coordinates <- function(fem_head_center = c(0,0)
   # Step 2: Calculate the length of the line between s1_anterior and s1_posterior
   line_length <- sqrt((s1_anterior[1] - s1_posterior[1])^2 + (s1_anterior[2] - s1_posterior[2])^2)
   
-  # Step 3: Calculate the perpendicular slope (negative reciprocal of original slope)
-  # If the line is vertical (undefined slope), we set the perpendicular to be horizontal
-  if (s1_anterior[1] == s1_posterior[1]) {
-    slope_perpendicular <- 0  # Horizontal line
-  } else {
-    original_slope <- (s1_posterior[2] - s1_anterior[2]) / (s1_posterior[1] - s1_anterior[1])
-    slope_perpendicular <- -1 / original_slope
-  }
-  
   # Step 4: Calculate the length of the perpendicular line (5 times the original length)
-  extended_length <- 5 * line_length
+  extended_length <- 3 * line_length
   
-  # Step 5: Calculate the inferior point
-  # The displacement (dx, dy) is based on the perpendicular slope and the extended length
   if (s1_anterior[1] == s1_posterior[1]) {
     # For vertical lines, the perpendicular is horizontal
     dx <- extended_length
@@ -122,30 +184,33 @@ calculate_pelvic_incidence_line_coordinates <- function(fem_head_center = c(0,0)
     dx <- 0
     dy <- extended_length
   } else {
-    # For all other lines, use the slope to calculate displacement
-    dx <- extended_length / sqrt(1 + slope_perpendicular^2)
-    dy <- slope_perpendicular * dx
+    pt_pi_diff <- pelvic_incidence_value - pelvic_tilt
+    
+    pt_pi_diff_rad <- pt_pi_diff*(pi/180)
+    
+    orientation_modifier <- if_else(spine_facing == "left", -1, 1)
+    
+    dx <- sin(pt_pi_diff_rad)*extended_length*orientation_modifier
+    dy <- cos(pt_pi_diff_rad)*extended_length
   }
   
   # Inferior point is displaced from the center by (dx, dy)
-  inferior_x <- center[1] + dx
-  inferior_y <- center[2] + dy
+  inferior_x <- center[1] - dx
+  inferior_y <- center[2] - dy
   inferior <- c(inferior_x, inferior_y)
   
   pi_line_coordinates_df <- tibble(spine_point = c("fem_head_center", "s1_center", "s1_inferior"), 
-         x = c(fem_head_center[1], 
-               center[1],
-               inferior_x),
-         y = c(fem_head_center[2],
-               center[2],
-               inferior_y)
-         )
-  
+                                   x = c(fem_head_center[1], 
+                                         center[1],
+                                         inferior_x),
+                                   y = c(fem_head_center[2],
+                                         center[2],
+                                         inferior_y)
+  )
   # Return the center and inferior points as a list
   # return(list(center = center, inferior = inferior))
   pi_line_coordinates_df
 }
-
 
 all_possible_lumbar_segments_angles_with_lpa_df <- read_csv("all_possible_lumbar_segment_angles_for_lpa.csv")
 
@@ -827,24 +892,8 @@ ui <- dashboardPage(
               # )
       ),
       tabItem(tabName = "upload_measure_xray",
-              # column(width = 1,
-              #   fileInput(inputId = "xray_file", "Upload an Xray"),
-              #   br(),
-              #   switchInput(inputId = "xray_input_all_centroids", 
-              #               label = "Select all spine centroids",
-              #               size = "mini",
-              #               value = FALSE),
-              #   br(),
-              #   hr(),
-              #   tableOutput(outputId = "alignment_parameters_df")
-              # ),
               column(width = 1, 
                      fileInput(inputId = "xray_file", "Upload an Xray"),
-                     br(),
-                     switchInput(inputId = "xray_input_all_centroids", 
-                                 label = "Select all spine centroids",
-                                 size = "mini",
-                                 value = FALSE),
                      br(),
                      h6("Click to set orientation:"),
                      prettyToggle(
@@ -867,7 +916,14 @@ ui <- dashboardPage(
                        uiOutput("icon_xray_orientation")  # Replaces imageOutput
                      ),
                      uiOutput(outputId = "preop_xray_rigid_segments_ui")
-                     ),
+                     ),   
+              br(),
+              br(),
+              switchInput(inputId = "xray_input_all_centroids", 
+                          label = "Select all spine centroids",
+                          size = "mini",
+                          value = FALSE),
+              
               column(width = 2, 
                      tags$div(
                        style = "font-size:24px; font-weight:bold; color:red; font-family:sans-serif; font-style:italic; hjust: 0.5", 
@@ -892,7 +948,7 @@ ui <- dashboardPage(
                        )
                      )
                      ),
-              column(width = 1, 
+              column(width = 2, 
                      tableOutput(outputId = "alignment_parameters_df")
                      ),
               column(width = 2, 
@@ -3059,52 +3115,44 @@ server <- function(input, output, session) {
       }
     })
     
-    # output$icon_xray_orientation <- renderImage({
-    #   # Return the path to the SVG file based on the user input
-    #   if (input$xray_orientation) {
-    #     list(
-    #       src = "www/icon_facing_left.svg",  # Path to the `www` folder
-    #       contentType = "image/svg+xml",
-    #       alt = "Left Facing Icon",
-    #       width = "50%",  # 50% of the column width
-    #       height = "auto"  # Maintain aspect ratio
-    #     )
-    #   } else {
-        # list(
-        #   src = "www/icon_facing_right.svg",  # Path to the `www` folder
-        #   contentType = "image/svg+xml",
-        #   alt = "Right Facing Icon",
-        #   width = "50%",  # 50% of the column width
-        #   height = "auto"  # Maintain aspect ratio
-        # )
-    #   }
-    # }, deleteFile = FALSE)
-    
     output$icon_xray_orientation <- renderUI({
-      # Dynamically render the icon based on the xray_orientation
-      if (input$xray_orientation) {
-        tags$img(
+      if (input$xray_orientation){
+        image_object <- tags$img(
           src = "icon_facing_left.svg",  # Remove 'www/', correct path to icon
           style = "width: 50%; height: auto;",  # Set width to 50%, maintain aspect ratio
           alt = "Left Facing Icon"
         )
-        # tags$img(
-        #   src = "www/icon_facing_left.svg",  # Path to the left-facing icon
-        #   style = "width: 50%; height: auto;"  # Ensure the width is 50% and maintain aspect ratio
-        # )
-      } else {
-        tags$img(
+      }else{
+        image_object <-tags$img(
           src = "icon_facing_right.svg",  # Remove 'www/', correct path to icon
           style = "width: 50%; height: auto;",  # Set width to 50%, maintain aspect ratio
           alt = "Right Facing Icon"
         )
       }
+      
+      div(
+        style = "text-align: center;",  # Center the image
+        actionLink(
+          inputId = "orientation_icon_click",  # Input ID for action
+          label = image_object
+        )
+      )
     })
+    
+    observeEvent(input$orientation_icon_click, {
+      updatePrettyToggle(session = session, 
+                         inputId = "xray_orientation",
+                         value = if_else(input$xray_orientation == TRUE, FALSE, TRUE)
+      )
+    }
+    )
+    
     
     spine_orientation_reactive <- reactive({
       xray_orientation <- if_else(input$xray_orientation, "left", "right")
       xray_orientation
     })
+    
     
     observeEvent(input$xray_click, {
       if(nrow(xray_click_coordinates_reactive_df())==3){
@@ -3165,10 +3213,17 @@ server <- function(input, output, session) {
       
       if (click_count < length(spine_input_labels)) {
         instruction <- spine_input_labels[click_count + 1]
+        
+        instruction <- str_replace_all(instruction, "fem_head_center", "Center of Femoral Heads")
+        instruction <- str_replace_all(instruction, "_superior", "_superior Corner")
+        
+        instruction <- str_to_title(str_replace_all(instruction, "_", " "))
+        
+        instruction <- paste("Click the", instruction)
+        
       } else {
         instruction <- "All points recorded."
       }
-      
       HTML("<div>", instruction, "</div>")
     })
 
@@ -3304,7 +3359,17 @@ server <- function(input, output, session) {
         
         ## SOH. Sin theta = opp/hyp
         
-        spine_alignment_measures_list$pelvic_tilt <- asin(fem_head_to_s1_x_length/fem_head_to_s1_length)*180/pi
+        # input$xray_orientation
+        
+        pt_orientation_modifier <- case_when(
+          input$xray_orientation & fem_head_center[[1]] < s1_center[[1]] ~ 1,
+          input$xray_orientation & fem_head_center[[1]] > s1_center[[1]] ~ -1,
+          input$xray_orientation == FALSE & fem_head_center[[1]] > s1_center[[1]] ~ 1,
+          input$xray_orientation  == FALSE & fem_head_center[[1]] < s1_center[[1]] ~ -1
+        )
+        
+        spine_alignment_measures_list$pelvic_tilt <- asin(fem_head_to_s1_x_length/fem_head_to_s1_length)*180/pi*pt_orientation_modifier
+    
         
         ### COMPUTE SS ###
         s1_length <- jh_calculate_distance_between_2_points_function(point_1 = click_coord_reactive_list$coords$s1_anterior_superior,
@@ -3329,6 +3394,7 @@ server <- function(input, output, session) {
           filter(spine_point != "s1_center") %>%
           mutate(vpa = map2(.x = x, .y = y, .f = ~ jh_compute_vpa_from_xray_data_function(fem_head_center = click_coord_reactive_list$coords$fem_head_center,
                                                                                           vertebral_centroid = c(.x, .y),
+                                                                                          spine_facing = if_else(input$xray_orientation, "left", "right"),
                                                                                           pelvic_tilt = spine_alignment_measures_list$pelvic_tilt
           )
           )
@@ -3749,7 +3815,11 @@ server <- function(input, output, session) {
          
          pi_df <- calculate_pelvic_incidence_line_coordinates(fem_head_center = click_coord_reactive_list$coords$fem_head_center,
                                                      s1_anterior = click_coord_reactive_list$coords$s1_anterior_superior, 
-                                                     s1_posterior = click_coord_reactive_list$coords$s1_posterior_superior)
+                                                     s1_posterior = click_coord_reactive_list$coords$s1_posterior_superior, 
+                                                     spine_facing = if_else(input$xray_orientation, "left", "right"),
+                                                     pelvic_tilt = alignment_parameters_list$pelvic_tilt, 
+                                                     pelvic_incidence_value = alignment_parameters_list$pelvic_incidence
+                                                     )
          
         
         #  s1_fem_head_df <- xray_centroid_coordinates_reactive_df() %>%

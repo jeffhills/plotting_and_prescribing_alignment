@@ -509,7 +509,7 @@ build_t11_spine_plot_function <- function(pso_option_number = 1,
                                           l1pa_line_color, 
                                           t4pa_line_color, 
                                           c2pa_line_color, 
-                                          preop_segment_angles_input_list_reactive,
+                                          preop_segment_angles_input_list_reactive = c(),
                                           preop_rigid_levels_vector_reactive
                                           ){
 
@@ -519,7 +519,21 @@ build_t11_spine_plot_function <- function(pso_option_number = 1,
 
   starting_pi <- preop_pelvic_incidence
   
-  starting_segment_angles <- preop_segment_angles_input_list_reactive
+  if(length(preop_segment_angles_input_list_reactive) < 2){
+    starting_segment_angles <- compute_segment_angles_list_function(pelvic_incidence = starting_pi,
+                                                                    # l1_s1 = l1s1_value_input,
+                                                                    # t10_l2 = t10_l2_value_input,
+                                                                    # c2_c7 = c2_c7_value_input,
+                                                                    l1pa = preop_l1pa,
+                                                                    t9pa = preop_t9pa,
+                                                                    t4pa = preop_t4pa,
+                                                                    c2pa = preop_c2pa
+    )
+  }else{
+    starting_segment_angles <- preop_segment_angles_input_list_reactive
+  }
+  
+  # starting_segment_angles <- preop_segment_angles_input_list_reactive
   
   preop_c2_t1 <- compute_c2_t1_function(segment_angles_list = starting_segment_angles)
   
@@ -1153,7 +1167,7 @@ build_upper_t_uiv_spine_plot_function <- function(pso_option_number = 1,
                                           l1pa_line_color, 
                                           t4pa_line_color, 
                                           c2pa_line_color, 
-                                          preop_segment_angles_input_list_reactive,
+                                          preop_segment_angles_input_list_reactive = c(),
                                           preop_rigid_levels_vector_reactive
 ){
   
@@ -1164,7 +1178,21 @@ build_upper_t_uiv_spine_plot_function <- function(pso_option_number = 1,
   
   
   starting_pi <- preop_pelvic_incidence
-  starting_segment_angles <- preop_segment_angles_input_list_reactive
+  
+  if(length(preop_segment_angles_input_list_reactive) < 2){
+    starting_segment_angles <- compute_segment_angles_list_function(pelvic_incidence = starting_pi,
+                                                               # l1_s1 = l1s1_value_input,
+                                                               # t10_l2 = t10_l2_value_input,
+                                                               # c2_c7 = c2_c7_value_input,
+                                                               l1pa = preop_l1pa,
+                                                               t9pa = preop_t9pa,
+                                                               t4pa = preop_t4pa,
+                                                               c2pa = preop_c2pa
+    )
+  }else{
+    starting_segment_angles <- preop_segment_angles_input_list_reactive
+  }
+ 
   preop_c2_t1 <- compute_c2_t1_function(segment_angles_list = starting_segment_angles)
   preop_t1_t10 <- compute_t1_t10_function(segment_angles_list = starting_segment_angles)
   prescribed_t10_l2 <- prescribe_t10_l2_function(pelvic_incidence = starting_pi, 

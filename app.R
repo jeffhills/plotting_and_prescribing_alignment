@@ -893,67 +893,120 @@ ui <- dashboardPage(
       ),
       tabItem(tabName = "upload_measure_xray",
               column(width = 1, 
-                     fileInput(inputId = "xray_file", "Upload an Xray"),
+                     fileInput(inputId = "xray_file", "Upload an Xray", capture = "environment", accept = "image/*"),
                      br(),
-                     h6("Click to set orientation:"),
-                     prettyToggle(
-                       inputId = "xray_orientation",
-                       fill = TRUE,
-                       value = TRUE,
-                       status_on = "info", 
-                       status_off = "info",
-                       bigger = TRUE, 
-                       width = "100%", 
-                       shape = "curve",
-                       label_on = "Facing Left", 
-                       label_off = "Facing Right",
-                       outline = FALSE,
-                       icon_on = icon("arrow-left"),
-                       icon_off = icon("arrow-right")
+                     conditionalPanel(
+                       condition = "input.xray_file_uploaded == true",  # Show only if xray_file is not null
+                       fluidRow(
+                         h6("Click to set orientation:"),
+                         prettyToggle(
+                           inputId = "xray_orientation",
+                           fill = TRUE,
+                           value = TRUE,
+                           status_on = "info", 
+                           status_off = "info",
+                           bigger = TRUE, 
+                           width = "100%", 
+                           shape = "curve",
+                           label_on = "Facing Left", 
+                           label_off = "Facing Right",
+                           outline = FALSE,
+                           icon_on = icon("arrow-left"),
+                           icon_off = icon("arrow-right")
+                         ),
+                         div(
+                           style = "text-align: center;",  # Center the image horizontally
+                           uiOutput("icon_xray_orientation")  # Replaces imageOutput
+                         ),
+                         uiOutput(outputId = "preop_xray_rigid_segments_ui")
+                       ),
+                       br(),
+                       br(),
+                       switchInput(inputId = "xray_input_all_centroids", 
+                                   # label = "Input all spine centroids",
+                                   label = NULL,
+                                   size = "mini",
+                                   value = FALSE,
+                       ),
+                       br()
                      ),
                      div(
-                       style = "text-align: center;",  # Center the image horizontally
-                       uiOutput("icon_xray_orientation")  # Replaces imageOutput
+                       style = "display: none;",  # Hide the entire div, including the switch
+                     switchInput(
+                       inputId = "xray_file_uploaded",
+                       size = "mini", label = NULL,
+                       value = FALSE, 
+                       onLabel = "Y", 
+                       offLabel = "N",
                      ),
-                     uiOutput(outputId = "preop_xray_rigid_segments_ui")
-                     ),   
-              br(),
-              br(),
-              switchInput(inputId = "xray_input_all_centroids", 
-                          label = "Select all spine centroids",
-                          size = "mini",
-                          value = FALSE),
-              
-              column(width = 2, 
-                     tags$div(
-                       style = "font-size:24px; font-weight:bold; color:red; font-family:sans-serif; font-style:italic; hjust: 0.5", 
-                       htmlOutput(outputId = "xray_click_instructions")
-                     ),
-                     uiOutput(outputId = "xray_plot_ui"),
-                     fluidRow(
-                       column(width = 6, 
-                              actionBttn(inputId = "xray_delete_last_point", 
-                                         label = "Delete Last Click",
-                                         style = "bordered", 
-                                         color = "success"
-                              ),
-                       ),
-                       column(width = 6, 
-                              actionBttn(
-                                inputId = "xray_reset_points",
-                                label = "Reset",
-                                style = "bordered", 
-                                color = "danger"
-                              )
-                       )
+                     switchInput(
+                       inputId = "all_centroids_recorded",
+                       size = "mini",
+                       label = NULL,
+                       value = FALSE, 
+                       onLabel = "Y", 
+                       offLabel = "N",
+                     )
+                     # all_centroids_recorded
+                     )
+              ),   
+              conditionalPanel(
+                condition = "input.xray_file_uploaded == true",
+                column(width = 3, 
+                       box(title = NULL, collapsible = FALSE, width = 12, 
+                           tags$div(
+                             style = 
+                               "font-size: 20px; 
+                       font-weight: bold; 
+                       color: yellow; 
+                       font-family: arial; 
+                       font-style: italic; 
+                       text-align: center; 
+                       background-color: black; 
+                       padding: 3px; 
+                       border-radius: 12px;  /* Rounded corners */
+                         display: block;"
+                             , 
+                             htmlOutput(outputId = "xray_click_instructions")
+                           ), 
+                           uiOutput(outputId = "xray_plot_ui"),
+                           
+                           fluidRow(
+                             column(width = 7, 
+                                    actionBttn(inputId = "xray_delete_last_point", 
+                                               size = "sm",
+                                               label = "Delete Last",
+                                               style = "jelly", 
+                                               color = "success",
+                                               icon = icon("delete-left")
+                                    )
+                             ),
+                             column(width = 5, 
+                                    actionBttn(
+                                      size = "sm",
+                                      inputId = "xray_reset_points",
+                                      label = "Reset",
+                                      style = "unite", 
+                                      color = "danger",
+                                      icon = icon("trash-can")
+                                    )
+                             ))
+                     )
+                )),
+              column(width = 1, 
+                     conditionalPanel(
+                       condition = "input.xray_file_uploaded == true",
+                     tableOutput(outputId = "alignment_parameters_df")
                      )
                      ),
               column(width = 2, 
-                     tableOutput(outputId = "alignment_parameters_df")
-                     ),
-              column(width = 2, 
+                     conditionalPanel(
+                       condition = "input.xray_file_uploaded == true",
                      uiOutput(outputId = "preop_spine_simulation_xray_ui") 
+                     )
                      ),
+              conditionalPanel(
+                condition = "input.xray_file_uploaded == true",
               column(width = 4, 
                      actionBttn(
                        inputId = "compute_plan_xray",
@@ -969,6 +1022,7 @@ ui <- dashboardPage(
                      fluidRow(
                        plotOutput(outputId = "spine_plan_upper_t_xray", height = 650),
                      )
+              )
               )
       )
     )
@@ -3098,8 +3152,71 @@ server <- function(input, output, session) {
     #############     #############  UPLOAD TAB #######################     ############# 
     #############     #############  UPLOAD TAB #######################     ############# 
 
+
+    observeEvent(input$xray_file, {
+      req(input$xray_file)
+      updateSwitchInput(session = session, inputId = "xray_file_uploaded", value = TRUE)
+    })
     
     click_coord_reactive_list <- reactiveValues(coords = list(), index = 1)
+    
+    imageState <- reactiveValues(zoomLevel = 1, panX = 0, panY = 0)
+    
+    # # Observe updates to zoom and pan from the front end
+    # observeEvent(input$xray_click, priority = 1, {
+    #   imageState$zoomLevel <- input$zoomLevel
+    # }, ignoreInit = TRUE)
+    # 
+    # observeEvent(input$xray_click, priority = 2, {
+    #   imageState$panX <- input$panX
+    # }, ignoreInit = TRUE)
+    # 
+    # observeEvent(input$xray_click,priority = 3, {
+    #   imageState$panY <- input$panY
+    # }, ignoreInit = TRUE)
+    # 
+    # # When the plot is clicked, restore the previous zoom and pan state
+    # # observeEvent(xray_click_coordinates_reactive_df(),, {
+    # observeEvent(list(imageState), priority = 10, {
+    #   session$sendCustomMessage('restoreTransform', list(
+    #     zoomLevel = imageState$zoomLevel,
+    #     panX = imageState$panX,
+    #     panY = imageState$panY
+    #   ))
+    # })
+    observeEvent(input$zoomLevel, {
+      imageState$zoomLevel <- input$zoomLevel
+    }, ignoreInit = TRUE)
+    
+    observeEvent(input$panX, {
+      imageState$panX <- input$panX
+    }, ignoreInit = TRUE)
+    
+    observeEvent(input$panY, {
+      imageState$panY <- input$panY
+    }, ignoreInit = TRUE)
+    
+    # When the plot is clicked, manually restore the previous zoom and pan state
+    observeEvent(list(input$xray_click, xray_reactive_plot()), {
+      session$sendCustomMessage('restoreTransform', list(
+        zoomLevel = isolate(imageState$zoomLevel),  # Use isolate to avoid triggering reactivity
+        panX = isolate(imageState$panX),
+        panY = isolate(imageState$panY)
+      ))
+    })
+    
+    observeEvent(input$all_centroids_recorded, {
+      imageState$zoomLevel <- 1
+      imageState$panX <- 0
+      imageState$panY <- 0
+      
+      session$sendCustomMessage('restoreTransform', list(
+        zoomLevel = isolate(imageState$zoomLevel),  # Use isolate to avoid triggering reactivity
+        panX = isolate(imageState$panX),
+        panY = isolate(imageState$panY)
+      ))
+    })
+    
     
     # Reset button to clear all points
     observeEvent(input$xray_reset_points, {
@@ -3214,17 +3331,29 @@ server <- function(input, output, session) {
       if (click_count < length(spine_input_labels)) {
         instruction <- spine_input_labels[click_count + 1]
         
-        instruction <- str_replace_all(instruction, "fem_head_center", "Center of Femoral Heads")
+        instruction <- str_replace_all(instruction, "fem_head_center", "Center of Hips")
         instruction <- str_replace_all(instruction, "_superior", "_superior Corner")
         
         instruction <- str_to_title(str_replace_all(instruction, "_", " "))
         
-        instruction <- paste("Click the", instruction)
+        # instruction <- paste("Click the", instruction)
+        
+        instruction <- glue("Click:<br>{instruction}")
         
       } else {
         instruction <- "All points recorded."
       }
       HTML("<div>", instruction, "</div>")
+    })
+    
+    observeEvent(input$xray_click, {
+      spine_input_labels <- get_spine_labels(input$xray_input_all_centroids)
+      click_count <- length(click_coord_reactive_list$coords)
+      if (click_count >= length(spine_input_labels)) {
+      
+        updateSwitchInput(session = session, inputId = "all_centroids_recorded", value = TRUE)
+        }
+      
     })
 
   
@@ -3304,21 +3433,15 @@ server <- function(input, output, session) {
           left_join(current_coords_df) %>%
           filter(!is.na(x))
         
-        
-        # Create a numeric sequence to use as the index for known spine levels
-        index_known <- spine_coordinates_short_df$index_count
-        
-        # Create a numeric sequence to represent the entire spine_coordinate_labels_df
-        index_full <- spine_coordinate_labels_df$index_count
-        
-        spine_splined_df <- spine_coordinate_labels_df %>%
+        spine_y_filled_df <- spine_coordinate_labels_df %>%
           left_join(spine_coordinates_short_df) %>%
-          mutate(spline_y = spline(index_known, spine_coordinates_short_df$y, xout = index_full)$y)
+          mutate(y = zoo::na.approx(y, rule = 2)) %>%
+          mutate(y = round(y, 3))
         
-        final_coords_df <- spine_splined_df %>%
-          mutate(spline_x = spline(spine_coordinates_short_df$y, spine_coordinates_short_df$x, xout = spine_splined_df$spline_y)$y) %>%
-          select(spine_point, x = spline_x, y = spline_y)
-        
+        final_coords_df <- spine_y_filled_df %>%
+          mutate(x = spline(spine_coordinates_short_df$y, spine_coordinates_short_df$x, xout = spine_y_filled_df$y)$y) %>%
+          select(spine_point, x, y) %>%
+          mutate(x = round(x, 3))
         
       }else{
         final_coords_df <- current_coords_df  %>%
@@ -3629,7 +3752,11 @@ server <- function(input, output, session) {
     
     output$alignment_parameters_df <- renderTable({
 
-      enframe(alignment_parameters_reactive_list())
+      enframe(alignment_parameters_reactive_list()) %>%
+        mutate(name = str_replace_all(name, "pelvic_tilt", "PT")) %>%
+        mutate(name = str_replace_all(name, "pelvic_incidence", "PI")) %>%
+        mutate(name = str_replace_all(name, "sacral_slope", "SS")) %>%
+        mutate(name = str_to_upper(name))
 
     })
     
@@ -3638,7 +3765,6 @@ server <- function(input, output, session) {
     #   enframe(xray_estimated_segment_angles_reactive_list())
     #   
     # })
-
 
     
     output$xray_plot_ui <- renderUI({
@@ -3653,107 +3779,126 @@ server <- function(input, output, session) {
       xray_height <- image_info(xray)$height
       xray_width <- image_info(xray)$width
       
+          # Use imageState reactive values to trigger reactivity
+      zoomLevel <- isolate(imageState$zoomLevel)
+      panX <- isolate(imageState$panX)
+      panY <- isolate(imageState$panY)
+      
       # Set up the dynamic UI for the plot, adjusting the height and width
       div(
         id = "image_container",
         plotOutput(
-          outputId = "xray", 
+          outputId = "xray",
           click = "xray_click",
-          height = paste0(xray_height, "px"),  # Use the image's height dynamically
-          width = paste0(xray_width, "px")    # Use the image's width dynamically
+          height = paste0(xray_height, "px"),
+          width = paste0(xray_width, "px")
         ),
         
-        # Style for container and image (same as before)
+        # Style for container and image
         tags$style(HTML(paste0("
-            #image_container {
-        overflow: hidden;
-        width: 100%;
-        height: ", xray_height, "px;
-        position: relative;
-      }
-      #image_container img {
-        transition: transform 0.25s ease;
-        cursor: crosshair; /* Default cursor */
-      }
-      #image_container img:active {
-        cursor: grabbing;
-      }
-    "))),
+        #image_container {
+          overflow: hidden;
+          width: 100%;
+          height: ", xray_height, "px;
+          position: relative;
+          display: flex;
+        }
+        #image_container img {
+          transition: transform 0.15s ease;
+          cursor: crosshair;
+        }
+        #image_container img:active {
+          cursor: grabbing;
+        }
+      "))),
         
-        # JavaScript for zoom and pan functionality (same as before)
-        tags$script(HTML("
-      var zoomLevel = 1;
-      var panX = 0;
-      var panY = 0;
-      var isPanning = false;
-      var startX, startY;
+        # JavaScript to handle zoom and pan
+        tags$script(HTML(paste0("
+        var zoomLevel = ", zoomLevel, ";
+        var panX = ", panX, ";
+        var panY = ", panY, ";
+        var isPanning = false;
+        var startX, startY;
 
-      // Function to apply the zoom and pan transformations
-      function applyTransform() {
-        var imgElement = document.querySelector('#image_container img');
-        if (imgElement) {
-          imgElement.style.transform = 'scale(' + zoomLevel + ') translate(' + panX + 'px, ' + panY + 'px)';
-        }
-      }
-
-      // Zoom in/out on scroll
-      document.getElementById('image_container').addEventListener('wheel', function(event) {
-        event.preventDefault();
-        if (event.deltaY > 0) {
-          zoomLevel *= 0.9; // Zoom out
-        } else {
-          zoomLevel *= 1.1; // Zoom in
-        }
-        applyTransform(); // Apply the updated zoom level
-      });
-
-      // Start panning on right-click (mousedown)
-      document.getElementById('image_container').addEventListener('mousedown', function(event) {
-        if (event.button === 2) { // Right-click for panning
-          isPanning = true;
-          startX = event.clientX;
-          startY = event.clientY;
+        function applyTransform() {
           var imgElement = document.querySelector('#image_container img');
           if (imgElement) {
-            imgElement.style.cursor = 'grabbing';
+            imgElement.style.transform = 'scale(' + zoomLevel + ') translate(' + panX + 'px, ' + panY + 'px)';
           }
         }
-      });
 
-      // Stop panning on mouseup
-      document.addEventListener('mouseup', function(event) {
-        isPanning = false;
-        var imgElement = document.querySelector('#image_container img');
-        if (imgElement) {
-          imgElement.style.cursor = 'crosshair'; // Reset to crosshair
-        }
-      });
+        // Zoom in/out on scroll
+        document.getElementById('image_container').addEventListener('wheel', function(event) {
+          event.preventDefault();
+          if (event.deltaY > 0) {
+            zoomLevel *= 0.9;
+          } else {
+            zoomLevel *= 1.1;
+          }
+          applyTransform();
+          Shiny.setInputValue('zoomLevel', zoomLevel, {priority: 'event'});
+        });
 
-      // Handle mouse movement for panning
-      document.addEventListener('mousemove', function(event) {
-        if (isPanning) {
-          var deltaX = event.clientX - startX;
-          var deltaY = event.clientY - startY;
-          panX += deltaX;
-          panY += deltaY;
-          applyTransform(); // Apply the updated pan
-          startX = event.clientX;
-          startY = event.clientY;
-        }
-      });
+        // Start panning on right-click (mousedown)
+        document.getElementById('image_container').addEventListener('mousedown', function(event) {
+          if (event.button === 2) {
+            isPanning = true;
+            startX = event.clientX;
+            startY = event.clientY;
+            var imgElement = document.querySelector('#image_container img');
+            if (imgElement) {
+              imgElement.style.cursor = 'grabbing';
+            }
+          }
+        });
 
-      // Prevent the right-click menu from showing up
-      document.addEventListener('contextmenu', function(event) {
-        event.preventDefault();
-      });
-    "))
+        // Stop panning on mouseup
+        document.addEventListener('mouseup', function(event) {
+          isPanning = false;
+          var imgElement = document.querySelector('#image_container img');
+          if (imgElement) {
+            imgElement.style.cursor = 'crosshair';
+          }
+        });
+
+        // Handle mouse movement for panning
+        document.addEventListener('mousemove', function(event) {
+          if (isPanning) {
+            var deltaX = event.clientX - startX;
+            var deltaY = event.clientY - startY;
+            panX += deltaX;
+            panY += deltaY;
+            applyTransform();
+            Shiny.setInputValue('panX', panX, {priority: 'event'});
+            Shiny.setInputValue('panY', panY, {priority: 'event'});
+            startX = event.clientX;
+            startY = event.clientY;
+          }
+        });
+
+        // Prevent the right-click menu from showing up
+        document.addEventListener('contextmenu', function(event) {
+          event.preventDefault();
+        });
+
+        // Restore zoom and pan state after the plot is clicked
+        Shiny.addCustomMessageHandler('restoreTransform', function(message) {
+          zoomLevel = message.zoomLevel;
+          panX = message.panX;
+          panY = message.panY;
+          applyTransform();
+        });
+      ")))
       )
     })
+
     
-    
+
+
+
     ##############################
 
-    output$xray <- renderPlot({
+    xray_reactive_plot <- reactive({
       # req(input$xray)
       req(input$xray_file)
   
@@ -3780,11 +3925,6 @@ server <- function(input, output, session) {
       }
       
       if(any(names(click_coord_reactive_list$coords) == "c2_centroid")){
-        #009E73
-        #D22F00
-        #0072B2
-        
-        
 
         spine_colors_df <- xray_centroid_coordinates_reactive_df() %>%
           mutate(spine_point = str_remove_all(spine_point, "_centroid|_center")) %>%
@@ -3923,6 +4063,11 @@ server <- function(input, output, session) {
       xray_plot
       
     })
+    
+    output$xray <- renderPlot({
+      xray_reactive_plot() 
+    }
+    )
     
     output$preop_spine_simulation_plot <- renderPlot({
       if(any(names(alignment_parameters_reactive_list()) == "c2pa")){

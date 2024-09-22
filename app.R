@@ -20,7 +20,7 @@ library(cowplot)
 library(lubridate)
 library(shinydashboard)
 library(magick)
-library(ggforce)
+# library(ggforce)
 
 source("jh_functions.R", local = TRUE)
 source("compute_segment_angles_function_from_sim_data_2024.R", local = TRUE)

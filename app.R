@@ -3205,7 +3205,7 @@ server <- function(input, output, session) {
     }, ignoreInit = TRUE)
     
     # When the plot is clicked, manually restore the previous zoom and pan state
-    observeEvent(list(input$xray_click, xray_reactive_plot()), {
+    observeEvent(list(input$xray_click), {
       session$sendCustomMessage('restoreTransform', list(
         zoomLevel = isolate(imageState$zoomLevel),  # Use isolate to avoid triggering reactivity
         panX = isolate(imageState$panX),
@@ -3280,7 +3280,8 @@ server <- function(input, output, session) {
     
     
     observeEvent(input$xray_click, {
-      if(nrow(xray_click_coordinates_reactive_df())==3){
+      # if(nrow(xray_click_coordinates_reactive_df())==3){
+      if(length(click_coord_reactive_list$coords)==3){
         fem_head_x <- click_coord_reactive_list$coords$fem_head_center[[1]]
         s1_anterior_superior_x <- click_coord_reactive_list$coords$s1_anterior_superior[[1]]
         s1_posterior_superior_x <- click_coord_reactive_list$coords$s1_posterior_superior[[1]]
@@ -4032,7 +4033,7 @@ server <- function(input, output, session) {
       # alignment_parameters_list <- alignment_parameters_reactive_list()
       alignment_parameters_list <- reactiveValuesToList(alignment_parameters_reactivevalues_list)
       
-       if(any(names(alignment_parameters_list) == "pelvic_incidence")){
+       if(length(click_coord_reactive_list$coords)>2 & any(names(alignment_parameters_list) == "pelvic_incidence")){
          
          s1_center <- c((click_coord_reactive_list$coords$s1_anterior_superior[[1]] + click_coord_reactive_list$coords$s1_posterior_superior[[1]])/2,
                         (click_coord_reactive_list$coords$s1_anterior_superior[[2]] + click_coord_reactive_list$coords$s1_posterior_superior[[2]])/2)
@@ -4105,7 +4106,7 @@ server <- function(input, output, session) {
 
       }
       
-      if(any(names(alignment_parameters_list) == "l1pa")){
+      if(any(names(click_coord_reactive_list$coords) == "l1_centroid") & any(names(alignment_parameters_list) == "l1pa")){
         spine_coordinates_df <- tibble(spine_point = "s1_center",
                                        x = s1_center[[1]],
                                        y = s1_center[[2]]) %>%
@@ -4126,7 +4127,7 @@ server <- function(input, output, session) {
 
       }
       
-      if(any(names(alignment_parameters_list) == "t4pa")){
+      if(any(names(click_coord_reactive_list$coords) == "t4_centroid") & any(names(alignment_parameters_list) == "t4pa")){
         t4pa_df <- tibble(x = c(s1_center[[1]],
                                 click_coord_reactive_list$coords$fem_head_center[[1]],
                                 click_coord_reactive_list$coords$t4_centroid[[1]]),

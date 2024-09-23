@@ -3180,15 +3180,27 @@ server <- function(input, output, session) {
     #     panY = imageState$panY
     #   ))
     # })
-    observeEvent(input$zoomLevel, {
+    # observeEvent(input$zoomLevel, {
+    #   imageState$zoomLevel <- input$zoomLevel
+    # }, ignoreInit = TRUE)
+    # 
+    # observeEvent(input$panX, {
+    #   imageState$panX <- input$panX
+    # }, ignoreInit = TRUE)
+    # 
+    # observeEvent(input$panY, {
+    #   imageState$panY <- input$panY
+    # }, ignoreInit = TRUE)
+    
+    observeEvent(input$xray_click, {
       imageState$zoomLevel <- input$zoomLevel
     }, ignoreInit = TRUE)
     
-    observeEvent(input$panX, {
+    observeEvent(input$xray_click, {
       imageState$panX <- input$panX
     }, ignoreInit = TRUE)
     
-    observeEvent(input$panY, {
+    observeEvent(input$xray_click, {
       imageState$panY <- input$panY
     }, ignoreInit = TRUE)
     

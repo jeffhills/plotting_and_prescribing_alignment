@@ -291,6 +291,71 @@ ui <- dashboardPage(
     )
   ),
   dashboardBody(
+    tags$script(HTML("
+  var zoomLevel = 1;
+  var panX = 0;
+  var panY = 0;
+  var isPanning = false;
+  var startX, startY;
+
+  function applyTransform() {
+    var imgElement = document.querySelector('#image_container img');
+    if (imgElement) {
+      imgElement.style.transform = 'scale(' + zoomLevel + ') translate(' + panX + 'px, ' + panY + 'px)';
+    }
+  }
+
+  // Zoom in/out on scroll
+  document.getElementById('image_container').addEventListener('wheel', function(event) {
+    event.preventDefault();
+    if (event.deltaY > 0) {
+      zoomLevel *= 0.9; // Zoom out
+    } else {
+      zoomLevel *= 1.1; // Zoom in
+    }
+    applyTransform(); // Apply the updated zoom level
+  });
+
+  // Start panning on right-click (mousedown)
+  document.getElementById('image_container').addEventListener('mousedown', function(event) {
+    if (event.button === 2) { // Right-click for panning
+      isPanning = true;
+      startX = event.clientX;
+      startY = event.clientY;
+      var imgElement = document.querySelector('#image_container img');
+      if (imgElement) {
+        imgElement.style.cursor = 'grabbing';
+      }
+    }
+  });
+
+  // Stop panning on mouseup
+  document.addEventListener('mouseup', function(event) {
+    isPanning = false;
+    var imgElement = document.querySelector('#image_container img');
+    if (imgElement) {
+      imgElement.style.cursor = 'crosshair'; // Reset to crosshair
+    }
+  });
+
+  // Handle mouse movement for panning
+  document.addEventListener('mousemove', function(event) {
+    if (isPanning) {
+      var deltaX = event.clientX - startX;
+      var deltaY = event.clientY - startY;
+      panX += deltaX;
+      panY += deltaY;
+      applyTransform(); // Apply the updated pan
+      startX = event.clientX;
+      startY = event.clientY;
+    }
+  });
+
+  // Prevent the right-click menu from showing up
+  document.addEventListener('contextmenu', function(event) {
+    event.preventDefault();
+  });
+")),
     tags$style(HTML("
   .segment-input {
     display: flex;
@@ -3205,13 +3270,13 @@ server <- function(input, output, session) {
     }, ignoreInit = TRUE)
     
     # When the plot is clicked, manually restore the previous zoom and pan state
-    observeEvent(list(input$xray_click), {
-      session$sendCustomMessage('restoreTransform', list(
-        zoomLevel = isolate(imageState$zoomLevel),  # Use isolate to avoid triggering reactivity
-        panX = isolate(imageState$panX),
-        panY = isolate(imageState$panY)
-      ))
-    })
+    # observeEvent(list(input$xray_click), {
+    #   session$sendCustomMessage('restoreTransform', list(
+    #     zoomLevel = isolate(imageState$zoomLevel),  # Use isolate to avoid triggering reactivity
+    #     panX = isolate(imageState$panX),
+    #     panY = isolate(imageState$panY)
+    #   ))
+    # })
     
     observeEvent(input$all_centroids_recorded, {
       imageState$zoomLevel <- 1
@@ -3851,8 +3916,132 @@ server <- function(input, output, session) {
     # })
 
     
+    # output$xray_plot_ui <- renderUI({
+    #   
+    #   # Ensure the image is uploaded
+    #   req(input$xray_file)
+    #   
+    #   # Read the uploaded image to get its dimensions
+    #   xray <- image_read(path = input$xray_file$datapath)
+    #   
+    #   # Extract the image's height and width
+    #   xray_height <- image_info(xray)$height
+    #   xray_width <- image_info(xray)$width
+    #   
+    #       # Use imageState reactive values to trigger reactivity
+    #   zoomLevel <- isolate(imageState$zoomLevel)
+    #   panX <- isolate(imageState$panX)
+    #   panY <- isolate(imageState$panY)
+    #   
+    #   # Set up the dynamic UI for the plot, adjusting the height and width
+    #   div(
+    #     id = "image_container",
+    #     plotOutput(
+    #       outputId = "xray",
+    #       click = "xray_click",
+    #       height = paste0(xray_height, "px"),
+    #       width = paste0(xray_width, "px")
+    #     ),
+    #     
+    #     # Style for container and image
+    #     tags$style(HTML(paste0("
+    #     #image_container {
+    #       overflow: hidden;
+    #       width: 100%;
+    #       height: ", xray_height, "px;
+    #       position: relative;
+    #       display: flex;
+    #     }
+    #     #image_container img {
+    #       transition: transform 0.15s ease;
+    #       cursor: crosshair;
+    #     }
+    #     #image_container img:active {
+    #       cursor: grabbing;
+    #     }
+    #   "))),
+    #     
+    #     # JavaScript to handle zoom and pan
+    #     tags$script(HTML(paste0("
+    #     var zoomLevel = ", zoomLevel, ";
+    #     var panX = ", panX, ";
+    #     var panY = ", panY, ";
+    #     var isPanning = false;
+    #     var startX, startY;
+    # 
+    #     function applyTransform() {
+    #       var imgElement = document.querySelector('#image_container img');
+    #       if (imgElement) {
+    #         imgElement.style.transform = 'scale(' + zoomLevel + ') translate(' + panX + 'px, ' + panY + 'px)';
+    #       }
+    #     }
+    # 
+    #     // Zoom in/out on scroll
+    #     document.getElementById('image_container').addEventListener('wheel', function(event) {
+    #       event.preventDefault();
+    #       if (event.deltaY > 0) {
+    #         zoomLevel *= 0.9;
+    #       } else {
+    #         zoomLevel *= 1.1;
+    #       }
+    #       applyTransform();
+    #       Shiny.setInputValue('zoomLevel', zoomLevel, {priority: 'event'});
+    #     });
+    # 
+    #     // Start panning on right-click (mousedown)
+    #     document.getElementById('image_container').addEventListener('mousedown', function(event) {
+    #       if (event.button === 2) {
+    #         isPanning = true;
+    #         startX = event.clientX;
+    #         startY = event.clientY;
+    #         var imgElement = document.querySelector('#image_container img');
+    #         if (imgElement) {
+    #           imgElement.style.cursor = 'grabbing';
+    #         }
+    #       }
+    #     });
+    # 
+    #     // Stop panning on mouseup
+    #     document.addEventListener('mouseup', function(event) {
+    #       isPanning = false;
+    #       var imgElement = document.querySelector('#image_container img');
+    #       if (imgElement) {
+    #         imgElement.style.cursor = 'crosshair';
+    #       }
+    #     });
+    # 
+    #     // Handle mouse movement for panning
+    #     document.addEventListener('mousemove', function(event) {
+    #       if (isPanning) {
+    #         var deltaX = event.clientX - startX;
+    #         var deltaY = event.clientY - startY;
+    #         panX += deltaX;
+    #         panY += deltaY;
+    #         applyTransform();
+    #         Shiny.setInputValue('panX', panX, {priority: 'event'});
+    #         Shiny.setInputValue('panY', panY, {priority: 'event'});
+    #         startX = event.clientX;
+    #         startY = event.clientY;
+    #       }
+    #     });
+    # 
+    #     // Prevent the right-click menu from showing up
+    #     document.addEventListener('contextmenu', function(event) {
+    #       event.preventDefault();
+    #     });
+    # 
+    #     // Restore zoom and pan state after the plot is clicked
+    #     Shiny.addCustomMessageHandler('restoreTransform', function(message) {
+    #       zoomLevel = message.zoomLevel;
+    #       panX = message.panX;
+    #       panY = message.panY;
+    #       applyTransform();
+    #     });
+    #   ")))
+    #   )
+    # })
+
     output$xray_plot_ui <- renderUI({
-      
       # Ensure the image is uploaded
       req(input$xray_file)
       
@@ -3863,119 +4052,102 @@ server <- function(input, output, session) {
       xray_height <- image_info(xray)$height
       xray_width <- image_info(xray)$width
       
-          # Use imageState reactive values to trigger reactivity
-      zoomLevel <- isolate(imageState$zoomLevel)
-      panX <- isolate(imageState$panX)
-      panY <- isolate(imageState$panY)
-      
       # Set up the dynamic UI for the plot, adjusting the height and width
       div(
         id = "image_container",
         plotOutput(
           outputId = "xray",
-          click = "xray_click",
+          click = "xray_click",  # Clicks are still processed by Shiny
           height = paste0(xray_height, "px"),
           width = paste0(xray_width, "px")
         ),
         
         # Style for container and image
         tags$style(HTML(paste0("
-        #image_container {
-          overflow: hidden;
-          width: 100%;
-          height: ", xray_height, "px;
-          position: relative;
-          display: flex;
-        }
-        #image_container img {
-          transition: transform 0.15s ease;
-          cursor: crosshair;
-        }
-        #image_container img:active {
-          cursor: grabbing;
-        }
-      "))),
+      #image_container {
+        overflow: hidden;
+        width: 100%;
+        height: ", xray_height, "px;
+        position: relative;
+        display: flex;
+      }
+      #image_container img {
+        transition: transform 0.15s ease;
+        cursor: crosshair;
+      }
+      #image_container img:active {
+        cursor: grabbing;
+      }
+    "))),
         
-        # JavaScript to handle zoom and pan
-        tags$script(HTML(paste0("
-        var zoomLevel = ", zoomLevel, ";
-        var panX = ", panX, ";
-        var panY = ", panY, ";
-        var isPanning = false;
-        var startX, startY;
+        # JavaScript to handle zoom and pan on the client side
+        tags$script(HTML("
+      var zoomLevel = 1;
+      var panX = 0;
+      var panY = 0;
+      var isPanning = false;
+      var startX, startY;
 
-        function applyTransform() {
+      function applyTransform() {
+        var imgElement = document.querySelector('#image_container img');
+        if (imgElement) {
+          imgElement.style.transform = 'scale(' + zoomLevel + ') translate(' + panX + 'px, ' + panY + 'px)';
+        }
+      }
+
+      // Zoom in/out on scroll
+      document.getElementById('image_container').addEventListener('wheel', function(event) {
+        event.preventDefault();
+        if (event.deltaY > 0) {
+          zoomLevel *= 0.9; // Zoom out
+        } else {
+          zoomLevel *= 1.1; // Zoom in
+        }
+        applyTransform(); // Apply the updated zoom level
+      });
+
+      // Start panning on right-click (mousedown)
+      document.getElementById('image_container').addEventListener('mousedown', function(event) {
+        if (event.button === 2) { // Right-click for panning
+          isPanning = true;
+          startX = event.clientX;
+          startY = event.clientY;
           var imgElement = document.querySelector('#image_container img');
           if (imgElement) {
-            imgElement.style.transform = 'scale(' + zoomLevel + ') translate(' + panX + 'px, ' + panY + 'px)';
+            imgElement.style.cursor = 'grabbing';
           }
         }
+      });
 
-        // Zoom in/out on scroll
-        document.getElementById('image_container').addEventListener('wheel', function(event) {
-          event.preventDefault();
-          if (event.deltaY > 0) {
-            zoomLevel *= 0.9;
-          } else {
-            zoomLevel *= 1.1;
-          }
-          applyTransform();
-          Shiny.setInputValue('zoomLevel', zoomLevel, {priority: 'event'});
-        });
+      // Stop panning on mouseup
+      document.addEventListener('mouseup', function(event) {
+        isPanning = false;
+        var imgElement = document.querySelector('#image_container img');
+        if (imgElement) {
+          imgElement.style.cursor = 'crosshair'; // Reset to crosshair
+        }
+      });
 
-        // Start panning on right-click (mousedown)
-        document.getElementById('image_container').addEventListener('mousedown', function(event) {
-          if (event.button === 2) {
-            isPanning = true;
-            startX = event.clientX;
-            startY = event.clientY;
-            var imgElement = document.querySelector('#image_container img');
-            if (imgElement) {
-              imgElement.style.cursor = 'grabbing';
-            }
-          }
-        });
+      // Handle mouse movement for panning
+      document.addEventListener('mousemove', function(event) {
+        if (isPanning) {
+          var deltaX = event.clientX - startX;
+          var deltaY = event.clientY - startY;
+          panX += deltaX;
+          panY += deltaY;
+          applyTransform(); // Apply the updated pan
+          startX = event.clientX;
+          startY = event.clientY;
+        }
+      });
 
-        // Stop panning on mouseup
-        document.addEventListener('mouseup', function(event) {
-          isPanning = false;
-          var imgElement = document.querySelector('#image_container img');
-          if (imgElement) {
-            imgElement.style.cursor = 'crosshair';
-          }
-        });
-
-        // Handle mouse movement for panning
-        document.addEventListener('mousemove', function(event) {
-          if (isPanning) {
-            var deltaX = event.clientX - startX;
-            var deltaY = event.clientY - startY;
-            panX += deltaX;
-            panY += deltaY;
-            applyTransform();
-            Shiny.setInputValue('panX', panX, {priority: 'event'});
-            Shiny.setInputValue('panY', panY, {priority: 'event'});
-            startX = event.clientX;
-            startY = event.clientY;
-          }
-        });
-
-        // Prevent the right-click menu from showing up
-        document.addEventListener('contextmenu', function(event) {
-          event.preventDefault();
-        });
-
-        // Restore zoom and pan state after the plot is clicked
-        Shiny.addCustomMessageHandler('restoreTransform', function(message) {
-          zoomLevel = message.zoomLevel;
-          panX = message.panX;
-          panY = message.panY;
-          applyTransform();
-        });
-      ")))
+      // Prevent the right-click menu from showing up
+      document.addEventListener('contextmenu', function(event) {
+        event.preventDefault();
+      });
+    "))
       )
     })
-
     
 
 

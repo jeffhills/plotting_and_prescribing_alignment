@@ -1030,8 +1030,103 @@ ui <- dashboardPage(
                              , 
                              htmlOutput(outputId = "xray_click_instructions")
                            ), 
-                           uiOutput(outputId = "xray_plot_ui"),
-                           
+                           # uiOutput(outputId = "xray_plot_ui"),
+                           div(
+                             id = "image_container",
+                             plotOutput(
+                               outputId = "xray",
+                               click = "xray_click",  # Clicks are still processed by Shiny
+                               height = "auto",  # Set to 100% to fill the container
+                               width = "100%"    # Set to 100% to fill the container
+                             ),
+                             
+                             # Style for container and image
+                             tags$style(HTML("
+      #image_container {
+        overflow: hidden;
+        width: 100%;
+        height: 750px;
+        position: relative;
+        display: flex;
+      }
+      #image_container img {
+        transition: transform 0.15s ease;
+        cursor: crosshair;
+              width: 100%;  /* Ensure the image fills the width of the container */
+      height: auto; /* Maintain aspect ratio */
+      }
+      #image_container img:active {
+        cursor: grabbing;
+      }
+    ")),
+                             
+                             # JavaScript to handle zoom and pan on the client side
+                             tags$script(HTML("
+      var zoomLevel = 1;
+      var panX = 0;
+      var panY = 0;
+      var isPanning = false;
+      var startX, startY;
+
+      function applyTransform() {
+        var imgElement = document.querySelector('#image_container img');
+        if (imgElement) {
+          imgElement.style.transform = 'scale(' + zoomLevel + ') translate(' + panX + 'px, ' + panY + 'px)';
+        }
+      }
+
+      // Zoom in/out on scroll
+      document.getElementById('image_container').addEventListener('wheel', function(event) {
+        event.preventDefault();
+        if (event.deltaY > 0) {
+          zoomLevel *= 0.9; // Zoom out
+        } else {
+          zoomLevel *= 1.1; // Zoom in
+        }
+        applyTransform(); // Apply the updated zoom level
+      });
+
+      // Start panning on right-click (mousedown)
+      document.getElementById('image_container').addEventListener('mousedown', function(event) {
+        if (event.button === 2) { // Right-click for panning
+          isPanning = true;
+          startX = event.clientX;
+          startY = event.clientY;
+          var imgElement = document.querySelector('#image_container img');
+          if (imgElement) {
+            imgElement.style.cursor = 'grabbing';
+          }
+        }
+      });
+
+      // Stop panning on mouseup
+      document.addEventListener('mouseup', function(event) {
+        isPanning = false;
+        var imgElement = document.querySelector('#image_container img');
+        if (imgElement) {
+          imgElement.style.cursor = 'crosshair'; // Reset to crosshair
+        }
+      });
+
+      // Handle mouse movement for panning
+      document.addEventListener('mousemove', function(event) {
+        if (isPanning) {
+          var deltaX = event.clientX - startX;
+          var deltaY = event.clientY - startY;
+          panX += deltaX;
+          panY += deltaY;
+          applyTransform(); // Apply the updated pan
+          startX = event.clientX;
+          startY = event.clientY;
+        }
+      });
+
+      // Prevent the right-click menu from showing up
+      document.addEventListener('contextmenu', function(event) {
+        event.preventDefault();
+      });
+    "))
+                           ),
                            fluidRow(
                              column(width = 7, 
                                     actionBttn(inputId = "xray_delete_last_point", 
@@ -3270,13 +3365,13 @@ server <- function(input, output, session) {
     }, ignoreInit = TRUE)
     
     # When the plot is clicked, manually restore the previous zoom and pan state
-    # observeEvent(list(input$xray_click), {
-    #   session$sendCustomMessage('restoreTransform', list(
-    #     zoomLevel = isolate(imageState$zoomLevel),  # Use isolate to avoid triggering reactivity
-    #     panX = isolate(imageState$panX),
-    #     panY = isolate(imageState$panY)
-    #   ))
-    # })
+    observeEvent(list(input$xray_click, xray_reactive_plot() ), {
+      session$sendCustomMessage('restoreTransform', list(
+        zoomLevel = isolate(imageState$zoomLevel),  # Use isolate to avoid triggering reactivity
+        panX = isolate(imageState$panX),
+        panY = isolate(imageState$panY)
+      ))
+    })
     
     observeEvent(input$all_centroids_recorded, {
       imageState$zoomLevel <- 1
@@ -3604,82 +3699,7 @@ server <- function(input, output, session) {
       
     })
     
-    # 
-    # alignment_parameters_reactive_list <- reactive({
-    #   xray_click_coordinates_df <- xray_click_coordinates_reactive_df()
-    #   
-    #   spine_alignment_measures_list <- list()
-    #   
-    #   if(any(xray_centroid_coordinates_reactive_df()$spine_point == "s1_center")){
-    #     fem_head_center <- click_coord_reactive_list$coords$fem_head_center
-    #     
-    #     
-    #     
-    #     s1_center <- c((click_coord_reactive_list$coords$s1_anterior_superior[[1]] + click_coord_reactive_list$coords$s1_posterior_superior[[1]])/2,
-    #                    (click_coord_reactive_list$coords$s1_anterior_superior[[2]] + click_coord_reactive_list$coords$s1_posterior_superior[[2]])/2)
-    #     
-    #     
-    #     ### COMPUTE PT ###
-    #     fem_head_to_s1_length <- jh_calculate_distance_between_2_points_function(point_1 = fem_head_center,
-    #                                                                              point_2 = s1_center) ## hypotenuse
-    #     
-    #     fem_head_to_s1_x_length <- jh_calculate_distance_between_2_points_function(point_1 = fem_head_center,
-    #                                                                                point_2 = c(s1_center[[1]], fem_head_center[[2]])) ## opposite
-    #     
-    #     ## SOH. Sin theta = opp/hyp
-    #     
-    #     # input$xray_orientation
-    #     
-    #     pt_orientation_modifier <- case_when(
-    #       input$xray_orientation & fem_head_center[[1]] < s1_center[[1]] ~ 1,
-    #       input$xray_orientation & fem_head_center[[1]] > s1_center[[1]] ~ -1,
-    #       input$xray_orientation == FALSE & fem_head_center[[1]] > s1_center[[1]] ~ 1,
-    #       input$xray_orientation  == FALSE & fem_head_center[[1]] < s1_center[[1]] ~ -1
-    #     )
-    #     
-    #     spine_alignment_measures_list$pelvic_tilt <- asin(fem_head_to_s1_x_length/fem_head_to_s1_length)*180/pi*pt_orientation_modifier
-    # 
-    #     
-    #     ### COMPUTE SS ###
-    #     s1_length <- jh_calculate_distance_between_2_points_function(point_1 = click_coord_reactive_list$coords$s1_anterior_superior,
-    #                                                                  point_2 = click_coord_reactive_list$coords$s1_posterior_superior)
-    #     
-    #     s1_x_length <- jh_calculate_distance_between_2_points_function(point_1 = c(click_coord_reactive_list$coords$s1_anterior_superior[[1]],
-    #                                                                                click_coord_reactive_list$coords$s1_posterior_superior[[2]]),
-    #                                                                    point_2 = click_coord_reactive_list$coords$s1_posterior_superior)
-    #     
-    #     spine_alignment_measures_list$sacral_slope <- acos(s1_x_length/s1_length)*180/pi
-    #     
-    #     ### COMPUTE PI ###
-    #     spine_alignment_measures_list$pelvic_incidence <- spine_alignment_measures_list$pelvic_tilt + spine_alignment_measures_list$sacral_slope
-    #     
-    #   }
-    #   
-    #   
-    #   ## COMPUTE ALL VPAs ##
-    #   if(any(xray_centroid_coordinates_reactive_df()$spine_point == "l4_centroid")){
-    #     
-    #     vpa_df <- xray_centroid_coordinates_reactive_df() %>%
-    #       filter(spine_point != "s1_center") %>%
-    #       mutate(vpa = map2(.x = x, .y = y, .f = ~ jh_compute_vpa_from_xray_data_function(fem_head_center = click_coord_reactive_list$coords$fem_head_center,
-    #                                                                                       vertebral_centroid = c(.x, .y),
-    #                                                                                       spine_facing = if_else(input$xray_orientation, "left", "right"),
-    #                                                                                       pelvic_tilt = spine_alignment_measures_list$pelvic_tilt
-    #       )
-    #       )
-    #       ) %>%
-    #       unnest() %>%
-    #       mutate(vpa_label = str_replace_all(spine_point, "_centroid", "pa")) %>%
-    #       select(vpa_label, vpa)
-    #     
-    #     vpa_list <- as.list(vpa_df$vpa)
-    #     names(vpa_list) <- vpa_df$vpa_label
-    #     
-    #     spine_alignment_measures_list <- append(spine_alignment_measures_list, vpa_list) 
-    #   }
-    #   
-    #   spine_alignment_measures_list
-    # })
+  
     
     
     ###############
@@ -3898,9 +3918,6 @@ server <- function(input, output, session) {
     
     output$alignment_parameters_df <- renderTable({
 
-      # enframe(alignment_parameters_reactive_list()) %>%
-      
-      
       enframe(reactiveValuesToList(alignment_parameters_reactivevalues_list)) %>%
         mutate(name = str_replace_all(name, "pelvic_tilt", "PT")) %>%
         mutate(name = str_replace_all(name, "pelvic_incidence", "PI")) %>%
@@ -3908,13 +3925,6 @@ server <- function(input, output, session) {
         mutate(name = str_to_upper(name))
 
     })
-    
-    # output$segment_angles_df <- renderTable({
-    #   
-    #   enframe(xray_estimated_segment_angles_reactive_list())
-    #   
-    # })
-
     
     # output$xray_plot_ui <- renderUI({
     #   
@@ -4041,114 +4051,114 @@ server <- function(input, output, session) {
     #   )
     # })
 
-    output$xray_plot_ui <- renderUI({
-      # Ensure the image is uploaded
-      req(input$xray_file)
-      
-      # Read the uploaded image to get its dimensions
-      xray <- image_read(path = input$xray_file$datapath)
-      
-      # Extract the image's height and width
-      xray_height <- image_info(xray)$height
-      xray_width <- image_info(xray)$width
-      
-      # Set up the dynamic UI for the plot, adjusting the height and width
-      div(
-        id = "image_container",
-        plotOutput(
-          outputId = "xray",
-          click = "xray_click",  # Clicks are still processed by Shiny
-          height = paste0(xray_height, "px"),
-          width = paste0(xray_width, "px")
-        ),
-        
-        # Style for container and image
-        tags$style(HTML(paste0("
-      #image_container {
-        overflow: hidden;
-        width: 100%;
-        height: ", xray_height, "px;
-        position: relative;
-        display: flex;
-      }
-      #image_container img {
-        transition: transform 0.15s ease;
-        cursor: crosshair;
-      }
-      #image_container img:active {
-        cursor: grabbing;
-      }
-    "))),
-        
-        # JavaScript to handle zoom and pan on the client side
-        tags$script(HTML("
-      var zoomLevel = 1;
-      var panX = 0;
-      var panY = 0;
-      var isPanning = false;
-      var startX, startY;
-
-      function applyTransform() {
-        var imgElement = document.querySelector('#image_container img');
-        if (imgElement) {
-          imgElement.style.transform = 'scale(' + zoomLevel + ') translate(' + panX + 'px, ' + panY + 'px)';
-        }
-      }
-
-      // Zoom in/out on scroll
-      document.getElementById('image_container').addEventListener('wheel', function(event) {
-        event.preventDefault();
-        if (event.deltaY > 0) {
-          zoomLevel *= 0.9; // Zoom out
-        } else {
-          zoomLevel *= 1.1; // Zoom in
-        }
-        applyTransform(); // Apply the updated zoom level
-      });
-
-      // Start panning on right-click (mousedown)
-      document.getElementById('image_container').addEventListener('mousedown', function(event) {
-        if (event.button === 2) { // Right-click for panning
-          isPanning = true;
-          startX = event.clientX;
-          startY = event.clientY;
-          var imgElement = document.querySelector('#image_container img');
-          if (imgElement) {
-            imgElement.style.cursor = 'grabbing';
-          }
-        }
-      });
-
-      // Stop panning on mouseup
-      document.addEventListener('mouseup', function(event) {
-        isPanning = false;
-        var imgElement = document.querySelector('#image_container img');
-        if (imgElement) {
-          imgElement.style.cursor = 'crosshair'; // Reset to crosshair
-        }
-      });
-
-      // Handle mouse movement for panning
-      document.addEventListener('mousemove', function(event) {
-        if (isPanning) {
-          var deltaX = event.clientX - startX;
-          var deltaY = event.clientY - startY;
-          panX += deltaX;
-          panY += deltaY;
-          applyTransform(); // Apply the updated pan
-          startX = event.clientX;
-          startY = event.clientY;
-        }
-      });
-
-      // Prevent the right-click menu from showing up
-      document.addEventListener('contextmenu', function(event) {
-        event.preventDefault();
-      });
-    "))
-      )
-    })
-    
+    # output$xray_plot_ui <- renderUI({
+    #   # Ensure the image is uploaded
+    #   req(input$xray_file)
+    #   
+    #   # Read the uploaded image to get its dimensions
+    #   xray <- image_read(path = input$xray_file$datapath)
+    #   
+    #   # Extract the image's height and width
+    #   xray_height <- image_info(xray)$height
+    #   xray_width <- image_info(xray)$width
+    #   
+    #   # Set up the dynamic UI for the plot, adjusting the height and width
+    #   div(
+    #     id = "image_container",
+    #     plotOutput(
+    #       outputId = "xray",
+    #       click = "xray_click",  # Clicks are still processed by Shiny
+    #       height = paste0(xray_height, "px"),
+    #       width = paste0(xray_width, "px")
+    #     ),
+    #     
+    #     # Style for container and image
+    #     tags$style(HTML(paste0("
+    #   #image_container {
+    #     overflow: hidden;
+    #     width: 100%;
+    #     height: ", xray_height, "px;
+    #     position: relative;
+    #     display: flex;
+    #   }
+    #   #image_container img {
+    #     transition: transform 0.15s ease;
+    #     cursor: crosshair;
+    #   }
+    #   #image_container img:active {
+    #     cursor: grabbing;
+    #   }
+    # "))),
+    #     
+    #     # JavaScript to handle zoom and pan on the client side
+    #     tags$script(HTML("
+    #   var zoomLevel = 1;
+    #   var panX = 0;
+    #   var panY = 0;
+    #   var isPanning = false;
+    #   var startX, startY;
+    # 
+    #   function applyTransform() {
+    #     var imgElement = document.querySelector('#image_container img');
+    #     if (imgElement) {
+    #       imgElement.style.transform = 'scale(' + zoomLevel + ') translate(' + panX + 'px, ' + panY + 'px)';
+    #     }
+    #   }
+    # 
+    #   // Zoom in/out on scroll
+    #   document.getElementById('image_container').addEventListener('wheel', function(event) {
+    #     event.preventDefault();
+    #     if (event.deltaY > 0) {
+    #       zoomLevel *= 0.9; // Zoom out
+    #     } else {
+    #       zoomLevel *= 1.1; // Zoom in
+    #     }
+    #     applyTransform(); // Apply the updated zoom level
+    #   });
+    # 
+    #   // Start panning on right-click (mousedown)
+    #   document.getElementById('image_container').addEventListener('mousedown', function(event) {
+    #     if (event.button === 2) { // Right-click for panning
+    #       isPanning = true;
+    #       startX = event.clientX;
+    #       startY = event.clientY;
+    #       var imgElement = document.querySelector('#image_container img');
+    #       if (imgElement) {
+    #         imgElement.style.cursor = 'grabbing';
+    #       }
+    #     }
+    #   });
+    # 
+    #   // Stop panning on mouseup
+    #   document.addEventListener('mouseup', function(event) {
+    #     isPanning = false;
+    #     var imgElement = document.querySelector('#image_container img');
+    #     if (imgElement) {
+    #       imgElement.style.cursor = 'crosshair'; // Reset to crosshair
+    #     }
+    #   });
+    # 
+    #   // Handle mouse movement for panning
+    #   document.addEventListener('mousemove', function(event) {
+    #     if (isPanning) {
+    #       var deltaX = event.clientX - startX;
+    #       var deltaY = event.clientY - startY;
+    #       panX += deltaX;
+    #       panY += deltaY;
+    #       applyTransform(); // Apply the updated pan
+    #       startX = event.clientX;
+    #       startY = event.clientY;
+    #     }
+    #   });
+    # 
+    #   // Prevent the right-click menu from showing up
+    #   document.addEventListener('contextmenu', function(event) {
+    #     event.preventDefault();
+    #   });
+    # "))
+    #   )
+    # })
+    # 
 
 
 
@@ -4168,7 +4178,12 @@ server <- function(input, output, session) {
       xray_plot <- ggdraw() +
         draw_image(
           xray,
-          x = 0, y = 0, width = 1, height = 1
+          x = 0, 
+          y = 0, 
+          width = 1,
+          height = 1
+          # width = xray_width, 
+          # height = xray_height
         ) 
 
       if(nrow(xray_click_coordinates_reactive_df()) > 0) {

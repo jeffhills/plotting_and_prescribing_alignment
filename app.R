@@ -3365,13 +3365,13 @@ server <- function(input, output, session) {
     }, ignoreInit = TRUE)
     
     # When the plot is clicked, manually restore the previous zoom and pan state
-    observeEvent(list(input$xray_click, xray_reactive_plot() ), {
-      session$sendCustomMessage('restoreTransform', list(
-        zoomLevel = isolate(imageState$zoomLevel),  # Use isolate to avoid triggering reactivity
-        panX = isolate(imageState$panX),
-        panY = isolate(imageState$panY)
-      ))
-    })
+    # observeEvent(list(input$xray_click, xray_reactive_plot() ), {
+    #   session$sendCustomMessage('restoreTransform', list(
+    #     zoomLevel = isolate(imageState$zoomLevel),  # Use isolate to avoid triggering reactivity
+    #     panX = isolate(imageState$panX),
+    #     panY = isolate(imageState$panY)
+    #   ))
+    # })
     
     observeEvent(input$all_centroids_recorded, {
       imageState$zoomLevel <- 1
@@ -4233,60 +4233,7 @@ server <- function(input, output, session) {
                                                      pelvic_incidence_value = alignment_parameters_list$pelvic_incidence
                                                      )
          
-        
-        #  s1_fem_head_df <- xray_centroid_coordinates_reactive_df() %>%
-        #    filter(spine_point == "s1_center") %>%
-        #    union_all(xray_click_coordinates_reactive_df() %>%
-        #                filter(spine_point == "fem_head_center")) 
-        #  
-        #  s1_center <- c((s1_fem_head_df %>%
-        #                    filter(spine_point == "s1_center"))$x,
-        #                 (s1_fem_head_df %>%
-        #                    filter(spine_point == "s1_center"))$y
-        #  )
-        #  
-        #  s1_ant_to_s1_center_length <- jh_calculate_distance_between_2_points_function(point_1 = click_coord_reactive_list$coords$s1_anterior_superior, 
-        #                                                  point_2 = s1_center)
-        #  
-        #  sac_inf_length <- s1_ant_to_s1_center_length*5
-        #  
-        #  sac_inf_hypotenuse_length <- sqrt(sac_inf_length^2 + s1_ant_to_s1_center_length^2)
-        #  
-        #  
-        #  
-        # spine_coord_df <-  xray_click_coordinates_reactive_df()
-        # 
-        # pelvic_incidence <- alignment_parameters_list$pelvic_incidence
-        # 
-        # pelvic_incidence_radians <- (pi / 180) * (pelvic_incidence)
-        # 
-        # pelvic_tilt <- alignment_parameters_list$pelvic_tilt
-        # 
-        # pelvic_tilt_radians <- (pi / 180) * (pelvic_tilt)
-        # 
-        # fem_head_center <- click_coord_reactive_list$coords$fem_head_center
-        # 
-        # s1_center <- c((click_coord_reactive_list$coords$s1_anterior_superior[[1]] + click_coord_reactive_list$coords$s1_posterior_superior[[1]])/2,
-        #                (click_coord_reactive_list$coords$s1_anterior_superior[[2]] + click_coord_reactive_list$coords$s1_posterior_superior[[2]])/2)
-        # 
-        # fem_head_to_s1_distance <- jh_calculate_distance_between_2_points_function(point_1 = fem_head_center,
-        #                                                                            point_2 = s1_center)
-        # sac_inf_length <- fem_head_to_s1_distance/2
-        # 
-        # sac_inf_x <- s1_center[[1]] + (cos(pelvic_tilt_radians)*sac_inf_length)
-        # 
-        # sac_inf_y <- s1_center[[2]] - (sin(pelvic_tilt_radians)*sac_inf_length)
-        # 
-        # sac_inf <- c(sac_inf_x, sac_inf_y)
-        # 
-        # 
-        # pi_df <- tibble(x = c(fem_head_center[[1]],
-        #                       s1_center[[1]],
-        #                       sac_inf[[1]]),
-        #                 y = c(fem_head_center[[2]],
-        #                       s1_center[[2]],
-        #                       sac_inf[[2]]))
-
+      
         xray_plot <- xray_plot +
           geom_path(data = pi_df,
                     aes(x = x, y = y), color = "darkgreen", size = 1.5)
@@ -4360,7 +4307,7 @@ server <- function(input, output, session) {
                                                                                           # c2_c7_value_input = alignment_parameters_list$preop_c2c7,
                                                                                           # input_segment_angles = "yes",
                                                                                           # segment_angles_input = segment_angles_list,
-                                                                                          spine_faces = "left"
+                                                                                          spine_faces = if_else(input$xray_orientation, "left", "right")
           )
 
         spine_geoms_df <- spine_simulation_list$spine_df %>%
@@ -4503,13 +4450,15 @@ server <- function(input, output, session) {
                                     t4pa_line_color = input$t4pa_line_color,
                                     c2pa_line_color = input$c2pa_line_color, 
                                     # preop_segment_angles_input_list_reactive = xray_estimated_segment_angles_reactive_list(),
-                                    preop_rigid_levels_vector_reactive = preop_rigid_levels_vector_reactive_xray() #preop_rigid_levels_vector_reactive()
+                                    preop_rigid_levels_vector_reactive = preop_rigid_levels_vector_reactive_xray(),
+                                    return_list_or_plot = "list"
       )
     })
     
     
     spine_plan_uiv_t11_option_2_xray <- eventReactive(input$compute_plan_xray, {
       alignment_parameters_list <- reactiveValuesToList(alignment_parameters_reactivevalues_list)
+      
       build_t11_spine_plot_function(pso_option_number = 2, 
                                     preop_age = input$preop_age,
                                     preop_sex = input$preop_sex,
@@ -4523,22 +4472,34 @@ server <- function(input, output, session) {
                                     t4pa_line_color = input$t4pa_line_color,
                                     c2pa_line_color = input$c2pa_line_color, 
                                     # preop_segment_angles_input_list_reactive = xray_estimated_segment_angles_reactive_list(),
-                                    preop_rigid_levels_vector_reactive = preop_rigid_levels_vector_reactive_xray() # preop_rigid_levels_vector_reactive()
+                                    preop_rigid_levels_vector_reactive = preop_rigid_levels_vector_reactive_xray(), 
+                                    return_list_or_plot = "list"
       )
     })
     
     
     output$spine_plan_lower_t_xray <- renderPlot({
       
-      plot_grid(NULL, NULL, NULL,
-                spine_plan_uiv_t11_option_1_xray(), NULL, spine_plan_uiv_t11_option_2_xray(), 
-                nrow = 2, rel_heights = c(0.075, 0.925), 
-                rel_widths = c(1, -0.15, 1)
-      ) + 
-        draw_text(text = "Prescribed Alignment: Lower Thoracic UIV", x = 0.5, y = 0.975, size = 18, fontfact = "bold")
+      if(spine_plan_uiv_t11_option_1_xray()$pso_level == "none"){
+
+                plot_grid(NULL,
+                  spine_plan_uiv_t11_option_1_xray()$prescribed_plot, 
+                  nrow = 2, rel_heights = c(0.075, 0.925)
+        ) + 
+          draw_text(text = "Prescribed Alignment: Lower Thoracic UIV", x = 0.5, y = 0.975, size = 18, fontfact = "bold")
+        
+      }else{
+        plot_grid(NULL, NULL, NULL,
+                  spine_plan_uiv_t11_option_1_xray()$prescribed_plot, NULL, spine_plan_uiv_t11_option_2_xray()$prescribed_plot, 
+                  nrow = 2, rel_heights = c(0.075, 0.925), 
+                  rel_widths = c(1, -0.15, 1)
+        ) + 
+          draw_text(text = "Prescribed Alignment: Lower Thoracic UIV", x = 0.5, y = 0.975, size = 18, fontfact = "bold")
+        
+      }
+
       
-      # plot_grid(spine_plan_uiv_t11_option_1(), spine_plan_uiv_t11_option_2(), nrow = 1)
-      
+
     })
     
     spine_plan_uiv_t4_option_1_xray <- eventReactive(input$compute_plan_xray, {
@@ -4556,7 +4517,8 @@ server <- function(input, output, session) {
                                             t4pa_line_color = input$t4pa_line_color,
                                             c2pa_line_color = input$c2pa_line_color, 
                                             # preop_segment_angles_input_list_reactive = xray_estimated_segment_angles_reactive_list(),
-                                            preop_rigid_levels_vector_reactive = preop_rigid_levels_vector_reactive_xray() #preop_rigid_levels_vector_reactive()
+                                            preop_rigid_levels_vector_reactive = preop_rigid_levels_vector_reactive_xray(),
+                                            return_list_or_plot = "list"
       )
     })
     
@@ -4577,17 +4539,37 @@ server <- function(input, output, session) {
                                             t4pa_line_color = input$t4pa_line_color,
                                             c2pa_line_color = input$c2pa_line_color, 
                                             # preop_segment_angles_input_list_reactive = xray_estimated_segment_angles_reactive_list(),
-                                            preop_rigid_levels_vector_reactive = preop_rigid_levels_vector_reactive_xray() #preop_rigid_levels_vector_reactive()
-      )
+                                            preop_rigid_levels_vector_reactive = preop_rigid_levels_vector_reactive_xray(), #preop_rigid_levels_vector_reactive()
+                                            return_list_or_plot = "list"
+                                            )
     })
     
     output$spine_plan_upper_t_xray <- renderPlot({
       
-      plot_grid(NULL, NULL, NULL,
-                spine_plan_uiv_t4_option_1_xray(), NULL, spine_plan_uiv_t4_option_2_xray(), 
-                nrow = 2, rel_heights = c(0.075, 0.925),
-                rel_widths = c(1, -0.15, 1)) + 
-        draw_text(text = "Prescribed Alignment: Upper Thoracic UIV", x = 0.5, y = 0.975, size = 18, fontfact = "bold")
+      if(spine_plan_uiv_t4_option_1_xray()$pso_level == "none"){
+        
+        plot_grid(NULL,
+                  spine_plan_uiv_t4_option_1_xray()$prescribed_plot, 
+                  nrow = 2, rel_heights = c(0.075, 0.925)
+        ) + 
+          draw_text(text = "Prescribed Alignment: Upper Thoracic UIV", x = 0.5, y = 0.975, size = 18, fontfact = "bold")
+        
+      }else{
+        plot_grid(NULL, NULL, NULL,
+                  spine_plan_uiv_t4_option_1_xray()$prescribed_plot, NULL, spine_plan_uiv_t4_option_2_xray()$prescribed_plot, 
+                  nrow = 2, rel_heights = c(0.075, 0.925), 
+                  rel_widths = c(1, -0.15, 1)
+        ) + 
+          draw_text(text = "Prescribed Alignment: Upper Thoracic UIV", x = 0.5, y = 0.975, size = 18, fontfact = "bold")
+        
+      }
+      
+      
+      # plot_grid(NULL, NULL, NULL,
+      #           spine_plan_uiv_t4_option_1_xray(), NULL, spine_plan_uiv_t4_option_2_xray(), 
+      #           nrow = 2, rel_heights = c(0.075, 0.925),
+      #           rel_widths = c(1, -0.15, 1)) + 
+      #   draw_text(text = "Prescribed Alignment: Upper Thoracic UIV", x = 0.5, y = 0.975, size = 18, fontfact = "bold")
       
     })
     

@@ -510,7 +510,8 @@ build_t11_spine_plot_function <- function(pso_option_number = 1,
                                           t4pa_line_color, 
                                           c2pa_line_color, 
                                           preop_segment_angles_input_list_reactive = c(),
-                                          preop_rigid_levels_vector_reactive
+                                          preop_rigid_levels_vector_reactive, 
+                                          return_list_or_plot = "plot"
                                           ){
 
   ############################################### MATCHING ALIGNMENT STARTS ##############################################
@@ -797,7 +798,7 @@ build_t11_spine_plot_function <- function(pso_option_number = 1,
     pjk_risk < 0.2 ~ "darkgreen"
   )
   
-  ggplot() +
+  prescribed_plot <- ggplot() +
     geom_sf(data = spine_geoms_df,
             aes(geometry = geom,
                 alpha = geom_alpha
@@ -825,6 +826,55 @@ build_t11_spine_plot_function <- function(pso_option_number = 1,
       panel.background = element_rect(fill = "transparent", colour = NA)
     ) +
     scale_alpha_identity()
+  
+  if(return_list_or_plot == "plot"){
+    return(prescribed_plot)
+  }else{
+    
+    prescribed_plan_list <- list()
+    
+    prescribed_plan_list$prescribed_plot <- prescribed_plot
+    
+    prescribed_plan_list$prescribed_plot_no_targets <- ggplot() +
+      geom_sf(data = spine_geoms_df,
+              aes(geometry = geom,
+                  alpha = geom_alpha
+              ),
+              color = "black",
+              fill = "grey90") +
+      geom_sf(data = st_multipolygon(x = screw_list), fill = "grey55") +
+      geom_sf(data = rod_sf, fill = "grey55") +
+      # draw_text(text = measurements_df$label, x = measurements_df$x, y = measurements_df$y, size = 14) +
+      # draw_text(text = "Regional\nTargets", x = -23, y = max(alignment_targets_df$y)+7, size = 14, fontface = "bold") +
+      # draw_text(text = alignment_targets_df$label, x = alignment_targets_df$x, y = alignment_targets_df$y, size = 12) +
+      # draw_text(text = segment_angles_df$label, x = segment_angles_df$x, y = segment_angles_df$y, size = 14) +
+      draw_text(text = "UIV: T11", x = -26, y = 56, size = 14, fontface = "bold") +
+      draw_text(text = pso_label, x = -26, y = 12, size = 16, fontface = "bold", color = "blue") +
+      draw_text(text = paste("PJK Risk = ", pjk_risk), x = 0, y = -5, size = 16, color = pjk_risk_color, fontface = "bold") +
+      lines_list +
+      xlim(-35, 32) +
+      # ylim(-6, 110) +
+      theme_void() +
+      # labs(title = "T11 UIV") +
+      theme(
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.background = element_rect(fill = "transparent", colour = NA)
+      ) +
+      scale_alpha_identity()
+    
+    prescribed_plan_list$regional_targets <- alignment_targets_df
+    
+    if(pso_level != "na"){
+      prescribed_plan_list$pso_level <- paste(pso_level)
+    }else{
+      prescribed_plan_list$pso_level <- "none"
+    }
+    
+    return(prescribed_plan_list)
+    
+  }
 }
 
 
@@ -1168,7 +1218,8 @@ build_upper_t_uiv_spine_plot_function <- function(pso_option_number = 1,
                                           t4pa_line_color, 
                                           c2pa_line_color, 
                                           preop_segment_angles_input_list_reactive = c(),
-                                          preop_rigid_levels_vector_reactive
+                                          preop_rigid_levels_vector_reactive, 
+                                          return_list_or_plot = "plot"
 ){
   
   ############################################### MATCHING ALIGNMENT STARTS ##############################################
@@ -1495,7 +1546,7 @@ build_upper_t_uiv_spine_plot_function <- function(pso_option_number = 1,
     pjk_risk < 0.2 ~ "darkgreen"
   )
   
-  ggplot() +
+  prescribed_plot <- ggplot() +
     geom_sf(data = spine_geoms_df,
             aes(geometry = geom,
                 alpha = geom_alpha
@@ -1523,4 +1574,53 @@ build_upper_t_uiv_spine_plot_function <- function(pso_option_number = 1,
       panel.background = element_rect(fill = "transparent", colour = NA)
     ) +
     scale_alpha_identity()
+  
+  if(return_list_or_plot == "plot"){
+    return(prescribed_plot)
+  }else{
+    prescribed_plan_list <- list()
+    
+    prescribed_plan_list$prescribed_plot <- prescribed_plot
+    
+    prescribed_plan_list$prescribed_plot_no_targets <- ggplot() +
+      geom_sf(data = spine_geoms_df,
+              aes(geometry = geom,
+                  alpha = geom_alpha
+              ),
+              color = "black",
+              fill = "grey90") +
+      geom_sf(data = st_multipolygon(x = screw_list), fill = "grey55") +
+      geom_sf(data = rod_sf, fill = "grey55") +
+      # draw_text(text = measurements_df$label, x = measurements_df$x, y = measurements_df$y, size = 14) +
+      # draw_text(text = "Regional\nTargets", x = -23, y = max(alignment_targets_df$y)+7, size = 14, fontface = "bold") +
+      # draw_text(text = alignment_targets_df$label, x = alignment_targets_df$x, y = alignment_targets_df$y, size = 12) +
+      # draw_text(text = segment_angles_df$label, x = segment_angles_df$x, y = segment_angles_df$y, size = 14) +
+      draw_text(text = uiv_label, x = -26, y = 56, size = 14, fontface = "bold") +
+      draw_text(text = pso_label, x = -26, y = 12, size = 16, fontface = "bold", color = "blue") +
+      draw_text(text = paste("PJK Risk = ", pjk_risk), x = 0, y = -5, size = 16, color = pjk_risk_color, fontface = "bold") +
+      lines_list +
+      xlim(-35, 32) +
+      # ylim(-6, 110) +
+      theme_void() +
+      # labs(title = "T11 UIV") +
+      theme(
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.background = element_rect(fill = "transparent", colour = NA)
+      ) +
+      scale_alpha_identity()
+    
+    prescribed_plan_list$regional_targets <- alignment_targets_df
+    
+    if(length(pso_list) > 0){
+      prescribed_plan_list$pso_level <- str_to_upper(as_vector(pso_list))
+    }else{
+      prescribed_plan_list$pso_level <- "none"
+    }
+    
+    # prescribed_plan_list$pso_label <- pso_label
+    
+    return(prescribed_plan_list)
+  }
 }

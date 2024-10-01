@@ -1074,8 +1074,87 @@ build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_valu
                                                                    pso_levels = c(""), 
                                                                    return_spine_plot = "no", 
                                                                    input_segment_angles = "no", 
-                                                                   segment_angles_input = c()
+                                                                   segment_angles_input = c(), 
+                                                                   vertebral_dimensions_list = list()
 ) {
+  if(length(vertebral_dimensions_list) <2){
+    vertebral_dimensions_list <- list()
+    
+    # Lumbosacral region
+    vertebral_dimensions_list$l5_height <- 4
+    vertebral_dimensions_list$l5_width <- 5
+    
+    vertebral_dimensions_list$l4_height <- 4
+    vertebral_dimensions_list$l4_width <- 5
+    
+    vertebral_dimensions_list$l3_height <- 4
+    vertebral_dimensions_list$l3_width <- 5
+    
+    vertebral_dimensions_list$l2_height <- 4
+    vertebral_dimensions_list$l2_width <- 5
+    
+    vertebral_dimensions_list$l1_height <- 4
+    vertebral_dimensions_list$l1_width <- 5
+    
+    # Thoracic region
+    vertebral_dimensions_list$t12_height <- 3.8
+    vertebral_dimensions_list$t12_width <- 4.9
+    
+    vertebral_dimensions_list$t11_height <- 3.7
+    vertebral_dimensions_list$t11_width <- 4.8
+    
+    vertebral_dimensions_list$t10_height <- 3.6
+    vertebral_dimensions_list$t10_width <- 4.8
+    
+    vertebral_dimensions_list$t9_height <- 3.4
+    vertebral_dimensions_list$t9_width <- 4.7
+    
+    vertebral_dimensions_list$t8_height <- 3.3
+    vertebral_dimensions_list$t8_width <- 4.6
+    
+    vertebral_dimensions_list$t7_height <- 3.2
+    vertebral_dimensions_list$t7_width <- 4.5
+    
+    vertebral_dimensions_list$t6_height <- 3
+    vertebral_dimensions_list$t6_width <- 4.4
+    
+    vertebral_dimensions_list$t5_height <- 2.8
+    vertebral_dimensions_list$t5_width <- 4.3
+    
+    vertebral_dimensions_list$t4_height <- 2.6
+    vertebral_dimensions_list$t4_width <- 4.2
+    
+    vertebral_dimensions_list$t3_height <- 2.4
+    vertebral_dimensions_list$t3_width <- 4.1
+    
+    vertebral_dimensions_list$t2_height <- 2.2
+    vertebral_dimensions_list$t2_width <- 4
+    
+    vertebral_dimensions_list$t1_height <- 2
+    vertebral_dimensions_list$t1_width <- 3.8
+    
+    # Cervical region
+    vertebral_dimensions_list$c7_height <- 1.5
+    vertebral_dimensions_list$c7_width <- 3.6
+    
+    vertebral_dimensions_list$c6_height <- 1.5
+    vertebral_dimensions_list$c6_width <- 3.4
+    
+    vertebral_dimensions_list$c5_height <- 1.5
+    vertebral_dimensions_list$c5_width <- 3.2
+    
+    vertebral_dimensions_list$c4_height <- 1.5
+    vertebral_dimensions_list$c4_width <- 3
+    
+    vertebral_dimensions_list$c3_height <- 1.5
+    vertebral_dimensions_list$c3_width <- 3
+    
+    vertebral_dimensions_list$c2_height <- 1.5
+    vertebral_dimensions_list$c2_width <- 3
+    
+    vertebral_dimensions_list$c1_height <- 1.5
+    vertebral_dimensions_list$c1_width <- 3.25
+  }
   
   # segment_angle_list <- segment_angles_function_from_vertebral_pelvic_angles_function(pelvic_incidence_input = pelv_inc_value,
   #                                                                                     l1s1_input = l1s1_value_input,
@@ -1191,8 +1270,8 @@ build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_valu
     vertebral_body_build_function_new(
       vertebral_slope = (pi / 180) * (ss_value  - segment_angle_list$l5_segment_angle),
       inferior_vert_list = sacrum_list,
-      endplate_width = 5,
-      endplate_height = 4,
+      endplate_width = vertebral_dimensions_list$l5_width,
+      endplate_height = vertebral_dimensions_list$l5_height,
       wedge_body = FALSE,
       spine_facing = spine_faces,
       pso = if_else(any(str_to_lower(pso_levels) == "l5"), TRUE, FALSE)
@@ -1202,8 +1281,8 @@ build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_valu
     vertebral_body_build_function_new(
       vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:2]))), 
       inferior_vert_list = l5_list,
-      endplate_width = 5,
-      endplate_height = 4,
+      endplate_width = vertebral_dimensions_list$l4_width,
+      endplate_height = vertebral_dimensions_list$l4_height,
       wedge_body = FALSE,
       spine_facing = spine_faces,
       build_lines = TRUE,
@@ -1220,8 +1299,8 @@ build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_valu
     vertebral_body_build_function_new(
       vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:3]))), 
       inferior_vert_list = l4_list,
-      endplate_width = 5,
-      endplate_height = 4,
+      endplate_width = vertebral_dimensions_list$l3_width,
+      endplate_height = vertebral_dimensions_list$l3_height,
       wedge_body = if_else(segment_angle_list$l3_segment_angle < 0, TRUE, FALSE),
       spine_facing = spine_faces,
       pso = if_else(any(str_to_lower(pso_levels) == "l3"), TRUE, FALSE)
@@ -1231,8 +1310,8 @@ build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_valu
     vertebral_body_build_function_new(
       vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:4]))), 
       inferior_vert_list = l3_list,
-      endplate_width = 5,
-      endplate_height = 4,
+      endplate_width = vertebral_dimensions_list$l2_width,
+      endplate_height = vertebral_dimensions_list$l2_height,
       wedge_body = if_else(segment_angle_list$l2_segment_angle < 0, TRUE, FALSE),
       spine_facing = spine_faces,
       pso = if_else(any(str_to_lower(pso_levels) == "l2"), TRUE, FALSE)
@@ -1242,8 +1321,8 @@ build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_valu
     vertebral_body_build_function_new(
       vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:5]))), 
       inferior_vert_list = l2_list,
-      endplate_width = 5,
-      endplate_height = 4,
+      endplate_width = vertebral_dimensions_list$l1_width,
+      endplate_height = vertebral_dimensions_list$l1_height,
       wedge_body = if_else(segment_angle_list$l1_segment_angle < 0, TRUE, FALSE),
       spine_facing = spine_faces,
       build_lines = TRUE,
@@ -1265,8 +1344,8 @@ build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_valu
     vertebral_body_build_function_new(
       vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:6]))), 
       inferior_vert_list = l1_list,
-      endplate_width = 4.9,
-      endplate_height = 3.8,
+      endplate_width = vertebral_dimensions_list$t12_width,
+      endplate_height = vertebral_dimensions_list$t12_height,
       wedge_body = if_else(segment_angle_list$t12_segment_angle < 0, TRUE, FALSE),
       build_lines = TRUE,
       spine_facing = spine_faces,
@@ -1275,10 +1354,10 @@ build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_valu
   
   t11_list <-
     vertebral_body_build_function_new(
-      vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:7]))), 
+      vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:7]))),
       inferior_vert_list = t12_list,
-      endplate_width = 4.8,
-      endplate_height = 3.7,
+      endplate_width = vertebral_dimensions_list$t11_width,
+      endplate_height = vertebral_dimensions_list$t11_height,
       wedge_body = if_else(segment_angle_list$t11_segment_angle < 0, TRUE, FALSE),
       spine_facing = spine_faces,
       pso = if_else(any(str_to_lower(pso_levels) == "t11"), TRUE, FALSE)
@@ -1286,10 +1365,10 @@ build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_valu
   
   t10_list <-
     vertebral_body_build_function_new(
-      vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:8]))), 
+      vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:8]))),
       inferior_vert_list = t11_list,
-      endplate_width = 4.8,
-      endplate_height = 3.6,
+      endplate_width = vertebral_dimensions_list$t10_width,
+      endplate_height = vertebral_dimensions_list$t10_height,
       wedge_body = if_else(segment_angle_list$t10_segment_angle < 0, TRUE, FALSE),
       spine_facing = spine_faces,
       pso = if_else(any(str_to_lower(pso_levels) == "t10"), TRUE, FALSE)
@@ -1297,60 +1376,60 @@ build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_valu
   
   t9_list <-
     vertebral_body_build_function_new(
-      vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:9]))), 
+      vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:9]))),
       inferior_vert_list = t10_list,
-      endplate_width = 4.7,
-      endplate_height = 3.4,
+      endplate_width = vertebral_dimensions_list$t9_width,
+      endplate_height = vertebral_dimensions_list$t9_height,
       wedge_body = TRUE,
       spine_facing = spine_faces
     )
   
   t8_list <-
     vertebral_body_build_function_new(
-      vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:10]))), 
+      vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:10]))),
       inferior_vert_list = t9_list,
-      endplate_width = 4.6,
-      endplate_height = 3.3,
+      endplate_width = vertebral_dimensions_list$t8_width,
+      endplate_height = vertebral_dimensions_list$t8_height,
       wedge_body = TRUE,
       spine_facing = spine_faces
     )
   
   t7_list <-
     vertebral_body_build_function_new(
-      vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:11]))), 
+      vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:11]))),
       inferior_vert_list = t8_list,
-      endplate_width = 4.5,
-      endplate_height = 3.2,
+      endplate_width = vertebral_dimensions_list$t7_width,
+      endplate_height = vertebral_dimensions_list$t7_height,
       wedge_body = TRUE,
       spine_facing = spine_faces
     )
   
   t6_list <-
     vertebral_body_build_function_new(
-      vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:12]))), 
+      vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:12]))),
       inferior_vert_list = t7_list,
-      endplate_width = 4.4,
-      endplate_height = 3,
+      endplate_width = vertebral_dimensions_list$t6_width,
+      endplate_height = vertebral_dimensions_list$t6_height,
       wedge_body = TRUE,
       spine_facing = spine_faces
     )
   
   t5_list <-
     vertebral_body_build_function_new(
-      vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:13]))), 
+      vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:13]))),
       inferior_vert_list = t6_list,
-      endplate_width = 4.3,
-      endplate_height = 2.8,
+      endplate_width = vertebral_dimensions_list$t5_width,
+      endplate_height = vertebral_dimensions_list$t5_height,
       wedge_body = TRUE,
       spine_facing = spine_faces
     )
   
   t4_list <-
     vertebral_body_build_function_new(
-      vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:14]))), 
+      vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:14]))),
       inferior_vert_list = t5_list,
-      endplate_width = 4.2,
-      endplate_height = 2.6,
+      endplate_width = vertebral_dimensions_list$t4_width,
+      endplate_height = vertebral_dimensions_list$t4_height,
       wedge_body = TRUE,
       build_lines = TRUE,
       spine_facing = spine_faces
@@ -1358,91 +1437,106 @@ build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_valu
   
   t3_list <-
     vertebral_body_build_function_new(
-      vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:15]))), 
+      vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:15]))),
       inferior_vert_list = t4_list,
-      endplate_width = 4.1,
-      endplate_height = 2.4,
+      endplate_width = vertebral_dimensions_list$t3_width,
+      endplate_height = vertebral_dimensions_list$t3_height,
       wedge_body = TRUE,
       spine_facing = spine_faces
     )
   
   t2_list <-
     vertebral_body_build_function_new(
-      vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:16]))), 
+      vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:16]))),
       inferior_vert_list = t3_list,
-      endplate_width = 4,
-      endplate_height = 2.2,
+      endplate_width = vertebral_dimensions_list$t2_width,
+      endplate_height = vertebral_dimensions_list$t2_height,
       wedge_body = TRUE,
       spine_facing = spine_faces
     )
   
   t1_list <-
     vertebral_body_build_function_new(
-      vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:17]))), 
+      vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:17]))),
       inferior_vert_list = t2_list,
-      endplate_width = 3.8,
-      endplate_height = 2,
+      endplate_width = vertebral_dimensions_list$t1_width,
+      endplate_height = vertebral_dimensions_list$t1_height,
       wedge_body = TRUE,
       build_lines = TRUE,
       spine_facing = spine_faces
     )
   
+  ################## Cervical region  ################## 
+  ################## Cervical region  ################## 
+  ################## Cervical region  ################## 
+  ################## Cervical region  ################## 
+  ################## Cervical region  ################## 
   
-  ############################################# CERVICAL ############################################
-  ############################################# CERVICAL ############################################
-  ############################################# CERVICAL ############################################
-  ############################################# CERVICAL ############################################
-  ############################################# CERVICAL ############################################
+  c7_list <- vertebral_body_build_function_new(
+    vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:18]))),
+    inferior_vert_list = t1_list,
+    endplate_width = vertebral_dimensions_list$c7_width,
+    endplate_height = vertebral_dimensions_list$c7_height,
+    wedge_body = TRUE,
+    build_lines = TRUE,
+    spine_facing = spine_faces
+  )
   
-  spine_orientation <- if_else(spine_faces == "left", 1, -1)
+  c6_list <- vertebral_body_build_function_new(
+    vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:19]))),
+    inferior_vert_list = c7_list,
+    endplate_width = vertebral_dimensions_list$c6_width,
+    endplate_height = vertebral_dimensions_list$c6_height,
+    wedge_body = TRUE,
+    spine_facing = spine_faces
+  )
   
+  c5_list <- vertebral_body_build_function_new(
+    vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:20]))),
+    inferior_vert_list = c6_list,
+    endplate_width = vertebral_dimensions_list$c5_width,
+    endplate_height = vertebral_dimensions_list$c5_height,
+    wedge_body = TRUE,
+    spine_facing = spine_faces
+  )
   
-  c7_list <- vertebral_body_build_function_new(vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:18]))), 
-                                               inferior_vert_list = t1_list,
-                                               endplate_width = 3.6, 
-                                               endplate_height = 1.5, 
-                                               wedge_body = TRUE, build_lines = TRUE,
-                                               spine_facing = spine_faces)
-  c6_list <- vertebral_body_build_function_new(vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:19]))),
-                                               inferior_vert_list = c7_list,
-                                               endplate_width = 3.4,
-                                               endplate_height = 1.5,
-                                               wedge_body = TRUE, 
-                                               spine_facing = spine_faces)
-  c5_list <- vertebral_body_build_function_new(vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:20]))), 
-                                               inferior_vert_list = c6_list,
-                                               endplate_width = 3.2,
-                                               endplate_height = 1.5, 
-                                               wedge_body = TRUE, 
-                                               spine_facing = spine_faces)
-  c4_list <- vertebral_body_build_function_new(vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:21]))), 
-                                               inferior_vert_list = c5_list,
-                                               endplate_width = 3,
-                                               endplate_height = 1.5,
-                                               wedge_body = TRUE,
-                                               spine_facing = spine_faces)
-  c3_list <- vertebral_body_build_function_new(vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:22]))),
-                                               inferior_vert_list = c4_list,
-                                               endplate_width = 3,
-                                               endplate_height = 1.5,
-                                               wedge_body = TRUE,
-                                               spine_facing = spine_faces)
+  c4_list <- vertebral_body_build_function_new(
+    vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:21]))),
+    inferior_vert_list = c5_list,
+    endplate_width = vertebral_dimensions_list$c4_width,
+    endplate_height = vertebral_dimensions_list$c4_height,
+    wedge_body = TRUE,
+    spine_facing = spine_faces
+  )
   
-  c2_list <- vertebral_body_build_function_new(vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:23]))),
-                                               inferior_vert_list = c3_list, 
-                                               endplate_width = 3,
-                                               endplate_height = 1.5, 
-                                               wedge_body = TRUE, 
-                                               build_lines = TRUE,
-                                               spine_facing = spine_faces,
-                                               c2_body = TRUE)
+  c3_list <- vertebral_body_build_function_new(
+    vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:22]))),
+    inferior_vert_list = c4_list,
+    endplate_width = vertebral_dimensions_list$c3_width,
+    endplate_height = vertebral_dimensions_list$c3_height,
+    wedge_body = TRUE,
+    spine_facing = spine_faces
+  )
   
-  c1_list <- vertebral_body_build_function_new(vertebral_slope = (pi / 180) * (ss_value  - (Reduce("+", segment_angle_list[1:24]))),
-                                               inferior_vert_list = c2_list, 
-                                               endplate_width = 3.25, 
-                                               endplate_height = 1.5,
-                                               wedge_body = TRUE,
-                                               spine_facing = spine_faces)
+  c2_list <- vertebral_body_build_function_new(
+    vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:23]))),
+    inferior_vert_list = c3_list,
+    endplate_width = vertebral_dimensions_list$c2_width,
+    endplate_height = vertebral_dimensions_list$c2_height,
+    wedge_body = TRUE,
+    build_lines = TRUE,
+    spine_facing = spine_faces,
+    c2_body = TRUE
+  )
+  
+  c1_list <- vertebral_body_build_function_new(
+    vertebral_slope = (pi / 180) * (ss_value - (Reduce("+", segment_angle_list[1:24]))),
+    inferior_vert_list = c2_list,
+    endplate_width = vertebral_dimensions_list$c1_width,
+    endplate_height = vertebral_dimensions_list$c1_height,
+    wedge_body = TRUE,
+    spine_facing = spine_faces
+  )
   
   head_center <- st_point(c(c1_list$sa[[1]] + spine_orientation*1, 
                             c1_list$sa[[2]] +4))

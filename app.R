@@ -1025,95 +1025,7 @@ ui <- dashboardPage(
                          display: block;"
                              , 
                              htmlOutput(outputId = "xray_click_instructions")
-                           ), 
-    #                        fluidRow(
-    #                          div(
-    #                            id = "xray_zoom_pan_container", 
-    #                            style = "position: relative; width: 100%; height: 750px; overflow: hidden;",
-    #                            
-    #                            # Static plot layer
-    #                            div(
-    #                              id = "static_layer",
-    #                              style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%;",
-    #                              plotOutput("xray_static", height = "100%", width = "100%", click = "xray_click")
-    #                            ),
-    #                            
-    #                            # Dynamic plot layer
-    #                            div(
-    #                              id = "dynamic_layer",
-    #                              style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;",
-    #                              plotOutput("xray_dynamic", height = "100%", width = "100%")
-    #                            ),
-    #                            
-    #                            # Add JavaScript to handle zoom and pan
-    #                            tags$script(HTML("
-    #   var zoomLevel = 1;
-    #   var panX = 0;
-    #   var panY = 0;
-    #   var isPanning = false;
-    #   var startX, startY;
-    # 
-    #   function applyTransform() {
-    #     var container = document.getElementById('xray_zoom_pan_container');
-    #     if (container) {
-    #       container.style.transform = 'scale(' + zoomLevel + ') translate(' + panX + 'px, ' + panY + 'px)';
-    #     }
-    #   }
-    # 
-    #   // Zoom in/out on scroll
-    #   document.getElementById('xray_zoom_pan_container').addEventListener('wheel', function(event) {
-    #     event.preventDefault();
-    #     if (event.deltaY > 0) {
-    #       zoomLevel *= 0.9; // Zoom out
-    #     } else {
-    #       zoomLevel *= 1.1; // Zoom in
-    #     }
-    #     applyTransform();
-    #   });
-    # 
-    #   // Start panning on right-click (mousedown)
-    #   document.getElementById('xray_zoom_pan_container').addEventListener('mousedown', function(event) {
-    #     if (event.button === 2) { // Right-click for panning
-    #       isPanning = true;
-    #       startX = event.clientX;
-    #       startY = event.clientY;
-    #       var container = document.getElementById('xray_zoom_pan_container');
-    #       if (container) {
-    #         container.style.cursor = 'grabbing';
-    #       }
-    #     }
-    #   });
-    # 
-    #   // Stop panning on mouseup
-    #   document.addEventListener('mouseup', function(event) {
-    #     isPanning = false;
-    #     var container = document.getElementById('xray_zoom_pan_container');
-    #     if (container) {
-    #       container.style.cursor = 'crosshair'; // Reset to crosshair
-    #     }
-    #   });
-    # 
-    #   // Handle mouse movement for panning
-    #   document.addEventListener('mousemove', function(event) {
-    #     if (isPanning) {
-    #       var deltaX = event.clientX - startX;
-    #       var deltaY = event.clientY - startY;
-    #       panX += deltaX;
-    #       panY += deltaY;
-    #       applyTransform(); // Apply the updated pan
-    #       startX = event.clientX;
-    #       startY = event.clientY;
-    #     }
-    #   });
-    # 
-    #   // Prevent the right-click menu from showing up
-    #   document.addEventListener('contextmenu', function(event) {
-    #     event.preventDefault();
-    #   });
-    # "))
-    #                          )
-    #                        ),
-                           
+                           ),
                            div(
                              id = "image_container",
                              plotOutput(
@@ -1122,168 +1034,174 @@ ui <- dashboardPage(
                                height = "auto",  # Set to 100% to fill the container
                                width = "100%"    # Set to 100% to fill the container
                              ),
-
+                             
                              # Style for container and image
                              tags$style(HTML("
-      #image_container {
-        overflow: hidden;
-        width: 100%;
-        height: 750px;
-        position: relative;
-        display: flex;
-      }
-      #image_container img {
-        transition: transform 0.15s ease;
-        cursor: crosshair;
-              width: 100%;  /* Ensure the image fills the width of the container */
-      height: auto; /* Maintain aspect ratio */
-      }
-      #image_container img:active {
-        cursor: grabbing;
-      }
-    ")),
-
-                             # JavaScript to handle zoom and pan on the client side
-                             tags$script(HTML("
-                                              var zoomLevel = 1;
-var panX = 0;
-var panY = 0;
-var isPanning = false;
-var startX, startY;
-var needsUpdate = false;
-
-function applyTransform() {
-  var imgElement = document.querySelector('#image_container img');
-  if (imgElement) {
-    imgElement.style.transform = 'scale(' + zoomLevel + ') translate(' + panX + 'px, ' + panY + 'px)';
-  }
-  needsUpdate = false;
-}
-
-function requestUpdate() {
-  if (!needsUpdate) {
-    needsUpdate = true;
-    requestAnimationFrame(applyTransform);
-  }
-}
-
-// Zoom in/out on scroll
-document.getElementById('image_container').addEventListener('wheel', function(event) {
-  event.preventDefault();
-  if (event.deltaY > 0) {
-    zoomLevel *= 0.9; // Zoom out
-  } else {
-    zoomLevel *= 1.1; // Zoom in
-  }
-  requestUpdate(); // Request a new update via requestAnimationFrame
-});
-
-// Start panning on right-click (mousedown)
-document.getElementById('image_container').addEventListener('mousedown', function(event) {
-  if (event.button === 2) { // Right-click for panning
-    isPanning = true;
-    startX = event.clientX;
-    startY = event.clientY;
-    var imgElement = document.querySelector('#image_container img');
-    if (imgElement) {
-      imgElement.style.cursor = 'grabbing';
+    #image_container {
+      overflow: hidden;
+      width: 100%;
+      height: 750px;
+      position: relative;
+      display: flex;
     }
-  }
-});
+    #image_container img {
+      cursor: crosshair;
+      width: 100%;  /* Ensure the image fills the width of the container */
+      height: auto; /* Maintain aspect ratio */
+    }
+  ")),
+                             tags$script(src = "https://unpkg.com/@panzoom/panzoom@9.4.0/dist/panzoom.min.js"),
+                             tags$script(HTML("
+    document.addEventListener('DOMContentLoaded', function() {
+      var imageContainer = document.getElementById('image_container');
 
-// Stop panning on mouseup
-document.addEventListener('mouseup', function() {
-  isPanning = false;
-  var imgElement = document.querySelector('#image_container img');
-  if (imgElement) {
-    imgElement.style.cursor = 'crosshair'; // Reset to crosshair
-  }
-});
+      // Initialize Panzoom
+      var panzoomInstance = Panzoom(imageContainer, {
+        maxScale: 5,
+        minScale: 1,
+        contain: 'outside'
+      });
 
-// Handle mouse movement for panning
-document.addEventListener('mousemove', function(event) {
-  if (isPanning) {
-    var deltaX = event.clientX - startX;
-    var deltaY = event.clientY - startY;
-    panX += deltaX;
-    panY += deltaY;
-    startX = event.clientX;
-    startY = event.clientY;
-    requestUpdate(); // Request a new update via requestAnimationFrame
-  }
-});
+      // Allow zooming with mouse wheel
+      imageContainer.addEventListener('wheel', panzoomInstance.zoomWithWheel);
 
-// Prevent the right-click menu from showing up
-document.addEventListener('contextmenu', function(event) {
-  event.preventDefault();
-});
-")),
-    #                          tags$script(HTML("
-    #   var zoomLevel = 1;
-    #   var panX = 0;
-    #   var panY = 0;
-    #   var isPanning = false;
-    #   var startX, startY;
-    # 
-    #   function applyTransform() {
-    #     var imgElement = document.querySelector('#image_container img');
-    #     if (imgElement) {
-    #       imgElement.style.transform = 'scale(' + zoomLevel + ') translate(' + panX + 'px, ' + panY + 'px)';
-    #     }
-    #   }
-    # 
-    #   // Zoom in/out on scroll
-    #   document.getElementById('image_container').addEventListener('wheel', function(event) {
-    #     event.preventDefault();
-    #     if (event.deltaY > 0) {
-    #       zoomLevel *= 0.9; // Zoom out
-    #     } else {
-    #       zoomLevel *= 1.1; // Zoom in
-    #     }
-    #     applyTransform(); // Apply the updated zoom level
-    #   });
-    # 
-    #   // Start panning on right-click (mousedown)
-    #   document.getElementById('image_container').addEventListener('mousedown', function(event) {
-    #     if (event.button === 2) { // Right-click for panning
-    #       isPanning = true;
-    #       startX = event.clientX;
-    #       startY = event.clientY;
-    #       var imgElement = document.querySelector('#image_container img');
-    #       if (imgElement) {
-    #         imgElement.style.cursor = 'grabbing';
-    #       }
-    #     }
-    #   });
-    # 
-    #   // Stop panning on mouseup
-    #   document.addEventListener('mouseup', function(event) {
-    #     isPanning = false;
-    #     var imgElement = document.querySelector('#image_container img');
-    #     if (imgElement) {
-    #       imgElement.style.cursor = 'crosshair'; // Reset to crosshair
-    #     }
-    #   });
-    # 
-    #   // Handle mouse movement for panning
-    #   document.addEventListener('mousemove', function(event) {
-    #     if (isPanning) {
-    #       var deltaX = event.clientX - startX;
-    #       var deltaY = event.clientY - startY;
-    #       panX += deltaX;
-    #       panY += deltaY;
-    #       applyTransform(); // Apply the updated pan
-    #       startX = event.clientX;
-    #       startY = event.clientY;
-    #     }
-    #   });
-    # 
-    #   // Prevent the right-click menu from showing up
-    #   document.addEventListener('contextmenu', function(event) {
-    #     event.preventDefault();
-    #   });
-    # "))
+      // Function to send current transform values to Shiny
+      function sendTransformData() {
+        var transform = panzoomInstance.getTransform();
+        Shiny.setInputValue('zoomLevel', transform.scale, {priority: 'event'});
+        Shiny.setInputValue('panX', transform.x, {priority: 'event'});
+        Shiny.setInputValue('panY', transform.y, {priority: 'event'});
+      }
+
+      // Update Shiny whenever the user clicks on the image
+      imageContainer.addEventListener('click', function(event) {
+        sendTransformData();
+
+        // Adjust and send click coordinates
+        setTimeout(function() {
+          var offsetX = (event.offsetX - panzoomInstance.getTransform().x) / panzoomInstance.getTransform().scale;
+          var offsetY = (event.offsetY - panzoomInstance.getTransform().y) / panzoomInstance.getTransform().scale;
+          
+          Shiny.setInputValue('xray_click', {
+            x: offsetX,
+            y: offsetY
+          }, {priority: 'event'});
+        }, 50); // Adjust delay if needed
+      });
+    });
+  "))
                            ),
+                           
+                           
+                           
+                           
+                           
+#                            div(
+#                              id = "image_container",
+#                              plotOutput(
+#                                outputId = "xray",
+#                                click = "xray_click",  # Clicks are still processed by Shiny
+#                                height = "auto",  # Set to 100% to fill the container
+#                                width = "100%"    # Set to 100% to fill the container
+#                              ),
+# 
+#                              # Style for container and image
+#                              tags$style(HTML("
+#       #image_container {
+#         overflow: hidden;
+#         width: 100%;
+#         height: 750px;
+#         position: relative;
+#         display: flex;
+#       }
+#       #image_container img {
+#         transition: transform 0.15s ease;
+#         cursor: crosshair;
+#               width: 100%;  /* Ensure the image fills the width of the container */
+#       height: auto; /* Maintain aspect ratio */
+#       }
+#       #image_container img:active {
+#         cursor: grabbing;
+#       }
+#     ")),
+# 
+#                              # JavaScript to handle zoom and pan on the client side
+#                              tags$script(HTML("
+#                                               var zoomLevel = 1;
+# var panX = 0;
+# var panY = 0;
+# var isPanning = false;
+# var startX, startY;
+# var needsUpdate = false;
+# 
+# function applyTransform() {
+#   var imgElement = document.querySelector('#image_container img');
+#   if (imgElement) {
+#     imgElement.style.transform = 'scale(' + zoomLevel + ') translate(' + panX + 'px, ' + panY + 'px)';
+#   }
+#   needsUpdate = false;
+# }
+# 
+# function requestUpdate() {
+#   if (!needsUpdate) {
+#     needsUpdate = true;
+#     requestAnimationFrame(applyTransform);
+#   }
+# }
+# 
+# // Zoom in/out on scroll
+# document.getElementById('image_container').addEventListener('wheel', function(event) {
+#   event.preventDefault();
+#   if (event.deltaY > 0) {
+#     zoomLevel *= 0.9; // Zoom out
+#   } else {
+#     zoomLevel *= 1.1; // Zoom in
+#   }
+#   requestUpdate(); // Request a new update via requestAnimationFrame
+# });
+# 
+# // Start panning on right-click (mousedown)
+# document.getElementById('image_container').addEventListener('mousedown', function(event) {
+#   if (event.button === 2) { // Right-click for panning
+#     isPanning = true;
+#     startX = event.clientX;
+#     startY = event.clientY;
+#     var imgElement = document.querySelector('#image_container img');
+#     if (imgElement) {
+#       imgElement.style.cursor = 'grabbing';
+#     }
+#   }
+# });
+# 
+# // Stop panning on mouseup
+# document.addEventListener('mouseup', function() {
+#   isPanning = false;
+#   var imgElement = document.querySelector('#image_container img');
+#   if (imgElement) {
+#     imgElement.style.cursor = 'crosshair'; // Reset to crosshair
+#   }
+# });
+# 
+# // Handle mouse movement for panning
+# document.addEventListener('mousemove', function(event) {
+#   if (isPanning) {
+#     var deltaX = event.clientX - startX;
+#     var deltaY = event.clientY - startY;
+#     panX += deltaX;
+#     panY += deltaY;
+#     startX = event.clientX;
+#     startY = event.clientY;
+#     requestUpdate(); // Request a new update via requestAnimationFrame
+#   }
+# });
+# 
+# // Prevent the right-click menu from showing up
+# document.addEventListener('contextmenu', function(event) {
+#   event.preventDefault();
+# });
+# ")),
+#   
+#                            ),
                            fluidRow(
                              column(width = 7, 
                                     actionBttn(inputId = "xray_delete_last_point", 

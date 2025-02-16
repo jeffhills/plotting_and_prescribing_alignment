@@ -21,22 +21,22 @@ library(lubridate)
 library(shinydashboard)
 library(magick)
 
-vector_package_names <- installed.packages()[, "Package"]
-if(any(vector_package_names == "officer")){
-  library(officer)
-}else{
-  install.packages("officer")
-  library(officer)
-}
-if(any(vector_package_names== "rvg")){
-  library(rvg)
-}else{
-  install.packages("rvg")
-  library(rvg)
-}
+# vector_package_names <- installed.packages()[, "Package"]
+# if(any(vector_package_names == "officer")){
+#   library(officer)
+# }else{
+#   install.packages("officer")
+#   library(officer)
+# }
+# if(any(vector_package_names== "rvg")){
+#   library(rvg)
+# }else{
+#   install.packages("rvg")
+#   library(rvg)
+# }
 
-# library(officer)
-# library(rvg)
+library(officer)
+library(rvg)
 
 source("jh_functions.R", local = TRUE)
 source("compute_segment_angles_function_from_sim_data_2024.R", local = TRUE)

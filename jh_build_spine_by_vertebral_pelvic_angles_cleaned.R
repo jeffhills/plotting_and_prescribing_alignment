@@ -1957,6 +1957,24 @@ build_full_spine_from_vertebral_pelvic_angles_function <- function(pelv_inc_valu
     
   }
   
+  measurements_list <- list()
+  measurements_list$"C2 Tilt" <- round(spine_list$c2_tilt_value)
+  measurements_list$"C2PA" <- round(spine_list$c2_pelvic_angle_value, 0)
+  measurements_list$"T4PA" <- round(spine_list$t4_pelvic_angle_value, 0)
+  measurements_list$"T9PA" <- round(spine_list$t9_pelvic_angle_value, 0)
+  measurements_list$"L1PA" <- round(spine_list$l1_pelvic_angle_value, 0)
+  measurements_list$"L1-S1" <-  round(spine_list$lumbar_lordosis, 0)
+  # measurements_list$"TK" <- round(spine_list$thoracic_kyphosis, 0)
+  measurements_list$"PT" <- round(spine_list$pelvic_tilt, 0)
+  measurements_list$"PI" <- round(spine_list$pelvic_incidence, 0)
+  
+  full_list$measurements_df <- enframe(measurements_list) %>%
+    unnest() %>%
+    mutate(x = -8) %>%
+    mutate(y = c(seq(from = 0, by = -3, length = length(measurements_list)))) %>%
+    mutate(label = paste0(name, " = ", value, "º")) 
+  
+  
   return(full_list)
   
 }

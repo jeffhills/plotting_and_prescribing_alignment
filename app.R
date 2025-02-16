@@ -20,7 +20,9 @@ library(cowplot)
 library(lubridate)
 library(shinydashboard)
 library(magick)
-# library(ggforce)
+
+library(officer)
+library(rvg)
 
 source("jh_functions.R", local = TRUE)
 source("compute_segment_angles_function_from_sim_data_2024.R", local = TRUE)
@@ -274,7 +276,7 @@ create_spine_rigid_level_input_function <- function(segment_input_label){
 # Define UI for application that draws a histogram
 ui <- dashboardPage(
   dashboardHeader(title = "Solaspine"),
-  dashboardSidebar(
+  dashboardSidebar(collapsed = TRUE,
     sidebarMenu(
       menuItem("Plot Spine Alignment",
                tabName = "plot_alignment", 
@@ -666,8 +668,20 @@ ui <- dashboardPage(
                            title = tags$div(style = "font-size:14px; font-weight:bold", "Spinal Alignment"),
                            plotOutput("spine_base", height = 700),
                            span(textOutput("messages_ll"), style="color:red"),
+                           # downloadButton(outputId = "download_ppt_slide", label = "Download PPT slide"),
                            downloadButton(outputId = "download_figure", label = "Download the Figure"),
-                           downloadButton(outputId = "download_plain_figure", label = "Download Plain Spine Figure")  
+                           # downloadButton(outputId = "download_plain_figure", label = "Download Plain Spine Figure"),
+                           hr(),
+                           actionBttn(
+                             inputId = "add_to_powerpoint_button",
+                             label = "Add to Powerpoint", 
+                             style = "gradient",
+                             size = "sm",
+                             color = "primary",
+                             icon = icon("plus")
+                           ),
+                           downloadButton(outputId = "download_ppt_slide", label = "Download PPT slide"), 
+                           textOutput(outputId = "ppt_slide_counter")
                        )
                 ),
                 
@@ -1977,19 +1991,10 @@ server <- function(input, output, session) {
       xlim(-40, 40) +
       ylim(-6, 110) +
       theme_void() +
-      # labs(title = "The Cone of Economy") +
       theme(
         axis.text = element_blank(),
         axis.title = element_blank(),
-        # plot.title = element_text(
-        #     size = 16,
-        #     hjust = 0.5,
-        #     vjust = -0.5,
-        #     face = "bold.italic"
-        # ),
         plot.background = element_blank()
-        # plot.background = element_rect(fill = "transparent", colour = NA),
-        # panel.background = element_rect(fill = "transparent", colour = NA)
       ) + 
       scale_fill_identity() +
       scale_alpha_identity()
@@ -1998,6 +2003,8 @@ server <- function(input, output, session) {
   )
   
   ### NEW PLOTTING END
+  
+  
   
   
   
@@ -2015,36 +2022,89 @@ server <- function(input, output, session) {
       )
   })
   
+  # ppt <- read_pptx() %>%
+  #   add_slide(layout = "Title and Content", master = "Office Theme") %>%
+  #   ph_with(dml(ggobj = test_ggplot), location = ph_location_fullsize())
+  # 
+  # # Save the PowerPoint file
+  # print(ppt, target = "ggplot_shapes.pptx")
   
+  spine_powerpoint_list <- reactiveVal(list())
+  
+  observeEvent(input$add_to_powerpoint_button, {
+    
+    spine_plots_saved <- spine_powerpoint_list()
+    spine_plots_saved[[length(spine_plots_saved) + 1]] <- spine_plot()
+    
+    spine_powerpoint_list(spine_plots_saved)
+    
+  })
+  
+  output$ppt_slide_counter <-   renderText({
+    paste("PPT Slides = ", length(spine_powerpoint_list()))
+  })
+  
+  # input$add_to_powerpoint_button
+  
+  # output$download_ppt_slide <- downloadHandler(
+  #   filename = function() { paste("spine_figure.pptx") },
+  #   content = function(file) {
+  #     # Create a new PowerPoint document
+  #     ppt <- read_pptx() %>%
+  #       add_slide(layout = "Blank", master = "Office Theme") %>%
+  #       ph_with(dml(ggobj = spine_plot()), location = ph_location_fullsize())
+  # 
+  #     # Save the PowerPoint file
+  #     print(ppt, target = file)
+  #   }
+  # )
+  # Download PowerPoint file with multiple slides
+  
+  output$download_ppt_slide <- downloadHandler(
+    filename = function() { paste("spine_figure.pptx") },
+    content = function(file) {
+      ppt <- read_pptx()
+      
+      # Loop through saved plots and add each as a separate slide
+      for (plot in spine_powerpoint_list()) {
+        ppt <- ppt %>%
+          add_slide(layout = "Blank", master = "Office Theme") %>%
+          ph_with(dml(ggobj = plot), location = ph_location_fullsize())
+      }
+      
+      # Save PowerPoint file
+      print(ppt, target = file)
+    }
+  )
   
   output$download_figure <- downloadHandler(filename = function(){paste("spine_figure.svg")},
                                             content = function(figure){
                                               ggsave(filename = figure, 
-                                                     plot = spine_plot(),
+                                                     plot = spine_plot()+theme_void(),
                                                      units = "in",
                                                      width = 8,
                                                      height = 14,
-                                                     dpi = 1200,
+                                                     dpi = 300,
                                                      device = "svg")
                                             })
   
-  plain_spine_plot <- reactive({
-    
-    spine_plot() + 
-      theme_void()
-  }
-  )
+  # plain_spine_plot <- reactive({
+  #   
+  #   spine_plot() + 
+  #     theme_void()
+  # }
+  # )
   
-  output$download_plain_figure <- downloadHandler(filename = function(){paste("spine_figure.svg")},
-                                                  content = function(figure){
-                                                    ggsave(filename = figure, 
-                                                           plot = plain_spine_plot(),
-                                                           units = "in",
-                                                           width = 6,
-                                                           height = 10,
-                                                           dpi = 1200,
-                                                           device = "svg")
-                                                  })
+  # output$download_plain_figure <- downloadHandler(filename = function(){paste("spine_figure.svg")},
+  #                                                 content = function(figure){
+  #                                                   ggsave(filename = figure, 
+  #                                                          plot = plain_spine_plot(),
+  #                                                          units = "in",
+  #                                                          width = 6,
+  #                                                          height = 10,
+  #                                                          dpi = 1200,
+  #                                                          device = "svg")
+  #                                                 })
   
   
   

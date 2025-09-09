@@ -343,6 +343,70 @@ vertebral_body_build_function_new <- function(vertebral_slope,
 
 
 ################### BUILD THE SPINE ##########################
+jh_spine_build_sacrum_function <- function(pelvic_incidence = 50,
+                                           pelvic_tilt = 10,
+                                           fem_head_center_coord = c(0,0), 
+                                           fh_to_s1_center = 10, 
+                                           s1_endplate_length = 3){
+  
+  ## compute radians
+  pelvic_incidence_radians <- (pi / 180) * (pelvic_incidence)
+  pelvic_tilt_radians <- (pi / 180) * (pelvic_tilt)
+  sacral_slope_radians <- (pi / 180) * (pelvic_incidence - pelvic_tilt)
+  
+  sacrum_list <- list()
+  # S1 mid (center of superior endplate) located along the PT ray from FH
+  sacrum_list$mid <- c(
+    fem_head_center_coord[1] - fh_to_s1_center * sin(pelvic_tilt_radians),
+    fem_head_center_coord[2] + fh_to_s1_center * cos(pelvic_tilt_radians)
+  )
+  
+  # Unit vector along superior endplate, from SP → SA
+  u <- c(cos(sacral_slope_radians), -sin(sacral_slope_radians))
+  # Superior corners
+  sacrum_list$sp <- sacrum_list$mid - 0.5 * s1_endplate_length * u
+  sacrum_list$sa <- sacrum_list$mid + 0.5 * s1_endplate_length * u
+  
+  posterior_sacrum_length <- jh_calculate_distance_between_2_points_function(point_1 = sacrum_list$sp, point_2 = fem_head_center_coord)*0.8
+  
+  perp1 <- c(-u[2],  u[1])
+  perp2 <- c( u[2], -u[1])
+  
+  if(pelvic_incidence - pelvic_tilt < 91){
+    ip = if(perp1[2] < 0) perp1 else perp2
+  }else{
+    ip = if(perp1[2] > 0) perp1 else perp2
+  }
+  
+  sacrum_list$ip = c(sacrum_list$sp[[1]] + posterior_sacrum_length * ip[1], 
+                     sacrum_list$sp[[2]] + posterior_sacrum_length * ip[2])
+  
+  sacrum_list$ia <- c(sacrum_list$ip[[1]] + s1_endplate_length*0.1 * cos(sacral_slope_radians), 
+                      sacrum_list$ip[[2]] - s1_endplate_length*0.1 * sin(sacral_slope_radians))
+  
+  sacrum_sf <- st_polygon(list(rbind(sacrum_list$sp,
+                                     sacrum_list$sa, 
+                                     sacrum_list$ia,
+                                     sacrum_list$ip, 
+                                     sacrum_list$sp)))
+  
+  sacrum_df <- tibble(
+    level = "s1",
+    point = c("sp","sa","ia","ip","mid"),
+    x     = c(sacrum_list$sp[1],  sacrum_list$s1_mid[1], sacrum_list$sa[1], sacrum_list$ia[1], sacrum_list$ip[1], sacrum_list$sp[1]),
+    y     = c(sacrum_list$sp[2], sacrum_list$s1_mid[2], sacrum_list$sa[2], sacrum_list$ia[2], sacrum_list$ip[2], sacrum_list$sp[2])
+  )
+  
+  return(list(sacrum_list = sacrum_list, 
+              sacrum_df = sacrum_df,
+              sacrum_sf = sacrum_sf 
+  ))
+}
+
+
+################### BUILD THE SPINE ##########################
+################### BUILD THE SPINE ##########################
+################### BUILD THE SPINE ##########################
 
 build_full_spine_function_new <- function(pelv_inc_value = 50, 
                                       pt_value = 10,
@@ -407,16 +471,27 @@ build_full_spine_function_new <- function(pelv_inc_value = 50,
   ## Starting point is at the center of the femoral heads, then build sacrum and go up.
   fem_head_center <- st_point(c(fem_head_center_x, 3)) # Center of femoral head
   fem_head_center_sf <- fem_head_center
-  s1_mid <-  c(fem_head_center[[1]] + spine_orientation*15 * sin(pt),
-               fem_head_center[[2]] + 15 * cos(pt))
+  # s1_mid <-  c(fem_head_center[[1]] + spine_orientation*15 * sin(pt),
+  #              fem_head_center[[2]] + 15 * cos(pt))
+  # 
+  # sac_inf <-  c(s1_mid[[1]] + spine_orientation*10 * sin(p_inc - pt), s1_mid[[2]] - 10 * cos(p_inc - pt))
+  # s1p <- c(s1_mid[[1]] + spine_orientation*2.5 * cos(ss), s1_mid[[2]] + 2.5 * sin(ss))
+  # s1a <- c(s1_mid[[1]] - spine_orientation*2.5 * cos(ss), s1_mid[[2]] - 2.5 * sin(ss))
+  # sacrum_sf <- st_polygon(list(rbind(sac_inf, s1p, s1a, sac_inf)))
+  # s1_mid_sf <- st_point(s1_mid)
+  # sac_inf_sf <- st_point(sac_inf)
   
-  sac_inf <-  c(s1_mid[[1]] + spine_orientation*10 * sin(p_inc - pt), s1_mid[[2]] - 10 * cos(p_inc - pt))
-  s1p <- c(s1_mid[[1]] + spine_orientation*2.5 * cos(ss), s1_mid[[2]] + 2.5 * sin(ss))
-  s1a <- c(s1_mid[[1]] - spine_orientation*2.5 * cos(ss), s1_mid[[2]] - 2.5 * sin(ss))
-  sacrum_sf <- st_polygon(list(rbind(sac_inf, s1p, s1a, sac_inf)))
-  s1_mid_sf <- st_point(s1_mid)
-  sac_inf_sf <- st_point(sac_inf)
+  sacrum_list <- jh_spine_build_sacrum_function(pelvic_incidence = pelv_inc_value,
+                                 pelvic_tilt = pt_value, 
+                                 fem_head_center_coord = c(fem_head_center_x, 3),
+                                 s1_endplate_length = 5, 
+                                 fh_to_s1_center = 15)
   
+  s1_mid <- sacrum_list$sacrum_list$mid
+  s1p <- sacrum_list$sacrum_list$sp
+  s1a <-  sacrum_list$sacrum_list$sa
+  s1_mid_sf <- st_point(sacrum_list$sacrum_list$mid)
+  sacrum_sf <- sacrum_list$sacrum_sf
   
   ############################################# LUMBAR ############################################
   ############################################# LUMBAR ############################################

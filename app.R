@@ -411,8 +411,8 @@ ui <- dashboardPage(
                            sliderInput(
                              "pelvic_incidence",
                              "Pelvic Incidence:",
-                             min = 25,
-                             max = 90,
+                             min = 0,
+                             max = 110,
                              value = 50
                            ),
                            radioGroupButtons(inputId = "plot_lumbar_distribution_using",
@@ -715,59 +715,17 @@ ui <- dashboardPage(
                                                  label = "Choose Plot Background Color", 
                                                  selected = "white",
                                                  opacity = TRUE),
-                                      # colourpicker::colourInput(
-                                      #     inputId = "plot_background_color",
-                                      #     label = "Choose Plot Background Color",
-                                      #     value = "white",
-                                      #     allowTransparent = TRUE
-                                      # ),
                                       switchInput("spine_coloring",
                                                   "Change Spine Color with Values",
                                                   labelWidth = "130px", 
                                                   value = FALSE),
-                                      h4(strong("Pelvic Lines:")),
-                                      colorPickr(inputId = "pi_line_color", label = "Choose PT Line Color", "darkred"),
-                                      colorPickr(inputId = "pt_line_color", label = "Choose PT Line Color", "darkviolet"),
-                                      switchInput("pt_line_vertex_at_hips",
-                                                  "Vertex at hips?",
-                                                  labelWidth = "130px", 
-                                                  value = TRUE),
-                                      colorPickr(inputId = "ss_line_color", label = "Choose SS Line Color", "yellow"),
-                                      colorPickr(inputId = "c2_tilt_line_color", label = "Choose C2 Tilt Line Color", "#F090D8"),
-                                      h4(strong("Vertebral Pelvic Angle Lines:")),
-                                      colorPickr(inputId = "c2pa_line_color",
-                                                 label = "Choose C2 Pelvic Angle Line Color", 
-                                                 selected = "darkgreen"),
-                                      colorPickr(inputId = "t1pa_line_color", label = "Choose T1PA Line Color", "darkblue"),
-                                      colorPickr(inputId = "t9pa_line_color", label = "Choose T9 Pelvic Angle Line Color", "#CC79A7"),
-                                      colorPickr(inputId = "t4pa_line_color", label = "Choose T4 Pelvic Angle Line Color", "purple"),
-                                      colorPickr(inputId = "l1pa_line_color", label = "Choose L1 Pelvic Angle Line Color", "blue"),
-                                      colorPickr(inputId = "t1_c2_ha_line_color", label = "Choose T1-C2-Hip Angle Line Color", "orange"),
-                                      colorPickr(inputId = "t9_c2_ha_line_color", label = "Choose T9-C2-Hip Angle Line Color", "darkorange"),
-                                      h4(strong("Sagittal Cobb Angle Lines:")),
-                                      colorPickr(inputId = "tk_line_color", label = "Choose TK Line Color", "blue"),
+
                                       br(),
                                       switchInput("lines_posterior",
                                                   "Show Lordosis Lines Posteriorly",
                                                   labelWidth = "130px", value = TRUE),
-                                      colorPickr(inputId = "l1s1_line_color", label = "Choose L1-S1 Color", "#00B97A"),
-                                      sliderInput(
-                                        "l1l4_angle_line_length",
-                                        "L1-L4 Angle Display Length",
-                                        min = 0,
-                                        max = 30,
-                                        value = 10
-                                      ),
-                                      colorPickr(inputId = "l1l4_line_color", label = "Choose L1-L4 Line Color", "darkred"),
+
                                       br(),
-                                      sliderInput(
-                                        "l4s1_angle_line_length",
-                                        "L4-S1 Angle Display Length",
-                                        min = 0,
-                                        max = 30,
-                                        value = 10
-                                      ),
-                                      colorPickr(inputId = "l4s1_line_color", label = "Choose L4-S1 Line Color", "#00754D"),
                                       sliderInput(
                                         "posterior_lordosis_line_lengths",
                                         "Posterior Lordosis Line Lengths",
@@ -781,57 +739,230 @@ ui <- dashboardPage(
                                     h4("Plot Settings"))
                            ),
                            switchInput("cone_of_economy_show",
-                                       "Show Cone of Economy",
+                                       "Cone of Economy",
                                        labelWidth = "130px", 
                                        value = FALSE),
-                           switchInput("c2_tilt_line_show",
-                                       "Show C2 Tilt",
-                                       labelWidth = "130px"),
-                           h4("Pelvic Angles:"),
-                           switchInput("c2pa_line_show",
-                                       "Show C2 Pelvic Angle",
-                                       labelWidth = "130px"),
-                           switchInput("t1pa_line_show",
-                                       "Show T1PA",
-                                       labelWidth = "130px"),
-                           switchInput("t4pa_line_show",
-                                       "Show T4PA",
-                                       labelWidth = "130px"),
-                           switchInput("t9pa_line_show",
-                                       "Show T9PA",
-                                       labelWidth = "130px"),
-                           switchInput("l1pa_line_show",
-                                       "Show L1PA",
-                                       labelWidth = "130px"),
-                           switchInput("t1_c2_ha_line_show",
-                                       "Show T1-C2-HA",
-                                       labelWidth = "130px"),
-                           switchInput("t9_c2_ha_line_show",
-                                       "Show T9-C2-HA",
-                                       labelWidth = "130px"),
-                           h4("Sagittal Cobb Angles:"),
-                           switchInput("tk_line_show",
-                                       "Show TK",
-                                       labelWidth = "130px"),
-                           switchInput("l1s1_line_show",
-                                       "Show L1-S1 Angle",
-                                       labelWidth = "130px"),
-                           # switchInput("l1l4_line_show",
-                           #             "Show L1-L4 Angle",
-                           #             labelWidth = "130px"),
-                           switchInput("l4s1_line_show",
-                                       "Show L4-S1 Angle",
-                                       labelWidth = "130px"),
+                           fluidRow(
+                             column(width = 10, 
+                                    switchInput("c2_tilt_line_show",
+                                                "C2 Tilt",
+                                                labelWidth = "130px")
+                             ),
+                             column(width =2, 
+                                    dropdownButton(size = "xs", right = TRUE,
+                                                   circle = TRUE,label = "Edit",
+                                                   icon = icon("gear"),
+                                                   colorPickr(inputId = "c2_tilt_line_color", label = "Choose C2 Tilt Line Color", "#F090D8")
+                                    )
+                             )
+                           ),
                            h4("Pelvic Parameters:"),
-                           switchInput("pt_line_show",
-                                       "Show PT",
-                                       labelWidth = "130px"),
-                           switchInput("ss_line_show",
-                                       "Show SS",
-                                       labelWidth = "130px"),
-                           switchInput("pi_line_show",
-                                       "Show PI",
-                                       labelWidth = "130px")
+                           fluidRow(
+                             column(width = 10, 
+                                    switchInput("pt_line_show",
+                                                "PT",
+                                                labelWidth = "130px")
+                             ),
+                             column(width =2, 
+                                    dropdownButton(size = "xs",right = TRUE,
+                                      circle = TRUE,label = "Edit",
+                                      icon = icon("gear"),
+                                      colorPickr(inputId = "pt_line_color", label = "Choose PT Line Color", "darkviolet"),
+                                      switchInput("pt_line_vertex_at_hips",
+                                                  "Vertex at hips?",
+                                                  labelWidth = "130px", 
+                                                  value = TRUE)
+                                    )
+                             )
+                           ),
+                           fluidRow(
+                             column(width = 10, 
+                                    switchInput("ss_line_show",
+                                                "SS",
+                                                labelWidth = "130px")
+                             ),
+                             column(width = 2, 
+                                    dropdownButton(size = "xs",right = TRUE,
+                                      circle = TRUE,label = "Edit",
+                                      icon = icon("gear"),
+                                      colorPickr(inputId = "ss_line_color", label = "Choose SS Line Color", "yellow")
+                                    )
+                             )
+                           ),
+                           fluidRow(
+                             column(width = 10, 
+                                    switchInput("pi_line_show",
+                                                "PI",
+                                                labelWidth = "130px")
+                             ),
+                             column(width = 2, 
+                                    dropdownButton(size = "xs",right = TRUE,
+                                      circle = TRUE,label = "Edit",
+                                      icon = icon("gear"),
+                                      colorPickr(inputId = "pi_line_color", label = "Choose PI Line Color", "darkred")
+                                    )
+                             )
+                           ),
+                           h4("Pelvic Angles:"),
+                           fluidRow(
+                             column(width = 10, 
+                                    switchInput("c2pa_line_show",
+                                                "C2PA",
+                                                labelWidth = "130px")
+                             ),
+                             column(width = 2, 
+                                    dropdownButton(size = "xs",right = TRUE,
+                                                   circle = TRUE,label = "Edit",
+                                                   icon = icon("gear"),
+                                                   colorPickr(inputId = "c2pa_line_color", label = "Choose C2PA Line Color", "darkgreen")
+                                    )
+                             )
+                           ),
+                           fluidRow(
+                             column(width = 10, 
+                                    switchInput("t1pa_line_show",
+                                                "T1PA",
+                                                labelWidth = "130px")
+                             ),
+                             column(width = 2, 
+                                    dropdownButton(size = "xs",right = TRUE,
+                                                   circle = TRUE,label = "Edit",
+                                                   icon = icon("gear"),
+                                                   colorPickr(inputId = "t1pa_line_color", label = "Choose T1PA Line Color", "darkblue")
+                                    )
+                             )
+                           ),
+                           fluidRow(
+                             column(width = 10, 
+                                    switchInput("t4pa_line_show",
+                                                "T4PA",
+                                                labelWidth = "130px")
+                             ),
+                             column(width = 2, 
+                                    dropdownButton(size = "xs",right = TRUE,
+                                                   circle = TRUE,label = "Edit",
+                                                   icon = icon("gear"),
+                                                   colorPickr(inputId = "t4pa_line_color", label = "Choose T4PA Line Color", "purple")
+                                    )
+                             )
+                           ),
+                           fluidRow(
+                             column(width = 10, 
+                                    switchInput("t9pa_line_show",
+                                                "T9PA",
+                                                labelWidth = "130px")
+                             ),
+                             column(width = 2, 
+                                    dropdownButton(size = "xs",right = TRUE,
+                                                   circle = TRUE, label = "Edit",
+                                                   icon = icon("gear"),
+                                                   colorPickr(inputId = "t9pa_line_color", label = "Choose T9PA Line Color", "#CC79A7")
+                                    )
+                             )
+                           ),
+                           fluidRow(
+                             column(width = 10, 
+                                    switchInput("l1pa_line_show",
+                                                "L1PA",
+                                                labelWidth = "130px")
+                             ),
+                             column(width = 2, 
+                                    dropdownButton(size = "xs",right = TRUE,
+                                                   circle = TRUE,label = "Edit",
+                                                   icon = icon("gear"),
+                                                   colorPickr(inputId = "l1pa_line_color", label = "Choose L1PA Line Color", "blue")
+                                    )
+                             )
+                           ),
+                           fluidRow(
+                             column(width = 10, 
+                                    switchInput("t1_c2_ha_line_show",
+                                                "T1-C2-HA",
+                                                labelWidth = "130px")
+                             ),
+                             column(width = 2, 
+                                    dropdownButton(size = "xs",right = TRUE,
+                                                   circle = TRUE,label = "Edit",
+                                                   icon = icon("gear"),
+                                                   colorPickr(inputId = "t1_c2_ha_line_color", label = "Choose T1-C2-HA Line Color", "orange")
+                                    )
+                             )
+                           ),
+                           fluidRow(
+                             column(width = 10, 
+                                    switchInput("t9_c2_ha_line_show",
+                                                "T9-C2-HA",
+                                                labelWidth = "130px")
+                             ),
+                             column(width = 2, 
+                                    dropdownButton(size = "xs",right = TRUE,
+                                                   circle = TRUE,label = "Edit",
+                                                   icon = icon("gear"),
+                                                   colorPickr(inputId = "t9_c2_ha_line_color", label = "Choose T9-C2-HA Line Color", "darkorange")
+                                    )
+                             )
+                           ),
+                           h4("Sagittal Cobb Angles:"),
+                           fluidRow(
+                             column(width = 10, 
+                                    switchInput("tk_line_show",
+                                                "TK",
+                                                labelWidth = "130px")
+                             ),
+                             column(width = 2, 
+                                    dropdownButton(size = "xs",right = TRUE,
+                                                   circle = TRUE,label = "Edit",
+                                                   icon = icon("gear"),
+                                                   colorPickr(inputId = "tk_line_color", label = "Choose TK Line Color", "blue")
+                                    )
+                             )
+                           ),
+                           fluidRow(
+                             column(width = 10, 
+                                    switchInput("l1s1_line_show",
+                                                "L1-S1 Angle",
+                                                labelWidth = "130px")
+                             ),
+                             column(width = 2, 
+                                    dropdownButton(size = "xs",
+                                                   right = TRUE,
+                                                   circle = TRUE,
+                                                   label = "Edit",
+                                                   icon = icon("gear"),
+                                                   colorPickr(inputId = "l1s1_line_color", label = "Choose L1-S1 Color", "#00B97A"),
+                                                   sliderInput(
+                                                     "l1l4_angle_line_length",
+                                                     "L1-L4 Angle Display Length",
+                                                     min = 0,
+                                                     max = 30,
+                                                     value = 10
+                                                   )
+                                    )
+                             )
+                           ),
+                           fluidRow(
+                             column(width = 10, 
+                                    switchInput("l4s1_line_show",
+                                                "L4-S1 Angle",
+                                                labelWidth = "130px")
+                             ),
+                             column(width = 2, 
+                                    dropdownButton(size = "xs",
+                                                   right = TRUE,
+                                                   circle = TRUE,
+                                                   label = "Edit",
+                                                   icon = icon("gear"),
+                                                   colorPickr(inputId = "l4s1_line_color", label = "Choose L4-S1 Line Color", "#00754D"),
+                                                   sliderInput(
+                                                     "l4s1_angle_line_length",
+                                                     "L4-S1 Angle Display Length",
+                                                     min = 0,
+                                                     max = 30,
+                                                     value = 10
+                                                   )
+                                    )
+                             )
+                           )
                        )
                 )
               )
@@ -2085,6 +2216,7 @@ server <- function(input, output, session) {
           add_slide(layout = "Blank", master = "Office Theme") %>%
           ph_with(dml(ggobj = plot), location = ph_location_fullsize())
       }
+      
       
       # Save PowerPoint file
       print(ppt, target = file)

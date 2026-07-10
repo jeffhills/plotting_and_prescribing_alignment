@@ -1800,12 +1800,22 @@ server <- function(input, output, session) {
                                                      c(fem_head_center[[1]] + 30,
                                                        fem_head_center[[2]] + 100), 
                                                      fem_head_center)))
+      # cone_color <- case_when(
+      #   spine_build_list$spine_list$c2_tilt_value < c2_quant_05 ~ "red",
+      #   between(spine_build_list$spine_list$c2_tilt_value, c2_quant_05, c2_iqr_25) ~ "yellow",
+      #   between(spine_build_list$spine_list$c2_tilt_value, c2_iqr_25, c2_iqr_75) ~ "green",
+      #   between(spine_build_list$spine_list$c2_tilt_value, c2_iqr_75, c2_quant_95) ~ "yellow",
+      #   spine_build_list$spine_list$c2_tilt_value > c2_quant_95 ~ "red"
+      # )
+      c2_tilt_value <- as.numeric(spine_build_list$spine_list$c2_tilt_value)[1]
+      
       cone_color <- case_when(
-        spine_build_list$spine_list$c2_tilt_value < c2_quant_05 ~ "red",
-        between(spine_build_list$spine_list$c2_tilt_value, c2_quant_05, c2_iqr_25) ~ "yellow",
-        between(spine_build_list$spine_list$c2_tilt_value, c2_iqr_25, c2_iqr_75) ~ "green",
-        between(spine_build_list$spine_list$c2_tilt_value, c2_iqr_75, c2_quant_95) ~ "yellow",
-        spine_build_list$spine_list$c2_tilt_value > c2_quant_95 ~ "red"
+        c2_tilt_value < c2_quant_05 ~ "red",
+        between(c2_tilt_value, c2_quant_05, c2_iqr_25) ~ "yellow",
+        between(c2_tilt_value, c2_iqr_25, c2_iqr_75) ~ "green",
+        between(c2_tilt_value, c2_iqr_75, c2_quant_95) ~ "yellow",
+        c2_tilt_value > c2_quant_95 ~ "red",
+        TRUE ~ "grey80"
       )
       
       ######################### END ######################
